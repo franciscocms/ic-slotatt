@@ -39,6 +39,10 @@ def render(shape_obj, size_obj, color_obj, locx_obj, locy_obj, background_color)
       draw.ellipse(
         [locX - s//2, locY - s//2, locX + s//2, locY + s//2],
         fill=color_to_rgb(color))
+    elif shape == "triangle":
+      draw.polygon(
+        [(locX - s//2, locY - s//2), (locX + s//2, locY - s//2), (locX, locY + s//2)],
+        fill=color_to_rgb(color))
   #img.show()
   return img
 
