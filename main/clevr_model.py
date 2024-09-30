@@ -26,7 +26,8 @@ device = params["device"]
 
 img_transform = transforms.Compose([transforms.ToTensor()])
 
-properties_json_path = "main/clevr_data/properties.json"
+dir_path = os.path.dirname(__file__)
+properties_json_path = os.path.join(dir_path, "clevr_data", "properties.json")
 min_objects = 3
 max_objects = 10
 max_retries = 50
@@ -170,7 +171,7 @@ def sample_clevr_scene(N):
     
     return objects
 
-def generate_blender_script(objects, output_file="main/clevr_data/clevr_scene.blend"):
+def generate_blender_script(objects, output_file=os.path.join(dir_path, "clevr_data", "clevr_scene.blend")):
     """
     Generate a Blender Python script to render the CLEVR-like scene.
     """
@@ -183,7 +184,7 @@ import os
 from mathutils import Vector
 
 # Open main file
-bpy.ops.wm.open_mainfile(filepath="main/clevr_data/base_scene.blend")
+bpy.ops.wm.open_mainfile(filepath=os.path.join(dir_path, "clevr_data", "base_scene.blend"))
 
 # Load materials
 def load_materials(material_dir):
@@ -327,7 +328,7 @@ def add_object(object_dir, name, scale, loc, theta=0):
 # Add objects to the scene
 def _add_object(object_dir):
     
-    shape_dir = "main/clevr_data/shapes"
+    shape_dir = os.path.join(dir_path, "clevr_data", "shapes")
     add_object(shape_dir, object_dir["shape"], object_dir["size"], object_dir["position"], object_dir["pose"])
     
     # Get reference to the object
@@ -351,14 +352,14 @@ _add_object(objects[{i}])
 
 # Set render settings
 bpy.context.scene.render.image_settings.file_format = 'PNG'
-bpy.context.scene.render.filepath = 'main/rendered_scene.png'
+bpy.context.scene.render.filepath = os.path.join(dir_path, "rendered_scene.png")
 
 # Render the scene
 bpy.ops.render.render(write_still=True)
     """
     
     # Write the Blender script to a file
-    script_file = "main/generate_clevr_scene.py"
+    script_file = os.path.join(dir_path, "generate_clevr_scene.py")
     with open(script_file, "w") as f:
         f.write(script)
     
@@ -387,7 +388,7 @@ def clevr_model(observations={"image": torch.zeros((1, 3, 128, 128))}, show='all
 
     print("Scene rendered and saved as 'rendered_scene.png'")
 
-    img = img_transform(Image.open('main/rendered_scene.png')).unsqueeze(0) # img shape is (1, 4, 240, 320)
+    img = img_transform(Image.open(os.path.join(dir_path, "rendered_scene.png"))).unsqueeze(0) # img shape is (1, 4, 240, 320)
 
     #plt.imshow(img[0].permute(1, 2, 0).numpy())
     #plt.show()
