@@ -82,7 +82,6 @@ class CSIS(Importance):
     
     self.guide.train = True
     self.guide.step = s
-    if p["normalize_loss"]: self.total_N = 0
 
     self.guide.attn_overlap = torch.tensor(0., device=device)
     
@@ -223,12 +222,6 @@ class CSIS(Importance):
       #logging.info(particle_loss)
 
       particle_loss /= batch_size 
-      
-      if p["normalize_loss"]: 
-        eps = 1e-8
-        self.avg_N = self.total_N/batch_size
-        if self.avg_N == 0: self.avg_N += 1
-        particle_loss = particle_loss/(self.avg_N + eps)
 
       if grads:
         guide_params = set(
@@ -271,14 +264,6 @@ class CSIS(Importance):
           if name == "N" or name.split("_")[0] in ["locX", "locY", "bgR", "bgG", "bgB"]: logging.info(f"mean: {vals['fn'].mean.item()} - GT: {vals['value']} - log_prob = {vals['fn'].log_prob(vals['value']).item()}")
           if name.split("_")[0] in ["shape", "color", "size"]: logging.info(f"probs: {vals['fn'].probs} - GT: {vals['value']} - log_prob = {vals['fn'].log_prob(vals['value']).item()}")
           logp += vals['fn'].log_prob(vals['value']).item()
-      
-      # logging.info(logp)
-      # logging.info(-guide_trace.log_prob_sum())
-    
-    # if p["normalize_loss"]:
-    #   for name, vals in guide_trace.nodes.items():
-    #     if vals["name"] == "N":
-    #       self.total_N += vals["value"]
       
     if not p["perm_inv_loss"]: return -guide_trace.log_prob_sum()
     else:
@@ -375,7 +360,6 @@ class CSIS(Importance):
       self.set_validation_batch(*args, **kwargs)
     
     self.guide.train = False
-    if p["normalize_loss"]: self.total_N = 0
     
     with torch.no_grad():
       val_loss = self.loss_and_grads(False, self.validation_batch, step, *args, **kwargs)
