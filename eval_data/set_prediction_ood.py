@@ -107,9 +107,10 @@ def main():
         csis = mcsis.CSIS(model, guide, optimiser, training_batch_size=256, num_inference_samples=params["num_inference_samples"])
 
         plots_dir = os.path.abspath("set_prediction_plots")
-
-        img_path = "synthetic_data/ood_samples/00000.png" 
-        COUNT = 4       
+        
+        img_id = '00000'
+        img_path = f"synthetic_data/ood_samples/{img_id}.png" 
+        COUNT = 4
 
         ood_img_dir = "synthetic_data/ood_samples"                
                 
@@ -117,7 +118,6 @@ def main():
         sample = sample.to(device)
         sample_id = img_path.split('/')[-1].split('.')[0]
         
-        target_dict = json.load(open("synthetic_data/ood_samples_metadata/00000.json"))
         
         # in ICSA set prediction, we assume that 'N' is known
         posterior = csis.run(observations={"image": sample}, N=COUNT)
@@ -200,10 +200,15 @@ def main():
                                                 )
                                                 )
                 
-                # TO DO: save img overlay 
+                if int(vars_id) == 1:
+                    logger.info([tracking_dict[t][f"shape_{vars_id}"] for t in range(len(traces)) if t in tracking_dict])
+                
                 plt.imshow(overlay_img.permute(1, 2, 0).numpy())
                 plt.savefig(f'{ood_img_dir}/traces_overlay_vars_{vars_id}.png')
                 plt.close()
+
+                avg_likelihood, std_likelihood = torch.stack([v for k, v in vars_log_w.items()]).mean(), torch.stack([v for k, v in vars_log_w.items()]).std()
+                logger.info(f"average likelihood scores for object {vars_id}: {avg_likelihood} - {std_likelihood}")
 
                 resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(traces)) if i in tracking_dict]), torch.stack([v for k, v in vars_log_w.items()]))
                 resampling_id = resampling().item()
@@ -251,15 +256,58 @@ def main():
                 # try: trace = traces[resampling_id] 
                 # except:
                 #     logger.info(len(traces))
-                
-                # preds = process_preds(traces[resampling_id], COUNT)
-                # targets = process_targets(target_dict)
-                    
-                # for t in threshold: ap[t] += compute_AP(preds, targets, t)
+        
+        elif params['inference_method'] == 'importance_sampling_only' and params['proposals'] == 'data_driven':
+
+            resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(posterior.log_weights))]), torch.stack(posterior.log_weights))
+            resampling_id = resampling().item()
+
+            traces = posterior.prop_traces
+            tracking_dict = {}
             
-            # mAP = {k: v/n_test_samples for k, v in ap.items()}
-            # logger.info(f"COUNT {COUNT}: distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")
-            # logger.info(f"COUNT {COUNT}: mAP values: {mAP[threshold[0]]} - {mAP[threshold[1]]} - {mAP[threshold[2]]} - {mAP[threshold[3]]} - {mAP[threshold[4]]} - {mAP[threshold[5]]}\n")
+            for t in range(len(traces)):
+                tracking_dict[t] = {}
+                for name, site in traces[t].nodes.items():
+                    if site['type'] == 'sample': tracking_dict[t][name] = site['value']
+
+            # create an overlay img with all proposals for object 'vars_id'
+            img_transform = transforms.Compose([transforms.ToTensor()])
+            overlay_img = img_transform(render([tracking_dict[t][f"shape_{v}"] for t in range(len(traces)) for v in range(COUNT)],
+                                            [tracking_dict[t][f"size_{v}"] for t in range(len(traces)) for v in range(COUNT)],
+                                            [tracking_dict[t][f"color_{v}"] for t in range(len(traces)) for v in range(COUNT)],
+                                            [tracking_dict[t][f"locX_{v}"] for t in range(len(traces)) for v in range(COUNT)],
+                                            [tracking_dict[t][f"locY_{v}"] for t in range(len(traces))  for v in range(COUNT)],
+                                            background=None,
+                                            transparent_polygons=True
+                                            )
+                                            )
+            
+            plt.imshow(overlay_img.permute(1, 2, 0).numpy())
+            plt.savefig(f'{ood_img_dir}/IS_traces_overlay.png')
+            plt.close()
+
+            resampled_img = img_transform(render([tracking_dict[resampling_id][f"shape_{v}"] for v in range(COUNT)],
+                                            [tracking_dict[resampling_id][f"size_{v}"] for v in range(COUNT)],
+                                            [tracking_dict[resampling_id][f"color_{v}"] for v in range(COUNT)],
+                                            [tracking_dict[resampling_id][f"locX_{v}"] for v in range(COUNT)],
+                                            [tracking_dict[resampling_id][f"locY_{v}"] for v in range(COUNT)],
+                                            background=None
+                                            )
+                                            )
+            
+            plt.imshow(resampled_img.permute(1, 2, 0).numpy())
+            plt.savefig(f'{ood_img_dir}/IS_pred.png')
+            plt.close()
+
+                
+        # preds = process_preds(traces[resampling_id], COUNT)
+        # targets = process_targets(target_dict)
+            
+        # for t in threshold: ap[t] += compute_AP(preds, targets, t)
+    
+    # mAP = {k: v/n_test_samples for k, v in ap.items()}
+    # logger.info(f"COUNT {COUNT}: distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")
+    # logger.info(f"COUNT {COUNT}: mAP values: {mAP[threshold[0]]} - {mAP[threshold[1]]} - {mAP[threshold[2]]} - {mAP[threshold[3]]} - {mAP[threshold[4]]} - {mAP[threshold[5]]}\n")
 
 
 if __name__ == '__main__':

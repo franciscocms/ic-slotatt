@@ -157,7 +157,7 @@ class Encoder(nn.Module):
     super().__init__()
     
     self.encoder_sa = []
-    in_channels = 3
+    in_channels = 3 if params['dataset'] == '2Dobjects' else 4
     self.encoder_sa += [nn.Conv2d(in_channels, 64, 5, 1, 2), nn.ReLU(inplace=True)]
     for c in range(2):
       if params["strided_convs"]: self.encoder_sa += [nn.Conv2d(64, 64, 5, 2, 2), nn.ReLU(inplace=True)]
@@ -420,8 +420,49 @@ class InvSlotAttentionGuide(nn.Module):
         n_s = None
         if params["no_slots"] == "wo_background": n_s = N
         elif params["no_slots"] == "w_background": n_s = N + 1
-        if n_s != None: self.slots, self.slot_pos, attn = self.slot_attention(self.features_to_slots, num_slots=n_s)        
+        if n_s != None: self.slots, self.slot_pos, attn = self.slot_attention(self.features_to_slots, num_slots=n_s) 
+
+        #print(self.slot_pos) 
+
+        # ood_img_dir = "synthetic_data/ood_samples"
+        # aux_attn = attn.reshape((1, n_s, 32, 32))
+        # fig, ax = plt.subplots(ncols=n_s)
+        # for j in range(n_s):                                       
+        #     im = ax[j].imshow(aux_attn[0, j, :, :].detach().cpu().numpy())
+        #     ax[j].grid(False)
+        #     ax[j].axis('off')        
+        # plt.savefig(f"{ood_img_dir}/attn.png")
+        # plt.close() 
+
         
+        # CODE FOR SLOTS ANALYSIS #
+        #      DELETE AFTER       #
+        
+        # save_plots_dir = '/Users/franciscosilva/Downloads/slots_analysis'
+
+        # # check the higher index and save with the next
+        # if len(glob.glob(f"{save_plots_dir}/icsa_slots/*.npy")) != 0:
+          
+        #   sample_id = max([int(p.split('/')[-1].split('_')[-1].split('.')[0]) for p in os.listdir(f"{save_plots_dir}/icsa_slots") if p.split('.')[-1] == 'npy'])
+        #   sample_id += 1
+        # else: sample_id = 0
+        # print(sample_id)
+        # np.save(f"{save_plots_dir}/icsa_slots/slots_icsa_{params['guide_step']}_{str(sample_id).zfill(2)}.npy", self.slots.numpy())
+        # np.save(f"{save_plots_dir}/icsa_attn/attn_icsa_{params['guide_step']}_{str(sample_id).zfill(2)}.npy", attn.numpy())
+
+        # aux_attn = attn.reshape((1, n_s, 32, 32))
+        # fig, ax = plt.subplots(ncols=n_s)
+        # for j in range(n_s):                                       
+        #     im = ax[j].imshow(aux_attn[0, j, :, :].detach().cpu().numpy())
+        #     ax[j].grid(False)
+        #     ax[j].axis('off')        
+        # plt.savefig(f"{save_plots_dir}/attn_icsa_{params['guide_step']}.png")
+        # plt.close() 
+
+
+        # CODE FOR SLOTS ANALYSIS # 
+        #      DELETE AFTER       #
+         
         if params["running_type"] == "inspect":
           logging.info(f"slot_pos: {self.slot_pos}")
         

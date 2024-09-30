@@ -17,6 +17,7 @@ from utils.var import Variable
 from main.setup import params
 from utils.loss import save_loss, save_loss_plot
 from utils.guide import get_pretrained_wts, load_trained_guide
+from main.clevr_model import clevr_model
 
 import logging
 logfile_name = f"log-{params['jobID']}.log"
@@ -42,10 +43,6 @@ for p in [GUIDE_PATH, LOSS_PATH]:
 logger.info(f"\n... saving model checkpoints in {GUIDE_PATH}")
 logger.info(f"... saving loss values in {LOSS_PATH}\n")
 
-"""
-load pretrained density map estimator for guide.encoder_cnn
-"""
-
 guide = InvSlotAttentionGuide(resolution = (128, 128), num_iterations = 3, hid_dim = params["slot_dim"], stage="train", mixture_components=params["mixture_components"])
 guide.to(DEVICE)
 
@@ -70,7 +67,7 @@ VAL_BATCH_SIZE = params["batch_size"]
 LR = params["lr"]
 
 optimiser = pyro.optim.Adam({'lr': LR})
-csis = CSIS(model = model,
+csis = CSIS(model = model if params['dataset'] == '2Dobjects' else clevr_model,
             guide = guide,
             optim = optimiser,
             num_inference_samples=params["num_inference_samples"],

@@ -7,7 +7,7 @@ import json
 import sys
 sys.path.append(os.path.abspath(__file__+'/../../'))
 
-from utils.baseline import Tester, MyDataset, compute_AP
+from utils.baseline import Tester, MyDataset, process_preds
 from baseline import Baseline
 
 import logging
@@ -38,7 +38,7 @@ def main():
         "loss_path": loss_path,
         "epoch_log_rate": 1,
         "mode": "train",
-        "epoch_to_load": 100,
+        "epoch_to_load": 1,
         "slot_dim": 64,
         "test_image_save_path": test_path
     }
@@ -46,25 +46,21 @@ def main():
     DEVICE = params["device"]
     logger.info(f"device is {DEVICE}")
 
-    seeds = [1]
+    seeds = [1, 2, 3, 4, 5]
     for seed in seeds:
 
-        logger.info(f'seed {seed}')
+        torch.manual_seed(seed)
+
+        print(f'seed {seed}')
         #GUIDE_PATH = f"{params['checkpoint_path']}/model_epoch_{params['epoch_to_load']}.pth"
         GUIDE_PATH = f"/Users/franciscosilva/Downloads/model_epoch_{params['epoch_to_load']}.pth"
-        logger.info(GUIDE_PATH)
 
-        model = Baseline(resolution = (128, 128), num_iterations = 3, hid_dim = params["slot_dim"], stage="train", num_slots=params['max_objects'])
+        model = Baseline(resolution = (128, 128), num_iterations = 3, hid_dim = params["slot_dim"], stage="eval", num_slots=params['max_objects'])
         if DEVICE == 'cuda:0': model.load_state_dict(torch.load(GUIDE_PATH))
         else: model.load_state_dict(torch.load(GUIDE_PATH, map_location='cpu'))
         model.to(DEVICE)
 
-        overall_mAP = {}
         for COUNT in range(1, 11):
-
-            overall_mAP[COUNT] = 0.
-
-            logger.info(f'\nEVALUATION STARTED FOR SCENES WITH {COUNT} OBJECTS\n')
 
             #img_path = glob.glob(f"/nas-ctm01/homes/fcsilva/ic-slotatt/eval_data/images/{COUNT}/*.png")
             img_path = glob.glob(f'/Users/franciscosilva/Downloads/eval_data/images/{COUNT}/*.png')
@@ -73,44 +69,26 @@ def main():
             target_path = glob.glob(f'/Users/franciscosilva/Downloads/eval_data/metadata/{COUNT}/*.json')
             target_path.sort()
 
-            logger.info(img_path)
-
-            test_dataset = MyDataset(img = img_path[:5],
-                                    target = target_path[:5],
+            test_dataset = MyDataset(img = img_path,
+                                    target = target_path,
                                     params = params)
-            
-            logger.info(test_dataset.__len__())
 
             testloader = torch.utils.data.DataLoader(test_dataset, batch_size=params['batch_size'], shuffle=False)
             tester = Tester(model, testloader, params)
             preds, targets = tester.test()
 
-            logger.info(preds.shape) # (50, 17, 11)
-            logger.info(targets.shape) # (50, 17, 11)
+            #print(preds.shape) # (50, 17, 11)
+            #print(targets.shape) # (50, 17, 11)
 
-            threshold = [-1., 1., 0.5, 0.25, 0.125, 0.0625]
-            ap = {k: 0 for k in threshold}
-
+            acc = 0
+            
             for i in range(preds.shape[0]):
+                _, _, _, _, _, pred_real_obj = process_preds(preds[i])
+                pred_count = torch.sum(torch.round(pred_real_obj))
+                if pred_count.item() == COUNT: acc += 1
 
-                logger.info(f'\n{i}')
-
-                for t in threshold: ap[t] += compute_AP(preds[i], targets[i], t)
+            acc /= preds.shape[0]  
+            print(f"accuracy for count = {COUNT} -> {acc}")
             
-            mAP = {k: v/(preds.shape[0]) for k, v in ap.items()}
-            logger.info(f"COUNT {COUNT}: distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")
-            logger.info(f"COUNT {COUNT}: mAP values: {mAP[threshold[0]]} - {mAP[threshold[1]]} - {mAP[threshold[2]]} - {mAP[threshold[3]]} - {mAP[threshold[4]]} - {mAP[threshold[5]]}\n")
-
-            """
-            overall_mAP stores mAP values across all COUNTs
-            """
-            
-            for t in threshold: 
-                if t in overall_mAP: overall_mAP[t] += mAP[t]
-                else: overall_mAP[t] = mAP[t]
-
-        for k, v in overall_mAP.items(): overall_mAP[k] = v/10
-        logger.info(f"overall mAP: {overall_mAP[threshold[0]]} - {overall_mAP[threshold[1]]} - {overall_mAP[threshold[2]]} - {overall_mAP[threshold[3]]} - {overall_mAP[threshold[4]]} - {overall_mAP[threshold[5]]}\n")
-
 if __name__ == "__main__":
     main()

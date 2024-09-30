@@ -5,12 +5,13 @@ import os
 main_dir = os.path.abspath(__file__+'/../../')
 
 params = {
+    "dataset": "clevr", # 'clevr' or '2Dobjects'
     "mixture_components": 10,
     "guide_step" : 10000,
     "print_distributions": False,
     "print_importance_sampling": False,
     "bernoulli_inf_reduction": 'none',
-    "num_inference_samples": 50,
+    "num_inference_samples": 1,
     "N_proposal" : "normal", # mixture
     "loc_proposal" : "wo_net",
     "loc_proposal_std": 0.05, 
@@ -18,7 +19,7 @@ params = {
     "prior_stddevs" : 0.05,
     "N_prior_std" : 0.1,
     "pos_from_attn" : "attn-masks", # "attn-masks" if computing locations from slot attention masks (alternative: "dme" from the estimated density maps)
-    "training_from_scratch" : False,
+    "training_from_scratch" : True,
     "lr" : 1e-3, 
     "batch_size" : 256, # 256
     "training_iters": 10000, # 10k
@@ -29,7 +30,7 @@ params = {
     "softmax_temperature": 1.0,
     "strided_convs": True,
     "check_attn": True,
-    "jobID": 69,
+    "jobID": 70, # 69 holds the results for ICSA trained on '2Dobjects'
     "mesh_iters": 4,
     "mesh_lr": 3,
     "logprob_coeff": 1.,

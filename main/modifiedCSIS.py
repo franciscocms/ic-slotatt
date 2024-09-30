@@ -141,7 +141,7 @@ class CSIS(Importance):
           if name == "N": self.n_objects = to_int(vals["value"])
           
           # prior categorical distributed variables
-          if isinstance(vals["fn"], CategoricalVals): 
+          if isinstance(vals["fn"], CategoricalVals) or isinstance(vals["fn"], dist.Categorical): 
             prior_distribution = "categorical"
             proposal_distribution = "categorical"
             out_dim = len(vals["fn"].probs)

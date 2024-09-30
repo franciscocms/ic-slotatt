@@ -55,11 +55,12 @@ def model(scene_id):
                         
   # sample the number of objects
   poisson_param = 3.
-  shape_vals = ["ball", "square", "triangle"]
-  size_vals = ["small", "medium", "large"]
+  shape_vals = ["ball", "ood"]
+  size_vals = ["large"]
   color_vals = ["red", "green", "blue"]
 
   n_objects = dist.Poisson(torch.tensor(poisson_param)).sample()
+  #n_objects = 2
 
   # sample properties for each object 
 
@@ -68,12 +69,13 @@ def model(scene_id):
   scene_dict = {}
   scene_dict["scene_id"] = scene_id
   scene_dict["scene_attr"] = {
-    "N": n_objects.item(),
+    "N": n_objects.item() if type(n_objects) != int else n_objects,
   }
 
   all_locs = []
   for n in range(int(n_objects)):
     shape = shape_vals[dist.Categorical(probs=torch.tensor([1/len(shape_vals) for _ in range(len(shape_vals))])).sample()]
+    #shape = shape_vals[n]
     shape_obj.append(shape)
     size = size_vals[torch.randint(high=len(size_vals), size=(1,))]
     size_obj.append(size)

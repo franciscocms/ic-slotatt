@@ -186,7 +186,7 @@ class Encoder(nn.Module):
 
 """Slot Attention-based auto-encoder for object discovery."""
 class Baseline(nn.Module):
-  def __init__(self, resolution, num_iterations, hid_dim, stage, num_slots):
+  def __init__(self, resolution, num_iterations, hid_dim, stage, num_slots, save_slots=False):
     """Builds the Slot Attention-based auto-encoder.
     Args:
     resolution: Tuple of integers specifying width and height of input image.
@@ -199,6 +199,8 @@ class Baseline(nn.Module):
     self.num_slots = num_slots
     self.num_iterations = num_iterations
     self.stage = stage
+    self.save_slots = save_slots
+
     assert self.stage in ["train", "eval"], "stage must be either 'train' or 'eval'"
 
     self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -234,7 +236,9 @@ class Baseline(nn.Module):
     self.features_to_slots = self.mlp(x)
     self.slots, self.slot_pos, attn = self.slot_attention(self.features_to_slots, num_slots=self.num_slots)
     preds = self.mlp_classifier(self.slots)
-    return preds
+    
+    if not self.save_slots: return preds
+    else: return preds, self.slots, attn
 
       
     

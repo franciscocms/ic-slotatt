@@ -164,6 +164,26 @@ class Tester:
                 preds = self._test_batch(img)
                 return preds, target
 
+    def test_ood(self):
+        self.model.eval()
+        with torch.no_grad(): 
+            for idx, img in enumerate(self.testloader): 
+                print(idx)                               
+                # plt.imshow(img.squeeze().permute(1, 2, 0).cpu().numpy())
+                # plt.savefig(self.params['test_image_save_path'] + '/' + str(idx) + '.png', bbox_inches = 'tight')
+                # plt.close()
+                preds = self._test_batch(img)
+                return preds
+    
+    def slots_analysis(self):
+        self.model.eval()
+        assert self.model.save_slots == True
+
+        with torch.no_grad(): 
+            for img in self.testloader: 
+                preds, slots, attn = self._test_batch(img)
+                return preds, slots, attn
+
 
 class MyDataset():
   def __init__(self, img, target, params):
@@ -180,28 +200,32 @@ class MyDataset():
   
   def __getitem__(self, index):
     img = self.img_transform(Image.open(self.img[index]))
-    target_dict = json.load(open(self.target[index]))
+    if self.target != []: target_dict = json.load(open(self.target[index]))
     
-    target = torch.zeros(self.params['max_objects'], self.target_dim)
+    if self.target != []: 
+        target = torch.zeros(self.params['max_objects'], self.target_dim)
 
-    for n in range(int(target_dict['scene_attr']['N'])):
-        target[n, :2] = F.one_hot(torch.tensor(self.shape_vals[target_dict['scene_attr'][f'object_{n}']['shape']]), len(self.shape_vals))
-        target[n, 2:5] = F.one_hot(torch.tensor(self.size_vals[target_dict['scene_attr'][f'object_{n}']['size']]), len(self.size_vals))
-        target[n, 5:8] = F.one_hot(torch.tensor(self.color_vals[target_dict['scene_attr'][f'object_{n}']['color']]), len(self.color_vals))
-        target[n, 8] = target_dict['scene_attr'][f'object_{n}']['initLocX']
-        target[n, 9] = target_dict['scene_attr'][f'object_{n}']['initLocY']
-        target[n, 10] = torch.tensor(1.)
+        for n in range(int(target_dict['scene_attr']['N'])):
+            target[n, :2] = F.one_hot(torch.tensor(self.shape_vals[target_dict['scene_attr'][f'object_{n}']['shape']]), len(self.shape_vals))
+            target[n, 2:5] = F.one_hot(torch.tensor(self.size_vals[target_dict['scene_attr'][f'object_{n}']['size']]), len(self.size_vals))
+            target[n, 5:8] = F.one_hot(torch.tensor(self.color_vals[target_dict['scene_attr'][f'object_{n}']['color']]), len(self.color_vals))
+            target[n, 8] = target_dict['scene_attr'][f'object_{n}']['initLocX']
+            target[n, 9] = target_dict['scene_attr'][f'object_{n}']['initLocY']
+            target[n, 10] = torch.tensor(1.)
     
-    n = int(target_dict['scene_attr']['N'])
-    target[n:self.params['max_objects'], :] = torch.zeros(self.params['max_objects']-n, self.target_dim)
-
-    return img, target # target is shape (b_s, 17, 11)
+    
+    if self.target != []: 
+        n = int(target_dict['scene_attr']['N'])
+        target[n:self.params['max_objects'], :] = torch.zeros(self.params['max_objects']-n, self.target_dim)
+        return img, target # target is shape (b_s, 17, 11)
+    else: return img
   
   def __len__(self):
     return len(self.img)
 
 def process_preds(preds):
-    # preds have shape (max_objects, n_features)
+    # preds must have shape (max_objects, n_features)
+    assert len(preds.shape) == 2
 
     shape = torch.argmax(preds[:, :2], dim=-1)
     size = torch.argmax(preds[:, 2:5], dim=-1)
