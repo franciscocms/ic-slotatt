@@ -439,7 +439,7 @@ def clevr_model(observations={"image": torch.zeros((1, 3, 128, 128))}, show='all
 
     # Call Blender to render the scene
     with mp.Pool(processes=mp.cpu_count()) as pool:
-      pool.starmap(render_scene_in_blender, blender_scripts)
+      pool.map(render_scene_in_blender, blender_scripts)
 
     #logger.info("Scene rendered and saved...")
 
