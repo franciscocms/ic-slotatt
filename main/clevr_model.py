@@ -62,9 +62,16 @@ def sample_clevr_scene(N):
         object_mapping = [(v, k) for k, v in properties['shapes'].items()]
         size_mapping = list(properties['sizes'].items())
     
+    B = len(N)
+    
     # Sample scene 
-    num_objects = pyro.sample("N", MyPoisson(torch.tensor(5.), validate_args = False), obs=N)
-    if type(num_objects) == Tensor: num_objects = to_int(num_objects)
+    with pyro.plate('n_plate', size=B):
+      num_objects = pyro.sample("N", MyPoisson(torch.tensor(5.), validate_args = False), obs=N)
+
+      logger.info(num_objects)
+      
+      if type(num_objects) == Tensor: num_objects = to_int(num_objects)
+    
 
     positions = []
     objects = []
@@ -85,9 +92,6 @@ def sample_clevr_scene(N):
             # the objects in the scene and start over.
             num_tries += 1
             if num_tries > max_retries:
-                
-                logger.info(num_tries)
-                
                 return None
             
             # Choose a random location
@@ -384,19 +388,14 @@ def render_scene_in_blender(blender_script):
 def clevr_model(observations={"image": torch.zeros((1, 3, 128, 128))}, show='all', save_obs=None, N=None):
     
     init_time = time.time()
+    B = params['batch_size']
 
     # Sample a CLEVR-like scene using Pyro
-    batch_scenes = []
-
-    for _ in range(params['batch_size']):
-      
-      clevr_scene = None
-      while clevr_scene is None: 
-        clevr_scene = sample_clevr_scene(N)
-        batch_scenes.append(clevr_scene)
+    
+    clevr_scenes = sample_clevr_scene(N)
 
     # Generate the Blender script for the sampled scene
-    blender_scripts = [generate_blender_script(b, idx) for idx, b in enumerate(batch_scenes)]
+    blender_scripts = [generate_blender_script(b, idx) for idx, b in enumerate(clevr_scenes)]
     
     #logger.info("started rendering...")
 
