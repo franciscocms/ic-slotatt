@@ -369,7 +369,7 @@ def render_scene_in_blender(blender_script):
     """
     Call Blender to execute the script and render the scene.
     """
-    blender_path = "/Applications/Blender.app/Contents/MacOS/blender"  # Update this with your Blender path
+    blender_path = "/usr/bin/blender"  # Update this with your Blender path
     subprocess.call([blender_path, "--background", "--python", blender_script])
 
 def clevr_model(observations={"image": torch.zeros((1, 3, 128, 128))}, show='all', save_obs=None, N=None):
