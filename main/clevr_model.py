@@ -65,8 +65,6 @@ def sample_clevr_scene(N):
     def get_size_mapping(size):
         return size_mapping[int(size)]
 
-    
-    
     B = params['batch_size']
     
     # Sample scene 
@@ -82,17 +80,18 @@ def sample_clevr_scene(N):
     for i in range(B):
         n = int(num_objects[i])
 
-        with pyro.plate(f'obj_plate_{i}', size=n, dim=-1): # each sample statement draws a B-dim tensor from the prior distributions
+        with pyro.plate(f'obj_plate_{i}', size=n, dim=-1): # each sample statement draws a n-dim tensor from the prior distributions
 
             # Choose a random size
             size = pyro.sample(f"size_{i}", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))]))) 
             
             logger.info(size)
 
-            size_name, r = map(get_size_mapping, size)
+            #size_name, r = map(get_size_mapping, size.tolist())
+            logger.info(map(get_size_mapping, size))
 
-            logger.info(size_name)
-            logger.info(r)
+            #logger.info(size_name)
+            #logger.info(r)
 
             # Try to place the object, ensuring that we don't intersect any existing
             # objects and that we are more than the desired margin away from all existing

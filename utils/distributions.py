@@ -227,9 +227,6 @@ class MyPoisson(dist.Poisson, TorchDistributionMixin):
         shape = self._extended_shape(sample_shape)
         with torch.no_grad():
             s = torch.poisson(self.rate.expand(shape))
-            
-            logger.info(s)
-
             if isinstance(s, Tensor): 
                 s = s.tolist()
                 while any([s_ == 0 for s_ in s]): s = torch.poisson(self.rate.expand(shape))
