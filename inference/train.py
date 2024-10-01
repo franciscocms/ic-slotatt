@@ -19,6 +19,8 @@ from utils.loss import save_loss, save_loss_plot
 from utils.guide import get_pretrained_wts, load_trained_guide
 from main.clevr_model import clevr_model
 
+import wandb # type: ignore
+
 import logging
 logfile_name = f"log-{params['jobID']}.log"
 logger = logging.getLogger("train")
@@ -34,6 +36,11 @@ pyro.clear_param_store()
 set image and checkpoints saving paths
 """
 
+# start a new wandb run to track this script
+run = wandb.init(project="PICSA",
+                  name=f"{params['jobID']}"
+                  )
+
 DEVICE = params["device"]
 TRAINING_FROM_SCRATCH = params["training_from_scratch"]
 GUIDE_PATH = f"{main_dir}/checkpoint-{params['jobID']}"
@@ -45,6 +52,8 @@ logger.info(f"... saving loss values in {LOSS_PATH}\n")
 
 guide = InvSlotAttentionGuide(resolution = (128, 128), num_iterations = 3, hid_dim = params["slot_dim"], stage="train", mixture_components=params["mixture_components"])
 guide.to(DEVICE)
+
+run.watch(guide)
 
 """
 build CSIS class with model & guide
@@ -124,12 +133,15 @@ for s in range(resume_step, resume_step + nsteps):
   loss_dic = {#"train_loss": train_hist, 
                 "valid_loss": valid_hist} 
   if params["running_type"] == "train" and params["training_iters"] > 1: 
-    save_loss(LOSS_PATH, loss_dic)
+    #save_loss(LOSS_PATH, loss_dic)
     save_loss_plot(loss_dic, LOSS_PATH, resume_step, nsteps)
 
   if s % step_size == 0 or s == nsteps-1: 
     logger.info(f"step {s}/{resume_step + nsteps-1} - train_loss: {loss} - val_loss: {val_loss}")
-    if params["running_type"] == "train": 
-      torch.save(csis.guide.state_dict(), GUIDE_PATH+'/guide_'+str(s)+'.pth')    
+    dict_to_log = {'train_loss': loss, 'val_loss': val_loss}
+    run.log(dict_to_log)
+
+    torch.save(csis.guide.state_dict(), GUIDE_PATH+'/guide_'+str(s)+'.pth')    
 
 logger.info("\ntraining ended...")
+wandb.finish()
