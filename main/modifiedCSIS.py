@@ -310,7 +310,7 @@ class CSIS(Importance):
         partial_loss = -vals['fn'].log_prob(vals['value'])
         if len(partial_loss.shape) == 1: partial_loss.unsqueeze_(0)
 
-        logger.info(f"{name} - {partial_loss.shape}")
+        #logger.info(f"{name} - {partial_loss.shape}")
 
         loss.append(partial_loss)
     

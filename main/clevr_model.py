@@ -381,31 +381,31 @@ def clevr_model(observations={"image": torch.zeros((1, 3, 128, 128))}, show='all
     clevr_scene = None
     while clevr_scene is None: 
       clevr_scene = sample_clevr_scene(N)
-    logger.info(f"Sampled scene: {clevr_scene}")
+    #logger.info(f"Sampled scene: {clevr_scene}")
     
     # Generate the Blender script for the sampled scene
     blender_script = generate_blender_script(clevr_scene)
     
-    logger.info("started rendering...")
+    #logger.info("started rendering...")
 
     # Call Blender to render the scene
     render_scene_in_blender(blender_script)
 
-    logger.info("Scene rendered and saved...")
+    #logger.info("Scene rendered and saved...")
 
     img = img_transform(Image.open(os.path.join(dir_path, "rendered_scene.png"))).unsqueeze(0) # img shape is (1, 4, 240, 320)
 
     #plt.imshow(img[0].permute(1, 2, 0).numpy())
     #plt.show()
 
-    logger.info(img.shape)
+    #logger.info(img.shape)
 
     proc_img = preprocess_clevr(img) # proc_img shape is (1, 4, 128, 128)
 
     #plt.imshow(proc_img[0].permute(1, 2, 0).numpy())
     #plt.show()
 
-    logger.info(proc_img.shape)
+    #logger.info(proc_img.shape)
 
     with pyro.plate(observations["image"].shape[0]):
         #pyro.sample("image", MyBernoulli(img, validate_args=False).to_event(3), obs=observations["image"])
