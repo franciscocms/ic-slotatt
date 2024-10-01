@@ -36,6 +36,12 @@ max_retries = 50
 min_dist = 0.25
 min_margin = 0.4
 
+def sample_loc(i):
+    with pyro.poutine.block():     
+        x_mu = pyro.sample(f"x_{i}", dist.Uniform(-3., 3.))
+        y_mu = pyro.sample(f"y_{i}", dist.Uniform(-3., 3.))
+    return x_mu, y_mu
+
 def to_int(value: Tensor):
     return int(torch.round(value))
 
@@ -87,14 +93,11 @@ def sample_clevr_scene(N):
             
             logger.info(size)
 
-            size_mapping_list = list(map(get_size_mapping, size.tolist()))
+            size_mapping_list = list(map(get_size_mapping, size.tolist())) # list of tuples [('name', value)]
             size_name, r = [e[0] for e in size_mapping_list], [e[1] for e in size_mapping_list]
             #size_name, r = map(get_size_mapping, size.tolist())
             logger.info(size_name)
             logger.info(r)
-
-            #logger.info(size_name)
-            #logger.info(r)
 
             # Try to place the object, ensuring that we don't intersect any existing
             # objects and that we are more than the desired margin away from all existing
@@ -108,9 +111,12 @@ def sample_clevr_scene(N):
                     return None
                 
                 # Choose a random location
-                with poutine.block():
-                  x = pyro.sample(f"x_{i}", dist.Uniform(-3, 3))
-                  y = pyro.sample(f"y_{i}", dist.Uniform(-3, 3))            
+                x_mu, y_mu = sample_loc(i)
+                # x, y = sample_loc(i)
+                x, y = x_mu, y_mu  
+
+                logger.info(x_mu)
+                logger.info(y_mu)          
                 
                 # Assuming the default camera position
                 cam_default_pos = [7.358891487121582, -6.925790786743164, 4.958309173583984]
