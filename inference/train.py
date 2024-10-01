@@ -37,7 +37,7 @@ set image and checkpoints saving paths
 """
 
 # start a new wandb run to track this script
-run = wandb.init(project="PICSA",
+run = wandb.init(project="ICSA",
                   name=f"{params['jobID']}"
                   )
 

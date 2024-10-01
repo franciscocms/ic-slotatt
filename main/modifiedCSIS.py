@@ -149,7 +149,7 @@ class CSIS(Importance):
           elif isinstance(vals["fn"], dist.Uniform): 
             prior_distribution = "uniform"
             proposal_distribution = "normal"
-            out_dim = 2
+            out_dim = 1 # std is fixed!
           
           # prior poisson distributed variables
           elif isinstance(vals["fn"], dist.Poisson): 
