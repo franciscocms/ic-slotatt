@@ -13,6 +13,7 @@ import json
 import math
 from PIL import Image
 import matplotlib.pyplot as plt
+import time
 
 from utils.distributions import MyNormal, MyPoisson
 from .setup import params
@@ -380,6 +381,8 @@ def render_scene_in_blender(blender_script):
 
 def clevr_model(observations={"image": torch.zeros((1, 3, 128, 128))}, show='all', save_obs=None, N=None):
     
+    init_time = time.time()
+
     # Sample a CLEVR-like scene using Pyro
     batch_scenes = []
 
@@ -419,3 +422,7 @@ def clevr_model(observations={"image": torch.zeros((1, 3, 128, 128))}, show='all
         #pyro.sample("image", MyBernoulli(img, validate_args=False).to_event(3), obs=observations["image"])
         likelihood_fn = MyNormal(proc_img, torch.tensor(0.1)).get_dist()
         pyro.sample("image", likelihood_fn.to_event(3), obs=observations["image"])
+    
+    batch_time = time.time() - init_time
+    
+    logger.info(f"Batch generation duration: {batch_time}")
