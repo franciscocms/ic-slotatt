@@ -53,6 +53,24 @@ def preprocess_clevr(image, resolution=(128, 128)):
 
 def sample_clevr_scene(N):
     
+    # Assuming the default camera position
+    cam_default_pos = [7.358891487121582, -6.925790786743164, 4.958309173583984]
+    plane_normal = torch.tensor([0., 0., 1.])
+    cam_behind = torch.tensor([-0.6515582203865051, 0.6141704320907593, -0.44527149200439453])
+    cam_left = torch.tensor([-0.6859207153320312, -0.7276763916015625, 0.0])
+    cam_up = torch.tensor([-0.32401347160339355, 0.3054208755493164, 0.8953956365585327])
+    plane_behind = torch.tensor([-0.727676272392273, 0.6859206557273865, 0.0])
+    plane_left = torch.tensor([-0.6859206557273865, -0.7276763319969177, 0.0])
+    plane_up = torch.tensor([0., 0., 1.])
+
+    # Save all six axis-aligned directions in the scene struct
+    scene_struct['directions']['behind'] = tuple(plane_behind)
+    scene_struct['directions']['front'] = tuple(-plane_behind)
+    scene_struct['directions']['left'] = tuple(plane_left)
+    scene_struct['directions']['right'] = tuple(-plane_left)
+    scene_struct['directions']['above'] = tuple(plane_up)
+    scene_struct['directions']['below'] = tuple(-plane_up)
+    
     pyro.clear_param_store()
     
     #logger.info("generating clevr scene...")
@@ -89,12 +107,12 @@ def sample_clevr_scene(N):
 
       logger.info(num_objects)    
 
-    positions = []
-    objects = []
+    scenes = []
     scene_struct = {'directions': {}}
     
     for i in range(B):
         n = int(num_objects[i])
+        objects = []
 
         with pyro.plate(f'obj_plate_{i}', size=n, dim=-1): # each sample statement draws a n-dim tensor from the prior distributions
 
@@ -136,95 +154,61 @@ def sample_clevr_scene(N):
             mat_name, mat_name_out = [e[0] for e in mat_mapping_list], [e[1] for e in mat_mapping_list]
             logger.info(mat_name)
 
-            x = pyro.sample(f"x_{i}", dist.Uniform(-3., 3.))
-            y = pyro.sample(f"y_{i}", dist.Uniform(-3., 3.))
-
-            logger.info(x)
-            logger.info(y)
-
-
-
-
-
-            positions.append((x, y, r))
-
-        """
-        for n_ in range(n):
-          
-          # Try to place the object, ensuring that we don't intersect any existing
-          # objects and that we are more than the desired margin away from all existing
-          # objects along all cardinal directions.
-          num_tries = 0
-          while True:
-              # If we try and fail to place an object too many times, then delete all
-              # the objects in the scene and start over.
-              num_tries += 1
-              if num_tries > max_retries:
-                  return None
+            t = 0
+            dists_good = False
+            margins_good = False
+            while not (dists_good and margins_good):
               
-              # Choose a random location
-              x_mu, y_mu = sample_loc(n_, i)
-              # x, y = sample_loc(i)
-              x, y = x_mu, y_mu  
-
-              logger.info(x_mu)
-              logger.info(y_mu)          
+              positions = []
+              with pyro.poutine.block():
+                x_ = pyro.sample(f"x_{i}_{t}", dist.Uniform(-3., 3.))
+                y_ = pyro.sample(f"y_{i}_{t}", dist.Uniform(-3., 3.))
+                t += 1
               
-              # Assuming the default camera position
-              cam_default_pos = [7.358891487121582, -6.925790786743164, 4.958309173583984]
-              plane_normal = torch.tensor([0., 0., 1.])
-              cam_behind = torch.tensor([-0.6515582203865051, 0.6141704320907593, -0.44527149200439453])
-              cam_left = torch.tensor([-0.6859207153320312, -0.7276763916015625, 0.0])
-              cam_up = torch.tensor([-0.32401347160339355, 0.3054208755493164, 0.8953956365585327])
-              plane_behind = torch.tensor([-0.727676272392273, 0.6859206557273865, 0.0])
-              plane_left = torch.tensor([-0.6859206557273865, -0.7276763319969177, 0.0])
-              plane_up = torch.tensor([0., 0., 1.])
+              # Store the positions and sizes of all objects
+              for k in range(n): positions.append((x_[k], y_[k], r[k]))
 
-              # Save all six axis-aligned directions in the scene struct
-              scene_struct['directions']['behind'] = tuple(plane_behind)
-              scene_struct['directions']['front'] = tuple(-plane_behind)
-              scene_struct['directions']['left'] = tuple(plane_left)
-              scene_struct['directions']['right'] = tuple(-plane_left)
-              scene_struct['directions']['above'] = tuple(plane_up)
-              scene_struct['directions']['below'] = tuple(-plane_up)
+              for k in range(n):
               
-              # Check to make sure the new object is further than min_dist from all
-              # other objects, and further than margin along the four cardinal directions
-              dists_good = True
-              margins_good = True
-              for (xx, yy, rr) in positions:
-                  dx, dy = x - xx, y - yy
-                  distance = math.sqrt(dx * dx + dy * dy)
-                  if distance - r - rr < min_dist:
-                      dists_good = False
-                      break
-                  for direction_name in ['left', 'right', 'front', 'behind']:
-                      direction_vec = scene_struct['directions'][direction_name]
-                      assert direction_vec[2] == 0
-                      margin = dx * direction_vec[0] + dy * direction_vec[1]
-                      if 0 < margin < min_margin:
-                          margins_good = False
-                          break
-                  if not margins_good:
-                      break
+                c_x, c_y, c_r = positions[k]
 
-              if dists_good and margins_good:
-                  break          
+                dists_good = True
+                margins_good = True
+
+                for idx, (xx, yy, rr) in enumerate(positions):
+                    if idx > 0 and idx < k:
+                        dx, dy = c_x - xx, c_y - yy
+                        distance = math.sqrt(dx * dx + dy * dy)
+                        if distance - c_r - rr < min_dist:
+                            dists_good = False
+                        for direction_name in ['left', 'right', 'front', 'behind']:
+                            direction_vec = scene_struct['directions'][direction_name]
+                            assert direction_vec[2] == 0
+                            margin = dx * direction_vec[0] + dy * direction_vec[1]
+                            if 0 < margin < min_margin:
+                                margins_good = False
+
+            x = pyro.sample(f"x_{i}", dist.Normal(x_, 0.01))
+            y = pyro.sample(f"y_{i}", dist.Normal(y_, 0.01))
             
-        """
+            positions = []
+            # Store the positions and sizes of all objects
+            for k in range(n): positions.append((x[k], y[k], r[k]))
+
+            # Append the object attributes to the scene list
+            for k in range(n):
+              objects.append({
+                  "shape": obj_name[k],
+                  "color": color_name[k],
+                  "rgba": rgba[k],
+                  "size": r[k],
+                  "material": mat_name[k],
+                  "pose": theta[k].item(),
+                  "position": (x[k].item(), y[k].item())
+              })
         
-        # Append the object attributes to the scene list
-        objects.append({
-            "shape": obj_name,
-            "color": color_name,
-            "rgba": rgba,
-            "size": r,
-            "material": mat_name,
-            "pose": theta.item(),
-            "position": (x.item(), y.item())
-        })
-    
-    return objects
+        scenes.append(objects)
+    return scenes
 
 def generate_blender_script(objects, idx):
     """
@@ -444,11 +428,10 @@ def clevr_model(observations={"image": torch.zeros((1, 3, 128, 128))}, show='all
     B = params['batch_size']
 
     # Sample a CLEVR-like scene using Pyro
-    
     clevr_scenes = sample_clevr_scene(N)
 
     # Generate the Blender script for the sampled scene
-    blender_scripts = [generate_blender_script(b, idx) for idx, b in enumerate(clevr_scenes)]
+    blender_scripts = [generate_blender_script(scene, idx) for idx, scene in enumerate(clevr_scenes)]
     
     #logger.info("started rendering...")
 
