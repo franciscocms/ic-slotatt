@@ -45,7 +45,9 @@ def preprocess_clevr(image, resolution=(128, 128)):
 
 def sample_clevr_scene(N):
     
-    logger.info("generating clevr scene...")
+    pyro.clear_param_store()
+    
+    #logger.info("generating clevr scene...")
     
     # Load the property file
     with open(properties_json_path, 'r') as f:
