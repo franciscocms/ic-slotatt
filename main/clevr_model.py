@@ -62,7 +62,6 @@ def sample_clevr_scene(N):
         object_mapping = [(v, k) for k, v in properties['shapes'].items()]
         size_mapping = list(properties['sizes'].items())
     
-    
     # Sample scene 
     num_objects = pyro.sample("N", MyPoisson(torch.tensor(5.), validate_args = False), obs=N)
     if type(num_objects) == Tensor: num_objects = to_int(num_objects)
@@ -86,6 +85,9 @@ def sample_clevr_scene(N):
             # the objects in the scene and start over.
             num_tries += 1
             if num_tries > max_retries:
+                
+                logger.info(num_tries)
+                
                 return None
             
             # Choose a random location
