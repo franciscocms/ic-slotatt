@@ -21,7 +21,7 @@ warnings.filterwarnings("ignore")
 
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("train")
 device = params["device"]
 
 img_transform = transforms.Compose([transforms.ToTensor()])
@@ -44,6 +44,8 @@ def preprocess_clevr(image, resolution=(128, 128)):
     return image
 
 def sample_clevr_scene(N):
+    
+    logger.info("generating clevr scene...")
     
     # Load the property file
     with open(properties_json_path, 'r') as f:

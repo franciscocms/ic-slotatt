@@ -346,6 +346,8 @@ class InvSlotAttentionGuide(nn.Module):
       
     elif params['dataset'] == 'clevr':
       
+      proposal_layer_input = obs.unsqueeze(0)
+      
       if variable_address in ['x', 'y']: proposal = proposal_layer_input
       else: proposal = self.prop_nets[variable_address](proposal_layer_input)
       

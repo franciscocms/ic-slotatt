@@ -20,7 +20,7 @@ from utils.distributions import CategoricalVals
 from .setup import params as p
 from collections import OrderedDict, defaultdict
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("train")
 
 device = p["device"]
 
