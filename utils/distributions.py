@@ -4,6 +4,7 @@ import torch.nn as nn
 import pyro.distributions as dist
 from pyro.distributions import Categorical
 import torch.distributions.constraints as constraints
+from torch import Tensor
 
 from torch.distributions import Distribution, constraints
 from torch.distributions.utils import broadcast_all
@@ -229,9 +230,9 @@ class MyPoisson(dist.Poisson, TorchDistributionMixin):
             
             logger.info(s)
 
-            if isinstance(s, list): 
-                for i, s_ in enumerate(s):
-                    if s_ == 0: s[i] = torch.poisson(self.rate.expand(shape))
+            if isinstance(s, Tensor): 
+                s = s.tolist()
+                while any([s_ == 0 for s_ in s]): s = torch.poisson(self.rate.expand(shape))
             else:
                 while s == 0: s = torch.poisson(self.rate.expand(shape))
             return s
