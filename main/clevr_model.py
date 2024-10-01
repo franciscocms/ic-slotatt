@@ -171,8 +171,11 @@ def generate_blender_script(objects, output_file=os.path.join(dir_path, "clevr_d
 import bpy
 import random
 import os
+import logging
 
 from mathutils import Vector
+
+logger = logging.getLogger("train")
 
 # Set directory path
 dir_path = os.path.dirname(__file__)
@@ -212,6 +215,7 @@ render_args.resolution_percentage = 100
 cycles_prefs = bpy.context.preferences.addons['cycles'].preferences
 cycles_prefs.compute_device_type = 'CUDA'
 
+logger.info(cycles_prefs.compute_device_type)
 
 # Some CYCLES-specific stuff
 bpy.data.worlds['World'].cycles.sample_as_light = True
@@ -220,6 +224,8 @@ bpy.context.scene.cycles.samples = 512
 bpy.context.scene.cycles.transparent_min_bounces = 8
 bpy.context.scene.cycles.transparent_max_bounces = 8
 bpy.context.scene.cycles.device = 'GPU'
+
+logger.info(bpy.context.scene.cycles.device)
 
 # Put a plane on the ground so we can compute cardinal directions
 bpy.ops.mesh.primitive_plane_add(size=5)
@@ -335,6 +341,9 @@ def _add_object(object_dir):
     add_material(object_dir['material'], Color=object_dir['rgba'])
 
 # Sampled objects from Pyro
+
+logger.info("adding objects to blender scene...")
+
 objects = {}
 """
     
@@ -374,12 +383,14 @@ def clevr_model(observations={"image": torch.zeros((1, 3, 128, 128))}, show='all
     # Sample a CLEVR-like scene using Pyro
     clevr_scene = None
     while clevr_scene is None: 
-        clevr_scene = sample_clevr_scene(N)
+      clevr_scene = sample_clevr_scene(N)
     logger.info(f"Sampled scene: {clevr_scene}")
     
     # Generate the Blender script for the sampled scene
     blender_script = generate_blender_script(clevr_scene)
     
+    logger.info("started rendering...")
+
     # Call Blender to render the scene
     render_scene_in_blender(blender_script)
 
