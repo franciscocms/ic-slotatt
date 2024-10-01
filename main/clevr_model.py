@@ -182,6 +182,9 @@ import os
 
 from mathutils import Vector
 
+# Set directory path
+dir_path = os.path.dirname(__file__)
+
 # Open main file
 bpy.ops.wm.open_mainfile(filepath=os.path.join(dir_path, "clevr_data", "base_scene.blend"))
 
