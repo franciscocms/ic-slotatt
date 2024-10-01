@@ -161,8 +161,8 @@ def sample_clevr_scene(N):
               
               positions = []
               with pyro.poutine.block():
-                x_ = pyro.sample(f"x_{i}_{t}", dist.Uniform(-3., 3.))
-                y_ = pyro.sample(f"y_{i}_{t}", dist.Uniform(-3., 3.))
+                x_ = pyro.sample(f"x_{i}_{t}", dist.Uniform(-3., 3.).expand([n]))
+                y_ = pyro.sample(f"y_{i}_{t}", dist.Uniform(-3., 3.).expand([n]))
                 t += 1
               
               logger.info(x_)
