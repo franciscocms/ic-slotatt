@@ -217,7 +217,7 @@ render_args.engine = "CYCLES"
 render_args.resolution_x = 320
 render_args.resolution_y = 240
 render_args.resolution_percentage = 100
-cycles_prefs = bpy.context.user_preferences.addons['cycles'].preferences
+cycles_prefs = bpy.context.preferences.addons['cycles'].preferences
 cycles_prefs.compute_device_type = 'CUDA'
 
 
