@@ -217,6 +217,8 @@ render_args.engine = "CYCLES"
 render_args.resolution_x = 320
 render_args.resolution_y = 240
 render_args.resolution_percentage = 100
+cycles_prefs = bpy.context.user_preferences.addons['cycles'].preferences
+cycles_prefs.compute_device_type = 'CUDA'
 
 
 # Some CYCLES-specific stuff
@@ -225,6 +227,7 @@ bpy.context.scene.cycles.blur_glossy = 2.0
 bpy.context.scene.cycles.samples = 512
 bpy.context.scene.cycles.transparent_min_bounces = 8
 bpy.context.scene.cycles.transparent_max_bounces = 8
+bpy.context.scene.cycles.device = 'GPU'
 
 # Put a plane on the ground so we can compute cardinal directions
 bpy.ops.mesh.primitive_plane_add(size=5)

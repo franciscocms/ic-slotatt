@@ -148,20 +148,8 @@ class CSIS(Importance):
           # prior uniform distributed variables
           elif isinstance(vals["fn"], dist.Uniform): 
             prior_distribution = "uniform"
-            if name.split("_")[0] in ["locX", "locY"]:
-              if p["loc_proposal"] == "normal":
-                proposal_distribution = "normal"
-                out_dim = 2
-              elif p["loc_proposal"] == "mixture":
-                proposal_distribution = "mixture"
-                out_dim = 3*p["loc_proposal_k"]
-              elif p["loc_proposal"] == "wo_net":
-                proposal_distribution = "wo_net"
-              else: raise ValueError(f"Unknown proposal for loc: {p['loc_proposal']}")
-            elif name in ["bgR", "bgG", "bgB"]:
-              proposal_distribution = "normal"
-              out_dim = 2
-            else: raise ValueError(f"Unknown variable {name} with prior uniform distribution!")
+            proposal_distribution = "normal"
+            out_dim = 2
           
           # prior poisson distributed variables
           elif isinstance(vals["fn"], dist.Poisson): 
