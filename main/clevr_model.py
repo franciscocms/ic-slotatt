@@ -87,9 +87,10 @@ def sample_clevr_scene(N):
             
             logger.info(size)
 
-            size_name = map(get_size_mapping, size.tolist())
+            size_name, r = list(map(get_size_mapping, size.tolist()))[:][0], list(map(get_size_mapping, size.tolist()))[:][1]
             #size_name, r = map(get_size_mapping, size.tolist())
-            logger.info(list(size_name))
+            logger.info(size_name)
+            logger.info8r
 
             #logger.info(size_name)
             #logger.info(r)
