@@ -64,6 +64,7 @@ def sample_clevr_scene(N):
     plane_up = torch.tensor([0., 0., 1.])
 
     # Save all six axis-aligned directions in the scene struct
+    scene_struct = {'directions': {}}
     scene_struct['directions']['behind'] = tuple(plane_behind)
     scene_struct['directions']['front'] = tuple(-plane_behind)
     scene_struct['directions']['left'] = tuple(plane_left)
@@ -108,7 +109,6 @@ def sample_clevr_scene(N):
       logger.info(num_objects)    
 
     scenes = []
-    scene_struct = {'directions': {}}
     
     for i in range(B):
         n = int(num_objects[i])
