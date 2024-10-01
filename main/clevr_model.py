@@ -207,7 +207,7 @@ def load_materials(material_dir):
                 data_to.materials.append(name)
         appended_material = bpy.data.materials.get(name)
 
-load_materials("main/clevr_data/materials")
+load_materials(os.path.join(dir_path, "clevr_data", "materials"))
 
 # Set render arguments so we can get pixel coordinates later.
 # We use functionality specific to the CYCLES renderer so BLENDER_RENDER
