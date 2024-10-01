@@ -62,14 +62,14 @@ def sample_clevr_scene(N):
         object_mapping = [(v, k) for k, v in properties['shapes'].items()]
         size_mapping = list(properties['sizes'].items())
     
-    B = len(N)
+    B = params['batch_size']
     
     # Sample scene 
     with pyro.plate('n_plate', size=B):
       num_objects = pyro.sample("N", MyPoisson(torch.tensor(5.), validate_args = False), obs=N)
 
       logger.info(num_objects)
-      
+
       if type(num_objects) == Tensor: num_objects = to_int(num_objects)
     
 
