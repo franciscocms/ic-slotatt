@@ -178,7 +178,6 @@ def generate_blender_script(objects, output_file=os.path.join(dir_path, "clevr_d
     script = """
 import bpy
 import random
-import utils
 import os
 
 from mathutils import Vector
