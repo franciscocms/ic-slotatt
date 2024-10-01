@@ -85,7 +85,7 @@ def sample_clevr_scene(N):
     
     # Sample scene 
     with pyro.plate('n_plate', size=B):
-      num_objects = pyro.sample("N", MyPoisson(torch.tensor(5.), validate_args = False), obs=N)
+      num_objects = pyro.sample("N", MyPoisson(torch.tensor(3.), validate_args = False), obs=N)
 
       logger.info(num_objects)    
 
@@ -136,74 +136,82 @@ def sample_clevr_scene(N):
             mat_name, mat_name_out = [e[0] for e in mat_mapping_list], [e[1] for e in mat_mapping_list]
             logger.info(mat_name)
 
+            x = pyro.sample(f"x_{i}", dist.Uniform(-3., 3.))
+            y = pyro.sample(f"y_{i}", dist.Uniform(-3., 3.))
+
+            logger.info(x)
+            logger.info(y)
+
 
 
 
 
             positions.append((x, y, r))
 
+        """
+        for n_ in range(n):
+          
+          # Try to place the object, ensuring that we don't intersect any existing
+          # objects and that we are more than the desired margin away from all existing
+          # objects along all cardinal directions.
+          num_tries = 0
+          while True:
+              # If we try and fail to place an object too many times, then delete all
+              # the objects in the scene and start over.
+              num_tries += 1
+              if num_tries > max_retries:
+                  return None
+              
+              # Choose a random location
+              x_mu, y_mu = sample_loc(n_, i)
+              # x, y = sample_loc(i)
+              x, y = x_mu, y_mu  
 
-        # Try to place the object, ensuring that we don't intersect any existing
-        # objects and that we are more than the desired margin away from all existing
-        # objects along all cardinal directions.
-        num_tries = 0
-        while True:
-            # If we try and fail to place an object too many times, then delete all
-            # the objects in the scene and start over.
-            num_tries += 1
-            if num_tries > max_retries:
-                return None
+              logger.info(x_mu)
+              logger.info(y_mu)          
+              
+              # Assuming the default camera position
+              cam_default_pos = [7.358891487121582, -6.925790786743164, 4.958309173583984]
+              plane_normal = torch.tensor([0., 0., 1.])
+              cam_behind = torch.tensor([-0.6515582203865051, 0.6141704320907593, -0.44527149200439453])
+              cam_left = torch.tensor([-0.6859207153320312, -0.7276763916015625, 0.0])
+              cam_up = torch.tensor([-0.32401347160339355, 0.3054208755493164, 0.8953956365585327])
+              plane_behind = torch.tensor([-0.727676272392273, 0.6859206557273865, 0.0])
+              plane_left = torch.tensor([-0.6859206557273865, -0.7276763319969177, 0.0])
+              plane_up = torch.tensor([0., 0., 1.])
+
+              # Save all six axis-aligned directions in the scene struct
+              scene_struct['directions']['behind'] = tuple(plane_behind)
+              scene_struct['directions']['front'] = tuple(-plane_behind)
+              scene_struct['directions']['left'] = tuple(plane_left)
+              scene_struct['directions']['right'] = tuple(-plane_left)
+              scene_struct['directions']['above'] = tuple(plane_up)
+              scene_struct['directions']['below'] = tuple(-plane_up)
+              
+              # Check to make sure the new object is further than min_dist from all
+              # other objects, and further than margin along the four cardinal directions
+              dists_good = True
+              margins_good = True
+              for (xx, yy, rr) in positions:
+                  dx, dy = x - xx, y - yy
+                  distance = math.sqrt(dx * dx + dy * dy)
+                  if distance - r - rr < min_dist:
+                      dists_good = False
+                      break
+                  for direction_name in ['left', 'right', 'front', 'behind']:
+                      direction_vec = scene_struct['directions'][direction_name]
+                      assert direction_vec[2] == 0
+                      margin = dx * direction_vec[0] + dy * direction_vec[1]
+                      if 0 < margin < min_margin:
+                          margins_good = False
+                          break
+                  if not margins_good:
+                      break
+
+              if dists_good and margins_good:
+                  break          
             
-            # Choose a random location
-            x_mu, y_mu = sample_loc(i)
-            # x, y = sample_loc(i)
-            x, y = x_mu, y_mu  
-
-            logger.info(x_mu)
-            logger.info(y_mu)          
-            
-            # Assuming the default camera position
-            cam_default_pos = [7.358891487121582, -6.925790786743164, 4.958309173583984]
-            plane_normal = torch.tensor([0., 0., 1.])
-            cam_behind = torch.tensor([-0.6515582203865051, 0.6141704320907593, -0.44527149200439453])
-            cam_left = torch.tensor([-0.6859207153320312, -0.7276763916015625, 0.0])
-            cam_up = torch.tensor([-0.32401347160339355, 0.3054208755493164, 0.8953956365585327])
-            plane_behind = torch.tensor([-0.727676272392273, 0.6859206557273865, 0.0])
-            plane_left = torch.tensor([-0.6859206557273865, -0.7276763319969177, 0.0])
-            plane_up = torch.tensor([0., 0., 1.])
-
-            # Save all six axis-aligned directions in the scene struct
-            scene_struct['directions']['behind'] = tuple(plane_behind)
-            scene_struct['directions']['front'] = tuple(-plane_behind)
-            scene_struct['directions']['left'] = tuple(plane_left)
-            scene_struct['directions']['right'] = tuple(-plane_left)
-            scene_struct['directions']['above'] = tuple(plane_up)
-            scene_struct['directions']['below'] = tuple(-plane_up)
-            
-            # Check to make sure the new object is further than min_dist from all
-            # other objects, and further than margin along the four cardinal directions
-            dists_good = True
-            margins_good = True
-            for (xx, yy, rr) in positions:
-                dx, dy = x - xx, y - yy
-                distance = math.sqrt(dx * dx + dy * dy)
-                if distance - r - rr < min_dist:
-                    dists_good = False
-                    break
-                for direction_name in ['left', 'right', 'front', 'behind']:
-                    direction_vec = scene_struct['directions'][direction_name]
-                    assert direction_vec[2] == 0
-                    margin = dx * direction_vec[0] + dy * direction_vec[1]
-                    if 0 < margin < min_margin:
-                        margins_good = False
-                        break
-                if not margins_good:
-                    break
-
-            if dists_good and margins_good:
-                break          
-           
-        
+        """
         
         # Append the object attributes to the scene list
         objects.append({
