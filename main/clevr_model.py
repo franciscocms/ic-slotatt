@@ -7,6 +7,7 @@ from torch import Tensor
 from torchvision import transforms
 
 import subprocess
+import multiprocessing as mp
 import os
 import json
 import math
@@ -165,7 +166,7 @@ def sample_clevr_scene(N):
     
     return objects
 
-def generate_blender_script(objects, output_file=os.path.join(dir_path, "clevr_data", "clevr_scene.blend")):
+def generate_blender_script(objects, idx):
     """
     Generate a Blender Python script to render the CLEVR-like scene.
     """
@@ -357,14 +358,14 @@ _add_object(objects[{i}])
 
 # Set render settings
 bpy.context.scene.render.image_settings.file_format = 'PNG'
-bpy.context.scene.render.filepath = os.path.join(dir_path, "rendered_scene.png")
+bpy.context.scene.render.filepath = os.path.join(dir_path, f"rendered_scene_{idx}.png")
 
 # Render the scene
 bpy.ops.render.render(write_still=True)
     """
     
     # Write the Blender script to a file
-    script_file = os.path.join(dir_path, "generate_clevr_scene.py")
+    script_file = os.path.join(dir_path, f"generate_clevr_scene_{idx}.py")
     with open(script_file, "w") as f:
         f.write(script)
     
@@ -380,18 +381,23 @@ def render_scene_in_blender(blender_script):
 def clevr_model(observations={"image": torch.zeros((1, 3, 128, 128))}, show='all', save_obs=None, N=None):
     
     # Sample a CLEVR-like scene using Pyro
-    clevr_scene = None
-    while clevr_scene is None: 
-      clevr_scene = sample_clevr_scene(N)
-    #logger.info(f"Sampled scene: {clevr_scene}")
-    
+    batch_scenes = []
+
+    for _ in range(params['batch_size']):
+      
+      clevr_scene = None
+      while clevr_scene is None: 
+        clevr_scene = sample_clevr_scene(N)
+        batch_scenes.append(clevr_scene)
+
     # Generate the Blender script for the sampled scene
-    blender_script = generate_blender_script(clevr_scene)
+    blender_scripts = [generate_blender_script(b, idx) for idx, b in enumerate(batch_scenes)]
     
     #logger.info("started rendering...")
 
     # Call Blender to render the scene
-    render_scene_in_blender(blender_script)
+    with mp.Pool(processes=mp.cpu_count()) as pool:
+      pool.starmap(render_scene_in_blender, blender_scripts)
 
     #logger.info("Scene rendered and saved...")
 
