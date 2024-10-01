@@ -62,114 +62,125 @@ def sample_clevr_scene(N):
         object_mapping = [(v, k) for k, v in properties['shapes'].items()]
         size_mapping = list(properties['sizes'].items())
     
+    def get_size_mapping(size):
+        return size_mapping[int(size)]
+
+    
+    
     B = params['batch_size']
     
     # Sample scene 
     with pyro.plate('n_plate', size=B):
-      num_objects = pyro.sample("N", dist.Poisson(torch.tensor(5.), validate_args = False), obs=N)
+      num_objects = pyro.sample("N", MyPoisson(torch.tensor(5.), validate_args = False), obs=N)
 
-      logger.info(num_objects)
-
-      if type(num_objects) == Tensor: num_objects = to_int(num_objects)
-    
+      logger.info(num_objects)    
 
     positions = []
     objects = []
     scene_struct = {'directions': {}}
     
-    for i in range(num_objects):
+    for i in range(B):
+        n = int(num_objects[i])
 
-        # Choose a random size
-        size = pyro.sample(f"size_{i}", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])))
-        size_name, r = size_mapping[to_int(size)]
+        with pyro.plate(f'obj_plate_{i}', size=n, dim=-1): # each sample statement draws a B-dim tensor from the prior distributions
 
-        # Try to place the object, ensuring that we don't intersect any existing
-        # objects and that we are more than the desired margin away from all existing
-        # objects along all cardinal directions.
-        num_tries = 0
-        while True:
-            # If we try and fail to place an object too many times, then delete all
-            # the objects in the scene and start over.
-            num_tries += 1
-            if num_tries > max_retries:
-                return None
+            # Choose a random size
+            size = pyro.sample(f"size_{i}", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))]))) 
             
-            # Choose a random location
-            with poutine.block():
-              x = pyro.sample(f"x_{i}", dist.Uniform(-3, 3))
-              y = pyro.sample(f"y_{i}", dist.Uniform(-3, 3))            
-            
-            # Assuming the default camera position
-            cam_default_pos = [7.358891487121582, -6.925790786743164, 4.958309173583984]
-            plane_normal = torch.tensor([0., 0., 1.])
-            cam_behind = torch.tensor([-0.6515582203865051, 0.6141704320907593, -0.44527149200439453])
-            cam_left = torch.tensor([-0.6859207153320312, -0.7276763916015625, 0.0])
-            cam_up = torch.tensor([-0.32401347160339355, 0.3054208755493164, 0.8953956365585327])
-            plane_behind = torch.tensor([-0.727676272392273, 0.6859206557273865, 0.0])
-            plane_left = torch.tensor([-0.6859206557273865, -0.7276763319969177, 0.0])
-            plane_up = torch.tensor([0., 0., 1.])
+            logger.info(size)
 
-            # Save all six axis-aligned directions in the scene struct
-            scene_struct['directions']['behind'] = tuple(plane_behind)
-            scene_struct['directions']['front'] = tuple(-plane_behind)
-            scene_struct['directions']['left'] = tuple(plane_left)
-            scene_struct['directions']['right'] = tuple(-plane_left)
-            scene_struct['directions']['above'] = tuple(plane_up)
-            scene_struct['directions']['below'] = tuple(-plane_up)
-             
-            # Check to make sure the new object is further than min_dist from all
-            # other objects, and further than margin along the four cardinal directions
-            dists_good = True
-            margins_good = True
-            for (xx, yy, rr) in positions:
-                dx, dy = x - xx, y - yy
-                distance = math.sqrt(dx * dx + dy * dy)
-                if distance - r - rr < min_dist:
-                    dists_good = False
-                    break
-                for direction_name in ['left', 'right', 'front', 'behind']:
-                    direction_vec = scene_struct['directions'][direction_name]
-                    assert direction_vec[2] == 0
-                    margin = dx * direction_vec[0] + dy * direction_vec[1]
-                    if 0 < margin < min_margin:
-                        margins_good = False
+            size_name, r = map(get_size_mapping, size)
+
+            logger.info(size_name)
+            logger.info(r)
+
+            # Try to place the object, ensuring that we don't intersect any existing
+            # objects and that we are more than the desired margin away from all existing
+            # objects along all cardinal directions.
+            num_tries = 0
+            while True:
+                # If we try and fail to place an object too many times, then delete all
+                # the objects in the scene and start over.
+                num_tries += 1
+                if num_tries > max_retries:
+                    return None
+                
+                # Choose a random location
+                with poutine.block():
+                  x = pyro.sample(f"x_{i}", dist.Uniform(-3, 3))
+                  y = pyro.sample(f"y_{i}", dist.Uniform(-3, 3))            
+                
+                # Assuming the default camera position
+                cam_default_pos = [7.358891487121582, -6.925790786743164, 4.958309173583984]
+                plane_normal = torch.tensor([0., 0., 1.])
+                cam_behind = torch.tensor([-0.6515582203865051, 0.6141704320907593, -0.44527149200439453])
+                cam_left = torch.tensor([-0.6859207153320312, -0.7276763916015625, 0.0])
+                cam_up = torch.tensor([-0.32401347160339355, 0.3054208755493164, 0.8953956365585327])
+                plane_behind = torch.tensor([-0.727676272392273, 0.6859206557273865, 0.0])
+                plane_left = torch.tensor([-0.6859206557273865, -0.7276763319969177, 0.0])
+                plane_up = torch.tensor([0., 0., 1.])
+
+                # Save all six axis-aligned directions in the scene struct
+                scene_struct['directions']['behind'] = tuple(plane_behind)
+                scene_struct['directions']['front'] = tuple(-plane_behind)
+                scene_struct['directions']['left'] = tuple(plane_left)
+                scene_struct['directions']['right'] = tuple(-plane_left)
+                scene_struct['directions']['above'] = tuple(plane_up)
+                scene_struct['directions']['below'] = tuple(-plane_up)
+                
+                # Check to make sure the new object is further than min_dist from all
+                # other objects, and further than margin along the four cardinal directions
+                dists_good = True
+                margins_good = True
+                for (xx, yy, rr) in positions:
+                    dx, dy = x - xx, y - yy
+                    distance = math.sqrt(dx * dx + dy * dy)
+                    if distance - r - rr < min_dist:
+                        dists_good = False
                         break
-                if not margins_good:
-                    break
+                    for direction_name in ['left', 'right', 'front', 'behind']:
+                        direction_vec = scene_struct['directions'][direction_name]
+                        assert direction_vec[2] == 0
+                        margin = dx * direction_vec[0] + dy * direction_vec[1]
+                        if 0 < margin < min_margin:
+                            margins_good = False
+                            break
+                    if not margins_good:
+                        break
 
-            if dists_good and margins_good:
-                break          
-        
-        # Choose random color and shape
-        shape = pyro.sample(f"shape_{i}", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])))
-        obj_name, obj_name_out = object_mapping[to_int(shape)]
+                if dists_good and margins_good:
+                    break          
+            
+            # Choose random color and shape
+            shape = pyro.sample(f"shape_{i}", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])))
+            obj_name, obj_name_out = object_mapping[to_int(shape)]
 
-        color_mapping = list(color_name_to_rgba.items())
-        color = pyro.sample(f"color_{i}", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])))
-        color_name, rgba = color_mapping[to_int(color)]
+            color_mapping = list(color_name_to_rgba.items())
+            color = pyro.sample(f"color_{i}", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])))
+            color_name, rgba = color_mapping[to_int(color)]
 
-         # For cube, adjust the size a bit
-        if obj_name == 'Cube':
-            r /= math.sqrt(2)
-        
-        # Choose random orientation for the object.
-        theta = pyro.sample(f"pose_{i}", dist.Uniform(0., 1.)) * 360. 
-        positions.append((x, y, r))
+            # For cube, adjust the size a bit
+            if obj_name == 'Cube':
+                r /= math.sqrt(2)
+            
+            # Choose random orientation for the object.
+            theta = pyro.sample(f"pose_{i}", dist.Uniform(0., 1.)) * 360. 
+            positions.append((x, y, r))
 
-        # Attach a random material
-        mat = pyro.sample(f"mat_{i}", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])))
-        mat_name, mat_name_out = material_mapping[to_int(mat)]
-        
-        # Append the object attributes to the scene list
-        objects.append({
-            "shape": obj_name,
-            "color": color_name,
-            "rgba": rgba,
-            "size": r,
-            "material": mat_name,
-            "pose": theta.item(),
-            "position": (x.item(), y.item())
-        })
+            # Attach a random material
+            mat = pyro.sample(f"mat_{i}", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])))
+            mat_name, mat_name_out = material_mapping[to_int(mat)]
+            
+            # Append the object attributes to the scene list
+            objects.append({
+                "shape": obj_name,
+                "color": color_name,
+                "rgba": rgba,
+                "size": r,
+                "material": mat_name,
+                "pose": theta.item(),
+                "position": (x.item(), y.item())
+            })
     
     return objects
 

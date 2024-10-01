@@ -226,7 +226,11 @@ class MyPoisson(dist.Poisson, TorchDistributionMixin):
         shape = self._extended_shape(sample_shape)
         with torch.no_grad():
             s = torch.poisson(self.rate.expand(shape))
-            while s == 0: s = torch.poisson(self.rate.expand(shape))
+            if isinstance(s, list): 
+                for i, s_ in enumerate(s):
+                    if s_ == 0: s[i] = torch.poisson(self.rate.expand(shape))
+            else:
+                while s == 0: s = torch.poisson(self.rate.expand(shape))
             return s
 
 class Mixture(dist.TorchDistribution):
