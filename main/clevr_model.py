@@ -66,7 +66,7 @@ def sample_clevr_scene(N):
     
     # Sample scene 
     with pyro.plate('n_plate', size=B):
-      num_objects = pyro.sample("N", MyPoisson(torch.tensor(5.), validate_args = False), obs=N)
+      num_objects = pyro.sample("N", dist.Poisson(torch.tensor(5.), validate_args = False), obs=N)
 
       logger.info(num_objects)
 
