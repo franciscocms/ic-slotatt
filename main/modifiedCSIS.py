@@ -309,6 +309,9 @@ class CSIS(Importance):
       if vals["type"] == "sample" and len(name.split('_')) == 2: # only consider object-wise properties
         partial_loss = -vals['fn'].log_prob(vals['value'])
         if len(partial_loss.shape) == 1: partial_loss.unsqueeze_(0)
+
+        logger.info(f"{name} - {partial_loss.shape}")
+
         loss.append(partial_loss)
     
     loss = torch.stack(loss).reshape(1, 1, n_objects, n_latents)
