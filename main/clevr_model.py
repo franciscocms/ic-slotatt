@@ -180,6 +180,26 @@ logger = logging.getLogger("train")
 # Set directory path
 dir_path = os.path.dirname(__file__)
 
+# Set render arguments so we can get pixel coordinates later.
+# We use functionality specific to the CYCLES renderer so BLENDER_RENDER
+# cannot be used.
+render_args = bpy.context.scene.render
+render_args.engine = "CYCLES"
+render_args.resolution_x = 320
+render_args.resolution_y = 240
+render_args.resolution_percentage = 100
+cycles_prefs = bpy.context.preferences.addons['cycles'].preferences
+cycles_prefs.compute_device_type = 'CUDA'
+
+# Some CYCLES-specific stuff
+bpy.data.worlds['World'].cycles.sample_as_light = True
+bpy.context.scene.cycles.blur_glossy = 2.0
+bpy.context.scene.cycles.samples = 64
+bpy.context.scene.cycles.transparent_min_bounces = 8
+bpy.context.scene.cycles.transparent_max_bounces = 8
+bpy.context.scene.cycles.device = 'GPU'
+
+
 # Open main file
 bpy.ops.wm.open_mainfile(filepath=os.path.join(dir_path, "clevr_data", "base_scene.blend"))
 
@@ -203,29 +223,6 @@ def load_materials(material_dir):
         appended_material = bpy.data.materials.get(name)
 
 load_materials(os.path.join(dir_path, "clevr_data", "materials"))
-
-# Set render arguments so we can get pixel coordinates later.
-# We use functionality specific to the CYCLES renderer so BLENDER_RENDER
-# cannot be used.
-render_args = bpy.context.scene.render
-render_args.engine = "CYCLES"
-render_args.resolution_x = 320
-render_args.resolution_y = 240
-render_args.resolution_percentage = 100
-cycles_prefs = bpy.context.preferences.addons['cycles'].preferences
-cycles_prefs.compute_device_type = 'CUDA'
-
-logger.info(cycles_prefs.compute_device_type)
-
-# Some CYCLES-specific stuff
-bpy.data.worlds['World'].cycles.sample_as_light = True
-bpy.context.scene.cycles.blur_glossy = 2.0
-bpy.context.scene.cycles.samples = 512
-bpy.context.scene.cycles.transparent_min_bounces = 8
-bpy.context.scene.cycles.transparent_max_bounces = 8
-bpy.context.scene.cycles.device = 'GPU'
-
-logger.info(bpy.context.scene.cycles.device)
 
 # Put a plane on the ground so we can compute cardinal directions
 bpy.ops.mesh.primitive_plane_add(size=5)
