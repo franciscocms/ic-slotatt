@@ -20,7 +20,7 @@ import logging
 from main import setup
 
 #logging.basicConfig(filename=setup.params["logfile_name"], level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("train")
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 torch.set_default_device(device)
@@ -226,6 +226,9 @@ class MyPoisson(dist.Poisson, TorchDistributionMixin):
         shape = self._extended_shape(sample_shape)
         with torch.no_grad():
             s = torch.poisson(self.rate.expand(shape))
+            
+            logger.info(s)
+
             if isinstance(s, list): 
                 for i, s_ in enumerate(s):
                     if s_ == 0: s[i] = torch.poisson(self.rate.expand(shape))
