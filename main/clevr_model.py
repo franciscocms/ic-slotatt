@@ -212,7 +212,7 @@ def sample_clevr_scene(N):
         scenes.append(objects)
     return scenes
 
-def generate_blender_script(objects, idx):
+def generate_blender_script(objects, id):
     """
     Generate a Blender Python script to render the CLEVR-like scene.
     """
@@ -393,6 +393,12 @@ logger.info("adding objects to blender scene...")
 objects = {}
 """
     
+    script += f"""
+
+    # Pass the index of the batched sample
+    idx = {id}
+    """
+
     # Insert the sampled objects
     for i, obj in enumerate(objects):
         script += f"""
@@ -411,7 +417,7 @@ bpy.ops.render.render(write_still=True)
     """
     
     # Write the Blender script to a file
-    script_file = os.path.join(dir_path, f"generate_clevr_scene_{idx}.py")
+    script_file = os.path.join(dir_path, f"generate_clevr_scene_{id}.py")
     with open(script_file, "w") as f:
         f.write(script)
     
