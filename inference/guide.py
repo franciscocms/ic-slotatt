@@ -347,7 +347,7 @@ class InvSlotAttentionGuide(nn.Module):
     elif params['dataset'] == 'clevr':
       
       proposal_layer_input = obs.unsqueeze(0)
-      
+
       if variable_address in ['x', 'y']: proposal = proposal_layer_input
       else: proposal = self.prop_nets[variable_address](proposal_layer_input)
       
@@ -386,17 +386,19 @@ class InvSlotAttentionGuide(nn.Module):
       plt.close()
 
     if self.stage == "train":
+
+      for v in self.current_trace:
+        logger.info(f"{v.name} - {v.value}")
       
       assert N == None, f"During training, type of argument 'N' should be {type(None)}, not {type(N)}!"
 
       N = int(self.current_trace[0].value.item())
-      
-      n_s = None
-      if params["no_slots"] == "wo_background": n_s = N
-      elif params["no_slots"] == "w_background": n_s = N + 1
-      elif params["no_slots"] == "fixed": n_s = 17
-      if n_s != None: self.slots, self.slot_pos, attn = self.slot_attention(self.features_to_slots, num_slots=n_s)
-      else: raise ValueError(f"arg for number of slots {params['no_slots']} is not valid...")
+
+
+      # THE # OF SLOTS WILL HAVE TO BE THE MAX NO. OF OBJECTS IN THE BATCH...
+
+      n_s = 10
+      self.slots, self.slot_pos, attn = self.slot_attention(self.features_to_slots, num_slots=n_s)
       
       min_slots = 1 if params["no_slots"] == "wo_background" else 1
       if self.batch_idx == 0 and self.train and n_s > min_slots and self.step % 10 == 0:
