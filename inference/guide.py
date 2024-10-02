@@ -233,9 +233,7 @@ class InvSlotAttentionGuide(nn.Module):
   def add_proposal_net(self, var, out_dim):
     add_flag = False
     if var.proposal_distribution == "categorical": last_activ = nn.Softmax(dim=-1)
-    elif var.proposal_distribution == "normal":
-      if var.prior_distribution == "uniform": last_activ = nn.Sigmoid()
-      elif var.prior_distribution == "poisson": last_activ = nn.Identity()
+    elif var.proposal_distribution == "normal": last_activ = nn.Sigmoid()
     elif var.proposal_distribution == "mixture": last_activ = nn.Identity()
     else: raise ValueError(f"Unknown distribution: {var.proposal_distribution}")
 
