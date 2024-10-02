@@ -82,8 +82,6 @@ class CSIS(Importance):
     
     self.guide.train = True
     self.guide.step = s
-
-    self.guide.attn_overlap = torch.tensor(0., device=device)
     
     with poutine.trace(param_only=True) as param_capture:
         loss = self.loss_and_grads(True, None, s, *args, **kwargs)
@@ -121,6 +119,10 @@ class CSIS(Importance):
       #   for _ in range(self.training_batch_size)
       # )
       model_trace = self._sample_from_joint(*args, **kwargs)
+
+      for name, vals in model_trace.nodes.items():
+        logger.info(name)
+
       self.batch_size = self.training_batch_size
     else:
       self.batch_size = self.validation_batch_size
