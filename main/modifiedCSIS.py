@@ -16,7 +16,7 @@ import copy
 
 from utils.guide import to_int
 from utils.var import Variable
-from utils.distributions import CategoricalVals
+from utils.distributions import CategoricalVals, MyPoisson
 from .setup import params as p
 from collections import OrderedDict, defaultdict
 
@@ -141,7 +141,7 @@ class CSIS(Importance):
 
     for name, vals in model_trace.nodes.items(): 
 
-      if name not in ["image", "n_plate"] and vals["type"] == "sample": 
+      if name not in ["image", "n_plate"] and vals["type"] == "sample" and name.split('_')[0] not in hidden_addr: 
         #if name == "N": self.n_objects = to_int(vals["value"])
 
         logger.info(f"{name} - {vals}")
@@ -161,6 +161,12 @@ class CSIS(Importance):
         # prior uniform distributed variables
         elif isinstance(vals["fn"], dist.Normal): 
           prior_distribution = "normal"
+          proposal_distribution = "normal"
+          out_dim = 1 # std is fixed!
+        
+        # prior uniform distributed variables
+        elif isinstance(vals["fn"], MyPoisson): 
+          prior_distribution = "poisson"
           proposal_distribution = "normal"
           out_dim = 1 # std is fixed!
         
