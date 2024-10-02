@@ -392,7 +392,7 @@ class InvSlotAttentionGuide(nn.Module):
       
       assert N == None, f"During training, type of argument 'N' should be {type(None)}, not {type(N)}!"
 
-      N = int(self.current_trace[0].value.item())
+      #N = int(self.current_trace[0].value.item())
 
 
       # THE # OF SLOTS WILL HAVE TO BE THE MAX NO. OF OBJECTS IN THE BATCH...
