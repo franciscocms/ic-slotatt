@@ -387,6 +387,8 @@ class InvSlotAttentionGuide(nn.Module):
 
     if self.stage == "train":
 
+      logger.info(len(self.current_trace))
+      
       for v in self.current_trace:
         logger.info(f"{v.name} - {v.value}")
       
