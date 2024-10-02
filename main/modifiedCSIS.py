@@ -139,64 +139,66 @@ class CSIS(Importance):
     
     logger.info("\n\n")
 
-    for name, vals in model_trace.nodes.items():      
+    for name, vals in model_trace.nodes.items():   
 
-      if name not in ["image", "n_plate"] and vals["type"] == "sample": 
-        #if name == "N": self.n_objects = to_int(vals["value"])
+      logger.info(f"{name} - {vals['type']}")   
 
-        logger.info(f"{name} - {vals}")
+      # if name not in ["image", "n_plate"] and vals["type"] == "sample": 
+      #   #if name == "N": self.n_objects = to_int(vals["value"])
+
+      #   logger.info(f"{name} - {vals}")
         
-        # prior categorical distributed variables
-        if isinstance(vals["fn"], CategoricalVals) or isinstance(vals["fn"], dist.Categorical): 
-          prior_distribution = "categorical"
-          proposal_distribution = "categorical"
-          out_dim = len(vals["fn"].probs)
+      #   # prior categorical distributed variables
+      #   if isinstance(vals["fn"], CategoricalVals) or isinstance(vals["fn"], dist.Categorical): 
+      #     prior_distribution = "categorical"
+      #     proposal_distribution = "categorical"
+      #     out_dim = len(vals["fn"].probs)
         
-        # prior uniform distributed variables
-        elif isinstance(vals["fn"], dist.Uniform): 
-          prior_distribution = "uniform"
-          proposal_distribution = "normal"
-          out_dim = 1 # std is fixed!
+      #   # prior uniform distributed variables
+      #   elif isinstance(vals["fn"], dist.Uniform): 
+      #     prior_distribution = "uniform"
+      #     proposal_distribution = "normal"
+      #     out_dim = 1 # std is fixed!
         
-        # prior uniform distributed variables
-        elif isinstance(vals["fn"], dist.Normal): 
-          prior_distribution = "normal"
-          proposal_distribution = "normal"
-          out_dim = 1 # std is fixed!
+      #   # prior uniform distributed variables
+      #   elif isinstance(vals["fn"], dist.Normal): 
+      #     prior_distribution = "normal"
+      #     proposal_distribution = "normal"
+      #     out_dim = 1 # std is fixed!
         
-        # prior poisson distributed variables
-        # elif isinstance(vals["fn"], dist.Poisson): 
-        #   prior_distribution = "poisson"
-        #   if p["N_proposal"] == "normal":
-        #     proposal_distribution = "normal"
-        #     out_dim = 2
-        #   elif p["N_proposal"] == "mixture":
-        #     proposal_distribution = "mixture"
-        #     MIXTURE_COMPONENTS = p["mixture_components"]
-        #     out_dim = 3*MIXTURE_COMPONENTS
-        #   else: raise ValueError(f"Unknown proposal for N: {p['N_proposal']}")
+      #   # prior poisson distributed variables
+      #   # elif isinstance(vals["fn"], dist.Poisson): 
+      #   #   prior_distribution = "poisson"
+      #   #   if p["N_proposal"] == "normal":
+      #   #     proposal_distribution = "normal"
+      #   #     out_dim = 2
+      #   #   elif p["N_proposal"] == "mixture":
+      #   #     proposal_distribution = "mixture"
+      #   #     MIXTURE_COMPONENTS = p["mixture_components"]
+      #   #     out_dim = 3*MIXTURE_COMPONENTS
+      #   #   else: raise ValueError(f"Unknown proposal for N: {p['N_proposal']}")
           
         
 
-        # delete this block, ignore instance and just add variables
+      #   # delete this block, ignore instance and just add variables
         
-        var = Variable(name=name,
-                      value=vals["value"],
-                      prior_distribution=prior_distribution,
-                      proposal_distribution=proposal_distribution,
-                      address=name.split("_")[0],
-                      )                  
+      #   var = Variable(name=name,
+      #                 value=vals["value"],
+      #                 prior_distribution=prior_distribution,
+      #                 proposal_distribution=proposal_distribution,
+      #                 address=name.split("_")[0],
+      #                 )                  
         
-        #if var.name not in self.guide.prop_nets:
-        if var.address not in self.guide.prop_nets:
-          if var.address not in hidden_addr:
-            logging.info(f"... proposal net was added for variable '{var.name}'")
-            self.guide.add_proposal_net(var, out_dim)
-        #else: logging.info(f"... proposal net already existed for variable '{var.name}'")
+      #   #if var.name not in self.guide.prop_nets:
+      #   if var.address not in self.guide.prop_nets:
+      #     if var.address not in hidden_addr:
+      #       logging.info(f"... proposal net was added for variable '{var.name}'")
+      #       self.guide.add_proposal_net(var, out_dim)
+      #   #else: logging.info(f"... proposal net already existed for variable '{var.name}'")
         
-        self.guide.current_trace.append(var)
-        logger.info("\ncurrent trace\n")
-        for v in self.guide.current_trace: logger.info(f"{v.name} - {v.value}")
+      #   self.guide.current_trace.append(var)
+      #   logger.info("\ncurrent trace\n")
+      #   for v in self.guide.current_trace: logger.info(f"{v.name} - {v.value}")
       
       with poutine.trace(param_only=True) as particle_param_capture:
         guide_trace = self._get_matched_trace(model_trace, *args, **kwargs)
