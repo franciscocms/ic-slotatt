@@ -5,7 +5,6 @@ class Variable():
     self._prior_distribution = prior_distribution
     self._proposal_distribution = proposal_distribution
     self._address = address
-    self._instance = instance
   
   @property
   def name(self):
@@ -26,7 +25,3 @@ class Variable():
   @property
   def address(self):
     return self._address
-
-  @property
-  def instance(self):
-    return self._instance

@@ -139,9 +139,7 @@ class CSIS(Importance):
     
     logger.info("\n\n")
 
-    for name, vals in model_trace.nodes.items(): 
-      
-      logger.info(f"{name}")      
+    for name, vals in model_trace.nodes.items():      
 
       if name not in ["image", "n_plate"] and vals["type"] == "sample": 
         #if name == "N": self.n_objects = to_int(vals["value"])
@@ -178,29 +176,16 @@ class CSIS(Importance):
         #     out_dim = 3*MIXTURE_COMPONENTS
         #   else: raise ValueError(f"Unknown proposal for N: {p['N_proposal']}")
           
-        known_addr = [k.address for k in self.guide.current_trace]
-        if name.split("_")[0] not in known_addr:
-          instance = 0
-          var = Variable(name=name,
-                        value=vals["value"],
-                        prior_distribution=prior_distribution,
-                        proposal_distribution=proposal_distribution,
-                        address=name.split("_")[0],
-                        instance=instance)          
-        else:
-          for v in reversed(self.guide.current_trace):
-            if v.address == name.split("_")[0]:
-              last_instance = v.instance
-              break
-          instance = last_instance + 1
-
-          var = Variable(name=name,
-                        value=vals["value"],
-                        prior_distribution=prior_distribution,
-                        proposal_distribution=proposal_distribution,
-                        address=name.split("_")[0],
-                        instance=instance) 
         
+
+        # delete this block, ignore instance and just add variables
+        
+        var = Variable(name=name,
+                      value=vals["value"],
+                      prior_distribution=prior_distribution,
+                      proposal_distribution=proposal_distribution,
+                      address=name.split("_")[0],
+                      )                  
         
         #if var.name not in self.guide.prop_nets:
         if var.address not in self.guide.prop_nets:
