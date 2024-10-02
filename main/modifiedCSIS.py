@@ -116,13 +116,15 @@ class CSIS(Importance):
     `args` and `kwargs` are passed to the model and guide.
     """
     if batch is None:
-      batch = (
-        self._sample_from_joint(*args, **kwargs)
-        for _ in range(self.training_batch_size)
-      )
-      batch_size = self.training_batch_size
+      # batch = (
+      #   self._sample_from_joint(*args, **kwargs)
+      #   for _ in range(self.training_batch_size)
+      # )
+      model_trace = self._sample_from_joint(*args, **kwargs)
+      self.batch_size = self.training_batch_size
     else:
-      batch_size = len(batch)
+      self.batch_size = self.validation_batch_size
+      model_trace = batch
 
     loss = 0
     
@@ -131,13 +133,13 @@ class CSIS(Importance):
       hidden_addr.append("locX")
       hidden_addr.append("locY")
     
-    self.guide.batch_idx = 0
+    #self.guide.batch_idx = 0
     
     for model_trace in batch:     
       for site, vals in model_trace.nodes.items(): 
         name = vals["name"]        
         if name not in ["image", "n_plate"] and vals["type"] == "sample": 
-          if name == "N": self.n_objects = to_int(vals["value"])
+          #if name == "N": self.n_objects = to_int(vals["value"])
 
           logger.info(f"{name} - {vals}")
           
@@ -160,16 +162,16 @@ class CSIS(Importance):
             out_dim = 1 # std is fixed!
           
           # prior poisson distributed variables
-          elif isinstance(vals["fn"], dist.Poisson): 
-            prior_distribution = "poisson"
-            if p["N_proposal"] == "normal":
-              proposal_distribution = "normal"
-              out_dim = 2
-            elif p["N_proposal"] == "mixture":
-              proposal_distribution = "mixture"
-              MIXTURE_COMPONENTS = p["mixture_components"]
-              out_dim = 3*MIXTURE_COMPONENTS
-            else: raise ValueError(f"Unknown proposal for N: {p['N_proposal']}")
+          # elif isinstance(vals["fn"], dist.Poisson): 
+          #   prior_distribution = "poisson"
+          #   if p["N_proposal"] == "normal":
+          #     proposal_distribution = "normal"
+          #     out_dim = 2
+          #   elif p["N_proposal"] == "mixture":
+          #     proposal_distribution = "mixture"
+          #     MIXTURE_COMPONENTS = p["mixture_components"]
+          #     out_dim = 3*MIXTURE_COMPONENTS
+          #   else: raise ValueError(f"Unknown proposal for N: {p['N_proposal']}")
             
           known_addr = [k.address for k in self.guide.current_trace]
           if name.split("_")[0] not in known_addr:
@@ -211,13 +213,13 @@ class CSIS(Importance):
       #   if site['type'] == 'sample':
       #     logging.info(f"{name} - {site}\n")
       
-      self.guide.batch_idx += 1
+      #self.guide.batch_idx += 1
 
       particle_loss = self._differentiable_loss_particle(guide_trace)
 
       #logging.info(particle_loss)
 
-      particle_loss /= batch_size 
+      particle_loss /= self.batch_size 
 
       if grads:
         guide_params = set(
@@ -246,64 +248,52 @@ class CSIS(Importance):
         #     #if name.split(".")[0] == "slot_attention":
         #     logging.info(f"{name} - {param.requires_grad} - {param.grad}")
 
-      loss += particle_loss
+    loss += particle_loss
     #warn_if_nan(loss, "loss")
     return loss
 
   def _differentiable_loss_particle(self, guide_trace):
+      
+    """
+    save the GT latents separately
+    - since the DME is not being trained here, the error associated with 'N' is not considered
+    """
     
-    if p["running_type"] == "debug" and not p['perm_inv_loss']:
-      logp = 0
-      for name, vals in guide_trace.nodes.items():
-        if vals["type"] == "sample":
-          logging.info(f"\n---- {name} ----\n")
-          if name == "N" or name.split("_")[0] in ["locX", "locY", "bgR", "bgG", "bgB"]: logging.info(f"mean: {vals['fn'].mean.item()} - GT: {vals['value']} - log_prob = {vals['fn'].log_prob(vals['value']).item()}")
-          if name.split("_")[0] in ["shape", "color", "size"]: logging.info(f"probs: {vals['fn'].probs} - GT: {vals['value']} - log_prob = {vals['fn'].log_prob(vals['value']).item()}")
-          logp += vals['fn'].log_prob(vals['value']).item()
-      
-    if not p["perm_inv_loss"]: return -guide_trace.log_prob_sum()
-    else:
-      
-      # if self.n_objects == 0: return -guide_trace.log_prob_sum()
-      # else:
-      
-      """
-      save the GT latents separately
-      - since the DME is not being trained here, the error associated with 'N' is not considered
-      """
-      
-      true_latents = {}
+    true_latents = {}
+    for name, vals in guide_trace.nodes.items():
+      if vals["type"] == "sample" and len(name.split('_')) == 2: # only consider object-wise properties
+        true_latents[name] = vals['value']
+    
+    self.n_latents = len(set([k.split('_')[0] for k in true_latents.keys()]))
+
+    pdist = torch.tensor([], device=device)
+
+    # here, the number of objects is not the same for all samples in the batch...
+    # I need to compute the permutation invariant loss independently for each sample
+
+
+    #for b in range(self.batch_size):
+    for name, vals in guide_trace.nodes.items():
+      logger.info(f"{name} - {vals}")
+
+
+
+
+
+    for i in range(self.n_objects):
+      # modify guide_trace considering the values in 'true_latents' and compute the loss
       for name, vals in guide_trace.nodes.items():
         if vals["type"] == "sample" and len(name.split('_')) == 2: # only consider object-wise properties
-          true_latents[name] = vals['value']
-      
-      self.n_latents = len(set([k.split('_')[0] for k in true_latents.keys()]))
+          alt_property = f"{name.split('_')[0]}_{i}"
+          vals['value'] = true_latents[alt_property]
 
-      pdist = torch.tensor([], device=device)
-      for i in range(self.n_objects):
-        # modify guide_trace considering the values in 'true_latents' and compute the loss
-        for name, vals in guide_trace.nodes.items():
-          if vals["type"] == "sample" and len(name.split('_')) == 2: # only consider object-wise properties
-            alt_property = f"{name.split('_')[0]}_{i}"
-            vals['value'] = true_latents[alt_property]
+      partial_loss = self.my_log_prob(guide_trace, self.n_objects, self.n_latents) # 'partial_loss' shape (1, 1, NOBJECTS, NLATENTS)
+      pdist = torch.cat((pdist, partial_loss), dim=-3)
 
-        partial_loss = self.my_log_prob(guide_trace, self.n_objects, self.n_latents) # 'partial_loss' shape (1, 1, NOBJECTS, NLATENTS)
-        pdist = torch.cat((pdist, partial_loss), dim=-3)
+    loss, _ = self.hungarian_loss(pdist)
+    if len(loss.shape) == 1: loss = loss[0]
 
-      loss, _ = self.hungarian_loss(pdist)
-      if len(loss.shape) == 1: loss = loss[0]
-
-      # add the background log_prob_sum component to the loss 
-
-      if p["infer_background"]:
-        bg_log_prob_sum = 0.
-        for name, vals in guide_trace.nodes.items():
-          if vals["type"] == "sample" and name[:2] == 'bg': # only consider background properties
-            bg_log_prob_sum -= vals['fn'].log_prob(vals['value'])
-        
-        return loss + bg_log_prob_sum
-      else:
-        return loss
+    return loss
 
   def my_log_prob(self, guide_trace, n_objects, n_latents):
     
