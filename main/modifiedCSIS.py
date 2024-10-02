@@ -120,8 +120,8 @@ class CSIS(Importance):
       # )
       model_trace = self._sample_from_joint(*args, **kwargs)
 
-      # for name, vals in model_trace.nodes.items():
-      #   logger.info(f"{name} - {vals}")
+      for name, vals in model_trace.nodes.items():
+        logger.info(f"{name} - {vals['type']}")
 
       self.batch_size = self.training_batch_size
     else:
@@ -136,7 +136,9 @@ class CSIS(Importance):
       hidden_addr.append("locY")
     
     #self.guide.batch_idx = 0
-       
+    
+    logger.info("\n\n")
+
     for name, vals in model_trace.nodes.items(): 
       
       logger.info(f"{name}")      
