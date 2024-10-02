@@ -134,77 +134,75 @@ class CSIS(Importance):
       hidden_addr.append("locY")
     
     #self.guide.batch_idx = 0
-    
-    for model_trace in batch:     
-      for site, vals in model_trace.nodes.items(): 
-        name = vals["name"]        
-        if name not in ["image", "n_plate"] and vals["type"] == "sample": 
-          #if name == "N": self.n_objects = to_int(vals["value"])
+       
+    for name, vals in model_trace.nodes.items():       
+      if name not in ["image", "n_plate"] and vals["type"] == "sample": 
+        #if name == "N": self.n_objects = to_int(vals["value"])
 
-          logger.info(f"{name} - {vals}")
+        logger.info(f"{name} - {vals}")
+        
+        # prior categorical distributed variables
+        if isinstance(vals["fn"], CategoricalVals) or isinstance(vals["fn"], dist.Categorical): 
+          prior_distribution = "categorical"
+          proposal_distribution = "categorical"
+          out_dim = len(vals["fn"].probs)
+        
+        # prior uniform distributed variables
+        elif isinstance(vals["fn"], dist.Uniform): 
+          prior_distribution = "uniform"
+          proposal_distribution = "normal"
+          out_dim = 1 # std is fixed!
+        
+        # prior uniform distributed variables
+        elif isinstance(vals["fn"], dist.Normal): 
+          prior_distribution = "normal"
+          proposal_distribution = "normal"
+          out_dim = 1 # std is fixed!
+        
+        # prior poisson distributed variables
+        # elif isinstance(vals["fn"], dist.Poisson): 
+        #   prior_distribution = "poisson"
+        #   if p["N_proposal"] == "normal":
+        #     proposal_distribution = "normal"
+        #     out_dim = 2
+        #   elif p["N_proposal"] == "mixture":
+        #     proposal_distribution = "mixture"
+        #     MIXTURE_COMPONENTS = p["mixture_components"]
+        #     out_dim = 3*MIXTURE_COMPONENTS
+        #   else: raise ValueError(f"Unknown proposal for N: {p['N_proposal']}")
           
-          # prior categorical distributed variables
-          if isinstance(vals["fn"], CategoricalVals) or isinstance(vals["fn"], dist.Categorical): 
-            prior_distribution = "categorical"
-            proposal_distribution = "categorical"
-            out_dim = len(vals["fn"].probs)
-          
-          # prior uniform distributed variables
-          elif isinstance(vals["fn"], dist.Uniform): 
-            prior_distribution = "uniform"
-            proposal_distribution = "normal"
-            out_dim = 1 # std is fixed!
-          
-          # prior uniform distributed variables
-          elif isinstance(vals["fn"], dist.Normal): 
-            prior_distribution = "normal"
-            proposal_distribution = "normal"
-            out_dim = 1 # std is fixed!
-          
-          # prior poisson distributed variables
-          # elif isinstance(vals["fn"], dist.Poisson): 
-          #   prior_distribution = "poisson"
-          #   if p["N_proposal"] == "normal":
-          #     proposal_distribution = "normal"
-          #     out_dim = 2
-          #   elif p["N_proposal"] == "mixture":
-          #     proposal_distribution = "mixture"
-          #     MIXTURE_COMPONENTS = p["mixture_components"]
-          #     out_dim = 3*MIXTURE_COMPONENTS
-          #   else: raise ValueError(f"Unknown proposal for N: {p['N_proposal']}")
-            
-          known_addr = [k.address for k in self.guide.current_trace]
-          if name.split("_")[0] not in known_addr:
-            instance = 0
-            var = Variable(name=name,
-                          value=vals["value"],
-                          prior_distribution=prior_distribution,
-                          proposal_distribution=proposal_distribution,
-                          address=name.split("_")[0],
-                          instance=instance)          
-          else:
-            for v in reversed(self.guide.current_trace):
-              if v.address == name.split("_")[0]:
-                last_instance = v.instance
-                break
-            instance = last_instance + 1
+        known_addr = [k.address for k in self.guide.current_trace]
+        if name.split("_")[0] not in known_addr:
+          instance = 0
+          var = Variable(name=name,
+                        value=vals["value"],
+                        prior_distribution=prior_distribution,
+                        proposal_distribution=proposal_distribution,
+                        address=name.split("_")[0],
+                        instance=instance)          
+        else:
+          for v in reversed(self.guide.current_trace):
+            if v.address == name.split("_")[0]:
+              last_instance = v.instance
+              break
+          instance = last_instance + 1
 
-            var = Variable(name=name,
-                          value=vals["value"],
-                          prior_distribution=prior_distribution,
-                          proposal_distribution=proposal_distribution,
-                          address=name.split("_")[0],
-                          instance=instance) 
-          
-          
-          #if var.name not in self.guide.prop_nets:
-          if var.address not in self.guide.prop_nets:
-            if var.address not in hidden_addr:
-              logging.info(f"... proposal net was added for variable '{var.name}'")
-              self.guide.add_proposal_net(var, out_dim)
-          #else: logging.info(f"... proposal net already existed for variable '{var.name}'")
-          
-          self.guide.current_trace.append(var)
+          var = Variable(name=name,
+                        value=vals["value"],
+                        prior_distribution=prior_distribution,
+                        proposal_distribution=proposal_distribution,
+                        address=name.split("_")[0],
+                        instance=instance) 
+        
+        
+        #if var.name not in self.guide.prop_nets:
+        if var.address not in self.guide.prop_nets:
+          if var.address not in hidden_addr:
+            logging.info(f"... proposal net was added for variable '{var.name}'")
+            self.guide.add_proposal_net(var, out_dim)
+        #else: logging.info(f"... proposal net already existed for variable '{var.name}'")
+        
+        self.guide.current_trace.append(var)
       
       with poutine.trace(param_only=True) as particle_param_capture:
         guide_trace = self._get_matched_trace(model_trace, *args, **kwargs)
