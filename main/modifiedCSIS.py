@@ -130,7 +130,7 @@ class CSIS(Importance):
 
     loss = 0
     
-    hidden_addr = ["N"]
+    hidden_addr = ["N", "obj"]
     if p["loc_proposal"] == "wo_net": 
       hidden_addr.append("locX")
       hidden_addr.append("locY")
