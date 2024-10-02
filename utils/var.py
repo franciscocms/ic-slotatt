@@ -1,5 +1,5 @@
 class Variable():
-  def __init__(self, name, value, prior_distribution, proposal_distribution, address, instance):
+  def __init__(self, name, value, prior_distribution, proposal_distribution, address):
     self._name = name
     self._value = value
     self._prior_distribution = prior_distribution
