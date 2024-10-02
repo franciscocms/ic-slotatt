@@ -137,7 +137,10 @@ class CSIS(Importance):
     
     #self.guide.batch_idx = 0
        
-    for name, vals in model_trace.nodes.items():       
+    for name, vals in model_trace.nodes.items(): 
+      
+      logger.info(f"{name}")      
+
       if name not in ["image", "n_plate"] and vals["type"] == "sample": 
         #if name == "N": self.n_objects = to_int(vals["value"])
 
