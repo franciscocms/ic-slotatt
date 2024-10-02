@@ -139,108 +139,106 @@ class CSIS(Importance):
     
     logger.info("\n\n")
 
-    for name, vals in model_trace.nodes.items():   
+    for name, vals in model_trace.nodes.items(): 
 
-      logger.info(f"{name} - {vals['type']}")   
+      if name not in ["image", "n_plate"] and vals["type"] == "sample": 
+        #if name == "N": self.n_objects = to_int(vals["value"])
 
-      # if name not in ["image", "n_plate"] and vals["type"] == "sample": 
-      #   #if name == "N": self.n_objects = to_int(vals["value"])
-
-      #   logger.info(f"{name} - {vals}")
+        logger.info(f"{name} - {vals}")
         
-      #   # prior categorical distributed variables
-      #   if isinstance(vals["fn"], CategoricalVals) or isinstance(vals["fn"], dist.Categorical): 
-      #     prior_distribution = "categorical"
-      #     proposal_distribution = "categorical"
-      #     out_dim = len(vals["fn"].probs)
+        # prior categorical distributed variables
+        if isinstance(vals["fn"], CategoricalVals) or isinstance(vals["fn"], dist.Categorical): 
+          prior_distribution = "categorical"
+          proposal_distribution = "categorical"
+          out_dim = len(vals["fn"].probs)
         
-      #   # prior uniform distributed variables
-      #   elif isinstance(vals["fn"], dist.Uniform): 
-      #     prior_distribution = "uniform"
-      #     proposal_distribution = "normal"
-      #     out_dim = 1 # std is fixed!
+        # prior uniform distributed variables
+        elif isinstance(vals["fn"], dist.Uniform): 
+          prior_distribution = "uniform"
+          proposal_distribution = "normal"
+          out_dim = 1 # std is fixed!
         
-      #   # prior uniform distributed variables
-      #   elif isinstance(vals["fn"], dist.Normal): 
-      #     prior_distribution = "normal"
-      #     proposal_distribution = "normal"
-      #     out_dim = 1 # std is fixed!
+        # prior uniform distributed variables
+        elif isinstance(vals["fn"], dist.Normal): 
+          prior_distribution = "normal"
+          proposal_distribution = "normal"
+          out_dim = 1 # std is fixed!
         
-      #   # prior poisson distributed variables
-      #   # elif isinstance(vals["fn"], dist.Poisson): 
-      #   #   prior_distribution = "poisson"
-      #   #   if p["N_proposal"] == "normal":
-      #   #     proposal_distribution = "normal"
-      #   #     out_dim = 2
-      #   #   elif p["N_proposal"] == "mixture":
-      #   #     proposal_distribution = "mixture"
-      #   #     MIXTURE_COMPONENTS = p["mixture_components"]
-      #   #     out_dim = 3*MIXTURE_COMPONENTS
-      #   #   else: raise ValueError(f"Unknown proposal for N: {p['N_proposal']}")
+        # prior poisson distributed variables
+        # elif isinstance(vals["fn"], dist.Poisson): 
+        #   prior_distribution = "poisson"
+        #   if p["N_proposal"] == "normal":
+        #     proposal_distribution = "normal"
+        #     out_dim = 2
+        #   elif p["N_proposal"] == "mixture":
+        #     proposal_distribution = "mixture"
+        #     MIXTURE_COMPONENTS = p["mixture_components"]
+        #     out_dim = 3*MIXTURE_COMPONENTS
+        #   else: raise ValueError(f"Unknown proposal for N: {p['N_proposal']}")
           
         
 
-      #   # delete this block, ignore instance and just add variables
+        # delete this block, ignore instance and just add variables
         
-      #   var = Variable(name=name,
-      #                 value=vals["value"],
-      #                 prior_distribution=prior_distribution,
-      #                 proposal_distribution=proposal_distribution,
-      #                 address=name.split("_")[0],
-      #                 )                  
+        var = Variable(name=name,
+                      value=vals["value"],
+                      prior_distribution=prior_distribution,
+                      proposal_distribution=proposal_distribution,
+                      address=name.split("_")[0],
+                      )                  
         
-      #   #if var.name not in self.guide.prop_nets:
-      #   if var.address not in self.guide.prop_nets:
-      #     if var.address not in hidden_addr:
-      #       logging.info(f"... proposal net was added for variable '{var.name}'")
-      #       self.guide.add_proposal_net(var, out_dim)
-      #   #else: logging.info(f"... proposal net already existed for variable '{var.name}'")
+        #if var.name not in self.guide.prop_nets:
+        if var.address not in self.guide.prop_nets:
+          if var.address not in hidden_addr:
+            logging.info(f"... proposal net was added for variable '{var.name}'")
+            self.guide.add_proposal_net(var, out_dim)
+        #else: logging.info(f"... proposal net already existed for variable '{var.name}'")
         
-      #   self.guide.current_trace.append(var)
-      #   logger.info("\ncurrent trace\n")
-      #   for v in self.guide.current_trace: logger.info(f"{v.name} - {v.value}")
+        self.guide.current_trace.append(var)
+        logger.info("\ncurrent trace\n")
+        for v in self.guide.current_trace: logger.info(f"{v.name} - {v.value}")
       
-      with poutine.trace(param_only=True) as particle_param_capture:
-        guide_trace = self._get_matched_trace(model_trace, *args, **kwargs)
+    with poutine.trace(param_only=True) as particle_param_capture:
+      guide_trace = self._get_matched_trace(model_trace, *args, **kwargs)
+    
+    # for name, site in guide_trace.nodes.items():
+    #   if site['type'] == 'sample':
+    #     logging.info(f"{name} - {site}\n")
+    
+    #self.guide.batch_idx += 1
+
+    particle_loss = self._differentiable_loss_particle(guide_trace)
+
+    #logging.info(particle_loss)
+
+    particle_loss /= self.batch_size 
+
+    if grads:
+      guide_params = set(
+        site["value"].unconstrained()
+        for site in particle_param_capture.trace.nodes.values()
+      )
       
-      # for name, site in guide_trace.nodes.items():
-      #   if site['type'] == 'sample':
-      #     logging.info(f"{name} - {site}\n")
-      
-      #self.guide.batch_idx += 1
+      guide_grads = torch.autograd.grad(
+        particle_loss, guide_params, allow_unused=True
+      )
 
-      particle_loss = self._differentiable_loss_particle(guide_trace)
-
-      #logging.info(particle_loss)
-
-      particle_loss /= self.batch_size 
-
-      if grads:
-        guide_params = set(
-          site["value"].unconstrained()
-          for site in particle_param_capture.trace.nodes.values()
+      for guide_grad, guide_param in zip(guide_grads, guide_params):
+        if guide_grad is None:
+            continue
+        guide_param.grad = (
+            guide_grad
+            if guide_param.grad is None
+            else guide_param.grad + guide_grad
         )
-        
-        guide_grads = torch.autograd.grad(
-          particle_loss, guide_params, allow_unused=True
-        )
+        # logging.info(guide_grad)
+        # logging.info(guide_param)
+        # logging.info("\n")
 
-        for guide_grad, guide_param in zip(guide_grads, guide_params):
-          if guide_grad is None:
-              continue
-          guide_param.grad = (
-             guide_grad
-             if guide_param.grad is None
-             else guide_param.grad + guide_grad
-          )
-          # logging.info(guide_grad)
-          # logging.info(guide_param)
-          # logging.info("\n")
-
-        # if p["running_type"] == "debug":
-        #   for name, param in self.guide.named_parameters():
-        #     #if name.split(".")[0] == "slot_attention":
-        #     logging.info(f"{name} - {param.requires_grad} - {param.grad}")
+      # if p["running_type"] == "debug":
+      #   for name, param in self.guide.named_parameters():
+      #     #if name.split(".")[0] == "slot_attention":
+      #     logging.info(f"{name} - {param.requires_grad} - {param.grad}")
 
     loss += particle_loss
     #warn_if_nan(loss, "loss")
