@@ -136,7 +136,7 @@ class CSIS(Importance):
     for model_trace in batch:     
       for site, vals in model_trace.nodes.items(): 
         name = vals["name"]        
-        if name not in ["image"] and vals["type"] == "sample": 
+        if name not in ["image", "n_plate"] and vals["type"] == "sample": 
           if name == "N": self.n_objects = to_int(vals["value"])
 
           logger.info(f"{name} - {vals}")
