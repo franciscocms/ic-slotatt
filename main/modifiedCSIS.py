@@ -139,7 +139,7 @@ class CSIS(Importance):
         if name not in ["image"] and vals["type"] == "sample": 
           if name == "N": self.n_objects = to_int(vals["value"])
 
-          logger.info(f"{name} - {vals['fn']}")
+          logger.info(f"{name} - {vals}")
           
           # prior categorical distributed variables
           if isinstance(vals["fn"], CategoricalVals) or isinstance(vals["fn"], dist.Categorical): 
