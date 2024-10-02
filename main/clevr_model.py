@@ -395,9 +395,9 @@ objects = {}
     
     script += f"""
 
-    # Pass the index of the batched sample
-    idx = {id}
-    """
+# Pass the index of the batched sample
+idx = {id}
+"""
 
     # Insert the sampled objects
     for i, obj in enumerate(objects):
