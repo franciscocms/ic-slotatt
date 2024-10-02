@@ -120,8 +120,8 @@ class CSIS(Importance):
       # )
       model_trace = self._sample_from_joint(*args, **kwargs)
 
-      for name, vals in model_trace.nodes.items():
-        logger.info(f"{name} - {vals}")
+      # for name, vals in model_trace.nodes.items():
+      #   logger.info(f"{name} - {vals}")
 
       self.batch_size = self.training_batch_size
     else:
@@ -205,6 +205,8 @@ class CSIS(Importance):
         #else: logging.info(f"... proposal net already existed for variable '{var.name}'")
         
         self.guide.current_trace.append(var)
+        logger.info("\ncurrent trace\n")
+        for v in self.guide.current_trace: logger.info(f"{v.name} - {v.value}")
       
       with poutine.trace(param_only=True) as particle_param_capture:
         guide_trace = self._get_matched_trace(model_trace, *args, **kwargs)
