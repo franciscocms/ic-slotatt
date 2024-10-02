@@ -121,7 +121,7 @@ class CSIS(Importance):
       model_trace = self._sample_from_joint(*args, **kwargs)
 
       for name, vals in model_trace.nodes.items():
-        logger.info(name)
+        logger.info(f"{name} - {vals}")
 
       self.batch_size = self.training_batch_size
     else:
