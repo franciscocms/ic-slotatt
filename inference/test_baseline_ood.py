@@ -59,7 +59,8 @@ def main():
         else: model.load_state_dict(torch.load(GUIDE_PATH, map_location='cpu'))
         model.to(DEVICE)
 
-        img_path = ["synthetic_data/ood_samples/00000.png"]
+        #img_path = ["synthetic_data/ood_samples/00000.png"]
+        img_path = [os.path.join(main_dir, "synthetic_data", "new_ood_samples", "00045.png")]
         target_path = []
 
         logger.info(img_path)

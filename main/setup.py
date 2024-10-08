@@ -5,13 +5,13 @@ import os
 main_dir = os.path.abspath(__file__+'/../../')
 
 params = {
-    "dataset": "clevr", # 'clevr' or '2Dobjects'
+    "dataset": "2Dobjects", # 'clevr' or '2Dobjects'
     "mixture_components": 10,
     "guide_step" : 10000,
     "print_distributions": False,
     "print_importance_sampling": False,
     "bernoulli_inf_reduction": 'none',
-    "num_inference_samples": 1,
+    "num_inference_samples": 50,
     "N_proposal" : "normal", # mixture
     "loc_proposal" : "wo_net",
     "loc_proposal_std": 0.05, 
@@ -21,7 +21,7 @@ params = {
     "pos_from_attn" : "attn-masks", # "attn-masks" if computing locations from slot attention masks (alternative: "dme" from the estimated density maps)
     "training_from_scratch" : True,
     "lr" : 1e-3, 
-    "batch_size" : 3, # 256
+    "batch_size" : 1, # 256
     "training_iters": 10000, # 10k
     "running_type": "train", # train, debug, eval, inspect
     "slot_dim" : 64,

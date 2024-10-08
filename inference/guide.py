@@ -258,8 +258,6 @@ class InvSlotAttentionGuide(nn.Module):
       if variable_address == "N": variable_prior_distribution = "poisson"
       elif variable_address == "shape": variable_prior_distribution = "categorical"
       elif variable_address in ["locX", "locY"]: variable_prior_distribution = "uniform"
-      if variable_name == "N": variable_instance = 0
-      else: variable_instance = int(variable_name.split("_")[1])
       variable_proposal_distribution = proposal_distribution
     
     # training
@@ -268,7 +266,6 @@ class InvSlotAttentionGuide(nn.Module):
       variable_address = variable.address
       variable_prior_distribution = variable.prior_distribution
       variable_proposal_distribution = variable.proposal_distribution
-      variable_instance = variable.instance
     
     if params['dataset'] == '2Dobjects':
     
@@ -385,10 +382,10 @@ class InvSlotAttentionGuide(nn.Module):
 
     if self.stage == "train":
 
-      logger.info(len(self.current_trace))
+      # logger.info(len(self.current_trace))
       
-      for v in self.current_trace:
-        logger.info(f"{v.name} - {v.value}")
+      # for v in self.current_trace:
+      #   logger.info(f"{v.name} - {v.value}")
       
       assert N == None, f"During training, type of argument 'N' should be {type(None)}, not {type(N)}!"
 
@@ -396,6 +393,11 @@ class InvSlotAttentionGuide(nn.Module):
 
 
       # THE # OF SLOTS WILL HAVE TO BE THE MAX NO. OF OBJECTS IN THE BATCH...
+      # compute this
+
+
+
+
 
       n_s = 10
       self.slots, self.slot_pos, attn = self.slot_attention(self.features_to_slots, num_slots=n_s)
@@ -487,7 +489,7 @@ class InvSlotAttentionGuide(nn.Module):
         if params["running_type"] == "inspect":
           logging.info(f"slot_pos: {self.slot_pos}")
         
-        new_var = Variable(name="N", value=N, prior_distribution="poisson", proposal_distribution=params["N_proposal"], address="N", instance=0)
+        new_var = Variable(name="N", value=N, prior_distribution="poisson", proposal_distribution=params["N_proposal"], address="N")
         self.current_trace.append(new_var)
         
         """
@@ -523,8 +525,8 @@ class InvSlotAttentionGuide(nn.Module):
                                 value=out,
                                 prior_distribution=prior_distribution,
                                 proposal_distribution=proposal_distribution,
-                                address=prop,
-                                instance=n)
+                                address=prop
+                                )
             self.current_trace.append(new_var)
         self.current_trace = []
         return 

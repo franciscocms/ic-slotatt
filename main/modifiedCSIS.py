@@ -120,8 +120,8 @@ class CSIS(Importance):
       # )
       model_trace = self._sample_from_joint(*args, **kwargs)
 
-      for name, vals in model_trace.nodes.items():
-        logger.info(f"{name} - {vals['type']}")
+      # for name, vals in model_trace.nodes.items():
+      #   logger.info(f"{name} - {vals['type']}")
 
       self.batch_size = self.training_batch_size
     else:
@@ -137,14 +137,14 @@ class CSIS(Importance):
     
     #self.guide.batch_idx = 0
     
-    logger.info("\n\n")
+    #logger.info("\n\n")
 
     for name, vals in model_trace.nodes.items(): 
 
       if name not in ["image", "n_plate"] and vals["type"] == "sample" and name.split('_')[0] not in hidden_addr: 
         #if name == "N": self.n_objects = to_int(vals["value"])
 
-        logger.info(f"{name} - {vals}")
+        #logger.info(f"{name} - {vals}")
         
         # prior categorical distributed variables
         if isinstance(vals["fn"], CategoricalVals) or isinstance(vals["fn"], dist.Categorical): 
@@ -201,8 +201,8 @@ class CSIS(Importance):
         #else: logging.info(f"... proposal net already existed for variable '{var.name}'")
         
         self.guide.current_trace.append(var)
-        logger.info("\ncurrent trace\n")
-        for v in self.guide.current_trace: logger.info(f"{v.name} - {v.value}")
+        # logger.info("\ncurrent trace\n")
+        # for v in self.guide.current_trace: logger.info(f"{v.name} - {v.value}")
       
     with poutine.trace(param_only=True) as particle_param_capture:
       guide_trace = self._get_matched_trace(model_trace, *args, **kwargs)

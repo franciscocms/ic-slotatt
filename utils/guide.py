@@ -144,8 +144,8 @@ def load_trained_guide(guide, GUIDE_PATH):
                             value=None,
                             prior_distribution=prior_distribution,
                             proposal_distribution=proposal_distribution,
-                            address=name.split("_")[0],
-                            instance=0)
+                            address=name.split("_")[0]
+                            )
             
             #if prior_distribution is None: raise ValueError("Prior distribution cannot be None")
             #if proposal_distribution is None: raise ValueError("Proposal distribution cannot be None")

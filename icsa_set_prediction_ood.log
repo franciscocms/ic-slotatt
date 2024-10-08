@@ -1,8 +1,0 @@
-cpu
-seed 1
-/Users/franciscosilva/Desktop/phd/repos/ic-slotatt/checkpoint-69/guide_10000.pth
-average likelihood scores for object 0: 15921.6103515625 - 3584.048583984375
-['ball', 'ball', 'ball', 'ball', 'ball', 'ball', 'ball', 'square', 'ball', 'square', 'ball', 'ball', 'ball', 'ball', 'ball', 'ball', 'square', 'ball', 'ball', 'square', 'ball', 'ball', 'ball', 'square', 'ball', 'ball', 'ball', 'ball', 'ball', 'ball', 'ball', 'ball', 'square', 'ball', 'square', 'ball', 'ball', 'ball', 'ball', 'ball', 'square', 'ball', 'ball', 'ball', 'ball', 'ball', 'square', 'square', 'ball', 'ball']
-average likelihood scores for object 1: 17566.162109375 - 3533.19970703125
-average likelihood scores for object 2: 22554.89453125 - 5570.703125
-average likelihood scores for object 3: 30341.390625 - 5196.54345703125
