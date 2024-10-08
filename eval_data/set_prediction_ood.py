@@ -97,8 +97,8 @@ def main():
                                     mixture_components=params["mixture_components"])
         guide.to(device)
         
-        #GUIDE_PATH = f"{main_dir}/checkpoint-{params['jobID']}/guide_{params['guide_step']}.pth"
-        GUIDE_PATH = "/Users/franciscosilva/Downloads/checkpoint-69/guide_10000.pth"
+        GUIDE_PATH = f"{main_dir}/checkpoint-{params['jobID']}/guide_{params['guide_step']}.pth"
+
         
         if os.path.isfile(GUIDE_PATH): guide = load_trained_guide(guide, GUIDE_PATH)
         else: raise ValueError(f'{GUIDE_PATH} is not a valid path!')
@@ -228,7 +228,7 @@ def main():
                             "square": len([i for i in shape_list if i == 'square'])
                             },"\n")
                         
-                        
+
                         
                         # print("\n",{"red": len([i for i in color_list if i == 'red']),
                         #     "green": len([i for i in color_list if i == 'green']),
