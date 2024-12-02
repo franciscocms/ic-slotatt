@@ -20,7 +20,7 @@ from utils.distributions import CategoricalVals, MyPoisson
 from .setup import params as p
 from collections import OrderedDict, defaultdict
 
-from clevr_model import max_objects
+from .clevr_model import max_objects
 
 logger = logging.getLogger("train")
 
