@@ -286,7 +286,7 @@ class CSIS(Importance):
           alt_property = f"{name.split('_')[0]}_{i}"
           vals['value'] = true_latents[alt_property]
 
-      partial_loss = self.my_log_prob(guide_trace, self.n_objects, self.n_latents) # 'partial_loss' shape (1, 1, NOBJECTS, NLATENTS)
+      partial_loss = self.my_log_prob(guide_trace, max_objects, self.n_latents) # 'partial_loss' shape (1, 1, NOBJECTS, NLATENTS)
       pdist = torch.cat((pdist, partial_loss), dim=-3)
 
     loss, _ = self.hungarian_loss(pdist)
