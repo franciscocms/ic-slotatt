@@ -20,6 +20,8 @@ from utils.distributions import CategoricalVals, MyPoisson
 from .setup import params as p
 from collections import OrderedDict, defaultdict
 
+from clevr_model import max_objects
+
 logger = logging.getLogger("train")
 
 device = p["device"]
@@ -58,7 +60,7 @@ class CSIS(Importance):
     self.validation_batch = None
     self.train = True
 
-    self.max_objects = self.model.max_objects
+    self.max_objects = max_objects
 
     self.shape_map = {"ball": 0, "square": 1}
 

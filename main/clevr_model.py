@@ -430,7 +430,7 @@ def render_scene_in_blender(blender_script):
     blender_path = "/usr/bin/blender"  # Update this with your Blender path
     subprocess.call([blender_path, "--background", "--python", blender_script])
 
-def clevr_model(observations={"image": torch.zeros((1, 3, 128, 128))}, show='all', save_obs=None, N=None):
+def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}, show='all', save_obs=None, N=None):
     
     init_time = time.time()
     B = params['batch_size']
