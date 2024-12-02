@@ -250,6 +250,9 @@ bpy.context.scene.cycles.device = 'GPU'
 for device in bpy.context.preferences.addons['cycles'].preferences.devices:
     device.use = True
 
+devices = bpy.context.preferences.addons['cycles'].preferences.devices
+for device in devices:
+    logger.info(f"Device: {device.name}, Use: {device.use}")
 
 # Open main file
 bpy.ops.wm.open_mainfile(filepath=os.path.join(dir_path, "clevr_data", "base_scene.blend"))
