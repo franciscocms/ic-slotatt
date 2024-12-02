@@ -254,7 +254,10 @@ bpy.context.scene.cycles.samples = 64
 bpy.context.scene.cycles.transparent_min_bounces = 8
 bpy.context.scene.cycles.transparent_max_bounces = 8
 bpy.context.scene.cycles.device = 'GPU'
-logger.info(bpy.context.preferences.addons['cycles'].preferences.devices)
+devices = bpy.context.preferences.addons['cycles'].preferences.devices
+logger.info(type(devices))
+logger.info(len(devices))
+logger.info(devices[0])
 
 
 # Open main file
