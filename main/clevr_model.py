@@ -226,6 +226,8 @@ from mathutils import Vector
 
 logger = logging.getLogger("train")
 
+logger.info('logging from the generated blender script!')
+
 # Set directory path
 dir_path = os.path.dirname(__file__)
 
@@ -237,8 +239,7 @@ render_args.engine = "CYCLES"
 render_args.resolution_x = 320
 render_args.resolution_y = 240
 render_args.resolution_percentage = 100
-cycles_prefs = bpy.context.preferences.addons['cycles'].preferences
-cycles_prefs.compute_device_type = 'CUDA'
+bpy.context.preferences.addons['cycles'].preferences.compute_device_type = 'CUDA'
 
 # Some CYCLES-specific stuff
 bpy.data.worlds['World'].cycles.sample_as_light = True
@@ -250,9 +251,6 @@ bpy.context.scene.cycles.device = 'GPU'
 for device in bpy.context.preferences.addons['cycles'].preferences.devices:
     device.use = True
 
-devices = bpy.context.preferences.addons['cycles'].preferences.devices
-for device in devices:
-    logger.info(f"Device: {device.name}, Use: {device.use}")
 
 # Open main file
 bpy.ops.wm.open_mainfile(filepath=os.path.join(dir_path, "clevr_data", "base_scene.blend"))
