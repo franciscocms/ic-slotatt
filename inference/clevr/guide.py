@@ -11,7 +11,7 @@ import glob
 
 # add project path to sys to import relative modules
 import sys
-sys.path.append(os.path.abspath(__file__+'/../../'))
+sys.path.append(os.path.abspath(__file__+'/../../../'))
 
 from utils.distributions import CategoricalVals, TruncatedNormal, Mixture
 from utils.var import Variable
