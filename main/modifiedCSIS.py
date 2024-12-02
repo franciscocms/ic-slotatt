@@ -58,6 +58,8 @@ class CSIS(Importance):
     self.validation_batch = None
     self.train = True
 
+    self.max_objects = self.model.max_objects
+
     self.shape_map = {"ball": 0, "square": 1}
 
   def set_validation_batch(self, *args, **kwargs):
@@ -271,14 +273,11 @@ class CSIS(Importance):
 
 
     #for b in range(self.batch_size):
-    for name, vals in guide_trace.nodes.items():
-      logger.info(f"{name} - {vals}")
+    #for name, vals in guide_trace.nodes.items():
+    #  logger.info(f"{name} - {vals}")
 
 
-
-
-
-    for i in range(self.n_objects):
+    for i in range(self.max_objects):
       # modify guide_trace considering the values in 'true_latents' and compute the loss
       for name, vals in guide_trace.nodes.items():
         if vals["type"] == "sample" and len(name.split('_')) == 2: # only consider object-wise properties
