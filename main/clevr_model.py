@@ -226,10 +226,8 @@ from mathutils import Vector
 
 logger = logging.getLogger('blender_logger')
 logger.setLevel(logging.INFO)  # You can change this level to INFO, WARNING, etc.
-handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
+fh = logging.FileHandler("blender_log.log", mode='w')
+logger.addHandler(fh)
 
 logger.info('logging from the generated blender script!')
 
