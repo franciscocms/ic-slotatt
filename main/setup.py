@@ -5,7 +5,7 @@ import os
 main_dir = os.path.abspath(__file__+'/../../')
 
 params = {
-    "dataset": "2Dobjects", # 'clevr' or '2Dobjects'
+    "dataset": "clevr", # 'clevr' or '2Dobjects'
     "mixture_components": 10,
     "guide_step" : 10000,
     "print_distributions": False,
