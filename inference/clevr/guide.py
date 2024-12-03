@@ -288,8 +288,7 @@ class InvSlotAttentionGuide(nn.Module):
     return out
   
   def forward(self, 
-              observations={"image": torch.zeros((1, 3, 128, 128))},
-              objects_mask=torch.bernoulli(torch.zeros(1, 2))
+              observations={"image": torch.zeros((1, 3, 128, 128))}
               ):
 
     # register networks to be optimized
