@@ -245,7 +245,6 @@ render_args.engine = "CYCLES"
 render_args.resolution_x = 320
 render_args.resolution_y = 240
 render_args.resolution_percentage = 100
-bpy.context.preferences.addons['cycles'].preferences.compute_device_type = 'CUDA'
 
 # Some CYCLES-specific stuff
 bpy.data.worlds['World'].cycles.sample_as_light = True
@@ -254,7 +253,11 @@ bpy.context.scene.cycles.samples = 64
 bpy.context.scene.cycles.transparent_min_bounces = 8
 bpy.context.scene.cycles.transparent_max_bounces = 8
 bpy.context.scene.cycles.device = 'GPU'
+bpy.context.preferences.addons['cycles'].preferences.compute_device_type = 'CUDA'
+
 devices = bpy.context.preferences.addons['cycles'].preferences.devices
+
+logger.info(bpy.context.scene.cycles.device)
 logger.info(type(devices))
 logger.info(len(devices))
 logger.info(devices[0])
