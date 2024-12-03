@@ -287,7 +287,7 @@ class InvSlotAttentionGuide(nn.Module):
     
     return out
   
-  def forward(self, observations={"image": torch.zeros((1, 3, 128, 128))}, N=None):
+  def forward(self, observations={"image": torch.zeros((1, 3, 128, 128))}, objects_mask=None):
 
     # register networks to be optimized
     pyro.module("encoder_sa", self.encoder_cnn.encoder_sa, True)
@@ -313,23 +313,6 @@ class InvSlotAttentionGuide(nn.Module):
         plt.close()
 
     if self.stage == "train":
-
-        # logger.info(len(self.current_trace))
-        
-        # for v in self.current_trace:
-        #   logger.info(f"{v.name} - {v.value}")
-        
-        assert N == None, f"During training, type of argument 'N' should be {type(None)}, not {type(N)}!"
-
-        #N = int(self.current_trace[0].value.item())
-
-
-        # THE # OF SLOTS WILL HAVE TO BE THE MAX NO. OF OBJECTS IN THE BATCH...
-        # compute this
-    
-
-
-
 
         n_s = 10
         self.slots, self.slot_pos, attn = self.slot_attention(self.features_to_slots, num_slots=n_s)
