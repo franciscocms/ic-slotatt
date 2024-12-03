@@ -105,9 +105,9 @@ def sample_clevr_scene(N):
     # Sample scene 
     with pyro.poutine.block():
         n_probs = torch.tensor([1/(max_objects - min_objects) for _ in range(max_objects-min_objects)]).unsqueeze(0).expand(B, -1)
-        num_objects = pyro.sample("N", dist.Categorical(probs=n_probs), obs=N) + 3
+        num_objects = pyro.sample("N", dist.Categorical(probs=n_probs), obs=N) + 3 # [B]
 
-    logger.info(f"num objects: {num_objects}")    
+    logger.info(f"num objects: {num_objects} with shape {num_objects.shape}")    
     
 
     scenes = []
