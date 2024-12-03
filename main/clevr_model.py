@@ -51,7 +51,7 @@ def preprocess_clevr(image, resolution=(128, 128)):
     image = torch.clamp(image, 0., 1.)
     return image
 
-def sample_clevr_scene(N):
+def sample_clevr_scene(mask=None):
     
     # Assuming the default camera position
     cam_default_pos = [7.358891487121582, -6.925790786743164, 4.958309173583984]
@@ -104,25 +104,15 @@ def sample_clevr_scene(N):
     M = max_objects
     
     # Sample scene 
-    with pyro.poutine.block():
-        n_probs = torch.tensor([1/(max_objects - min_objects) for _ in range(max_objects-min_objects)]).unsqueeze(0).expand(B, -1)
-        num_objects = pyro.sample("N", dist.Categorical(probs=n_probs), obs=N) + 3 # [B]
+    num_objects = torch.sum(mask, dim=-1)
+    logger.info(f"\nnum_objects: {num_objects}")
 
-    logger.info(f"num objects: {num_objects} with shape {num_objects.shape}")  
-
-    mask = torch.arange(M).expand(B, M) < num_objects.unsqueeze(-1)  
-    logger.info(f"mask: {mask}")
+    
     
     # Sample the mask to predict real objects
     pyro.sample(f"mask", dist.Bernoulli(0.5), obs=mask)
     
     scenes = []
-    
-    # for i in range(B):
-    #     n = int(num_objects[i])
-    #     objects = []
-
-    #     with pyro.plate(f'obj_plate_{i}', size=n, dim=-1): # each sample statement draws a n-dim tensor from the prior distributions
 
     # Choose a random size
     #with pyro.poutine.block():
@@ -473,7 +463,7 @@ def render_scene_in_blender(blender_script):
     with open(debug_log, "w") as log_file:
         subprocess.call(cmd, stdout=log_file, stderr=log_file)
 
-def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}, show='all', save_obs=None, N=None):
+def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}, objects_mask=None):
 
     #logger.info(f"... using CUDA version {torch.version.cuda}")
     
@@ -481,7 +471,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}, show=
     B = params['batch_size']
 
     # Sample a CLEVR-like scene using Pyro
-    clevr_scenes = sample_clevr_scene(N)
+    clevr_scenes = sample_clevr_scene(objects_mask)
 
     # Generate the Blender script for the sampled scene
     blender_scripts = [generate_blender_script(scene, idx) for idx, scene in enumerate(clevr_scenes)]

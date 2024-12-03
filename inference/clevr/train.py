@@ -17,7 +17,7 @@ from utils.var import Variable
 from main.setup import params
 from utils.loss import save_loss, save_loss_plot
 from utils.guide import get_pretrained_wts, load_trained_guide
-from main.clevr_model import clevr_gen_model
+from main.clevr_model import clevr_gen_model, min_objects, max_objects
 
 import wandb # type: ignore
 
@@ -125,7 +125,12 @@ for s in range(resume_step, resume_step + nsteps):
   if CHECK_ATTN and s % step_size == 0: 
     if not os.path.isdir(f"{root_folder}/attn-step-{s}"): os.mkdir(f"{root_folder}/attn-step-{s}")  
   
-  loss = csis.step(s)
+  num_objects = torch.randint(min_objects, max_objects)
+  objects_mask = torch.arange(max_objects).expand(params["batch_size"], max_objects) < num_objects.unsqueeze(-1)  
+
+  logger.info(f"\nobjects_mask: {objects_mask}")
+
+  loss = csis.step(s, objects_mask)
   val_loss = csis.validation_loss(s)
   #train_hist.append(loss)
   valid_hist.append(val_loss) 
