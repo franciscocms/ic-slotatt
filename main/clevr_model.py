@@ -51,7 +51,7 @@ def preprocess_clevr(image, resolution=(128, 128)):
     image = torch.clamp(image, 0., 1.)
     return image
 
-def sample_clevr_scene(mask=None):
+def sample_clevr_scene(objects_mask=None):
     
     # Assuming the default camera position
     cam_default_pos = [7.358891487121582, -6.925790786743164, 4.958309173583984]
@@ -104,19 +104,19 @@ def sample_clevr_scene(mask=None):
     M = max_objects
     
     # Sample scene 
-    num_objects = torch.sum(mask, dim=-1)
+    num_objects = torch.sum(objects_mask, dim=-1)
     logger.info(f"\nnum_objects: {num_objects}")
 
     
     
     # Sample the mask to predict real objects
-    pyro.sample(f"mask", dist.Bernoulli(0.5), obs=mask)
+    pyro.sample(f"mask", dist.Bernoulli(0.5), obs=objects_mask)
     
     scenes = []
 
     # Choose a random size
     #with pyro.poutine.block():
-    with pyro.poutine.mask(mask=mask):
+    with pyro.poutine.mask(mask=objects_mask):
         size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])).expand([B, M]).to_event(1))
     
     #logger.info(f"{size}")
@@ -132,13 +132,13 @@ def sample_clevr_scene(mask=None):
     #logger.info(f"{r}")
 
     # Choose random color and shape
-    with pyro.poutine.mask(mask=mask):
+    with pyro.poutine.mask(mask=objects_mask):
         shape = pyro.sample(f"shape", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([B, M]).to_event(1))
     shape_mapping_list = {b: list(map(get_shape_mapping, shape[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
     obj_name, obj_name_out = {b: [e[0] for e in shape_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in shape_mapping_list[b]]  for b in range(B)}
     #logger.info(f"\n{obj_name}")
 
-    with pyro.poutine.mask(mask=mask):
+    with pyro.poutine.mask(mask=objects_mask):
         color = pyro.sample(f"color", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])).expand([B, M]).to_event(1))
     color_mapping_list = {b: list(map(get_color_mapping, color[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
     color_name, rgba = {b: [e[0] for e in color_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in color_mapping_list[b]] for b in range(B)}
@@ -151,12 +151,12 @@ def sample_clevr_scene(mask=None):
                 r[b, k] /= math.sqrt(2)
     
     # Choose random orientation for the object.
-    with pyro.poutine.mask(mask=mask):
+    with pyro.poutine.mask(mask=objects_mask):
         theta = pyro.sample(f"pose", dist.Uniform(0., 1.).expand([B, M]).to_event(1)) * 360. 
     #logger.info(f"{theta}")
 
     # Attach a random material
-    with pyro.poutine.mask(mask=mask):
+    with pyro.poutine.mask(mask=objects_mask):
         mat = pyro.sample(f"mat", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([B, M]).to_event(1))
     mat_mapping_list = {b: list(map(get_mat_mapping, mat[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
     mat_name, mat_name_out = {b: [e[0] for e in mat_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in mat_mapping_list[b]] for b in range(B)}
@@ -205,7 +205,7 @@ def sample_clevr_scene(mask=None):
             y_b = pyro.sample(f"y_{b}", dist.Normal(y_, 0.01))
             x_b_[b, :], y_b_[b, :] = x_b, y_b
     
-    with pyro.poutine.mask(mask=mask):
+    with pyro.poutine.mask(mask=objects_mask):
         x = pyro.sample(f"x_{b}", dist.Normal(x_b_, 0.01))
         y = pyro.sample(f"y_{b}", dist.Normal(y_b_, 0.01))
 
@@ -473,7 +473,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}, objec
     B = params['batch_size']
 
     # Sample a CLEVR-like scene using Pyro
-    clevr_scenes = sample_clevr_scene(mask=objects_mask)
+    clevr_scenes = sample_clevr_scene(objects_mask=objects_mask)
 
     # Generate the Blender script for the sampled scene
     blender_scripts = [generate_blender_script(scene, idx) for idx, scene in enumerate(clevr_scenes)]

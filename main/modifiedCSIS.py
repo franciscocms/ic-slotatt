@@ -59,6 +59,7 @@ class CSIS(Importance):
     self.validation_batch_size = validation_batch_size
     self.validation_batch = None
     self.train = True
+    self.nstep = 0
 
     self.max_objects = max_objects
 
@@ -72,7 +73,7 @@ class CSIS(Importance):
     """
     self.validation_batch = self._sample_from_joint(*args, **kwargs)
 
-  def step(self, s, objects_mask, *args, **kwargs):
+  def step(self, *args, **kwargs):
     """
     :returns: estimate of the loss
     :rtype: float
@@ -84,10 +85,10 @@ class CSIS(Importance):
     logger.info("step")
     
     self.guide.train = True
-    self.guide.step = s
+    self.guide.step = self.nstep
     
     with poutine.trace(param_only=True) as param_capture:
-        loss = self.loss_and_grads(True, None, s, objects_mask, *args, **kwargs)
+        loss = self.loss_and_grads(True, None, *args, **kwargs)
 
     params = set(
         site["value"].unconstrained()
@@ -103,7 +104,7 @@ class CSIS(Importance):
     pyro.infer.util.zero_grads(params)
     return loss.item()
 
-  def loss_and_grads(self, grads, batch, s, objects_mask, *args, **kwargs):
+  def loss_and_grads(self, grads, batch, *args, **kwargs):
     """
     :returns: an estimate of the loss (expectation over p(x, y) of
         -log q(x, y) ) - where p is the model and q is the guide
@@ -121,7 +122,7 @@ class CSIS(Importance):
       #   self._sample_from_joint(*args, **kwargs)
       #   for _ in range(self.training_batch_size)
       # )
-      model_trace = self._sample_from_joint(objects_mask, *args, **kwargs)
+      model_trace = self._sample_from_joint(*args, **kwargs)
 
       # for name, vals in model_trace.nodes.items():
       #   logger.info(f"{name} - {vals['type']}")

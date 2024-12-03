@@ -130,7 +130,9 @@ for s in range(resume_step, resume_step + nsteps):
 
   logger.info(f"\nobjects_mask: {objects_mask}")
 
-  loss = csis.step(s, objects_mask)
+  csis.nstep = s
+
+  loss = csis.step(objects_mask=objects_mask)
   val_loss = csis.validation_loss(s)
   #train_hist.append(loss)
   valid_hist.append(val_loss) 
