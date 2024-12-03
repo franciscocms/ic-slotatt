@@ -103,12 +103,10 @@ def sample_clevr_scene(N):
     B = params['batch_size']
     
     # Sample scene 
-    with pyro.poutine.block():
-        n_probs = torch.tensor([1/(max_objects - min_objects) for _ in range(max_objects-min_objects)]).unsqueeze(0).expand(B, -1)
-        num_objects = pyro.sample("N", dist.Categorical(probs=n_probs), obs=N) + 3
+    with pyro.plate('n_plate', size=B):
+      num_objects = pyro.sample("N", MyPoisson(torch.tensor(3.), validate_args = False), obs=N)
 
-    logger.info(f"num objects: {num_objects}")    
-    
+      #logger.info(num_objects)    
 
     scenes = []
     
