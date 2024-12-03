@@ -169,59 +169,68 @@ def sample_clevr_scene(N):
     mat_name, mat_name_out = {b: [e[0] for e in mat_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in mat_mapping_list[b]] for b in range(B)}
     logger.info(f"\n{mat_name}")
 
-    t = 0
-    dists_good = False
-    margins_good = False
-    while not (dists_good and margins_good):
+    x_b_ = torch.zeros(B, M)
+    y_b_ = torch.zeros(B, M)
+    for b in range(B):
+        t = 0
+        dists_good = False
+        margins_good = False
+        while not (dists_good and margins_good):
+            
+            positions = []
+            with pyro.poutine.block():
+                x_ = pyro.sample(f"x_{t}", dist.Uniform(-3., 3.).expand([M]))
+                y_ = pyro.sample(f"y_{t}", dist.Uniform(-3., 3.).expand([M]))
+                t += 1
+            
+            #logger.info(x_)
+
+            # Store the positions and sizes of all objects
+            for k in range(M): positions.append((x_[k], y_[k], r[b, k]))
+
+            for k in range(M):
+                c_x, c_y, c_r = positions[k]
+
+            dists_good = True
+            margins_good = True
+
+            for idx, (xx, yy, rr) in enumerate(positions):
+                if idx > 0 and idx < k:
+                    dx, dy = c_x - xx, c_y - yy
+                    distance = math.sqrt(dx * dx + dy * dy)
+                    if distance - c_r - rr < min_dist:
+                        dists_good = False
+                    for direction_name in ['left', 'right', 'front', 'behind']:
+                        direction_vec = scene_struct['directions'][direction_name]
+                        assert direction_vec[2] == 0
+                        margin = dx * direction_vec[0] + dy * direction_vec[1]
+                        if 0 < margin < min_margin:
+                            margins_good = False
         
-        positions = []
         with pyro.poutine.block():
-            x_ = pyro.sample(f"x_{i}_{t}", dist.Uniform(-3., 3.).expand([n]))
-            y_ = pyro.sample(f"y_{i}_{t}", dist.Uniform(-3., 3.).expand([n]))
-            t += 1
-        
-        #logger.info(x_)
+            x_b = pyro.sample(f"x_{b}", dist.Normal(x_, 0.01))
+            y_b = pyro.sample(f"y_{b}", dist.Normal(y_, 0.01))
+            x_b_[b, :], y_b_[b, :] = x_b, y_b
+    
+    with pyro.poutine.mask(mask=mask):
+        x = pyro.sample(f"x_{b}", dist.Normal(x_b_, 0.01))
+        y = pyro.sample(f"y_{b}", dist.Normal(y_b_, 0.01))
 
-        # Store the positions and sizes of all objects
-        for k in range(n): positions.append((x_[k], y_[k], r[k]))
 
-        for k in range(n):
-        
-            c_x, c_y, c_r = positions[k]
-
-        dists_good = True
-        margins_good = True
-
-        for idx, (xx, yy, rr) in enumerate(positions):
-            if idx > 0 and idx < k:
-                dx, dy = c_x - xx, c_y - yy
-                distance = math.sqrt(dx * dx + dy * dy)
-                if distance - c_r - rr < min_dist:
-                    dists_good = False
-                for direction_name in ['left', 'right', 'front', 'behind']:
-                    direction_vec = scene_struct['directions'][direction_name]
-                    assert direction_vec[2] == 0
-                    margin = dx * direction_vec[0] + dy * direction_vec[1]
-                    if 0 < margin < min_margin:
-                        margins_good = False
-
-        x = pyro.sample(f"x_{i}", dist.Normal(x_, 0.01))
-        y = pyro.sample(f"y_{i}", dist.Normal(y_, 0.01))
-        
-        positions = []
-        # Store the positions and sizes of all objects
-        for k in range(n): positions.append((x[k], y[k], r[k]))
-
+    # Store each scene's attributes
+    scenes = []
+    for b in range(B):
+        objects = []
         # Append the object attributes to the scene list
-        for k in range(n):
+        for k in range(num_objects[b]):
             objects.append({
-                "shape": obj_name[k],
-                "color": color_name[k],
-                "rgba": rgba[k],
-                "size": r[k],
-                "material": mat_name[k],
-                "pose": theta[k].item(),
-                "position": (x[k].item(), y[k].item())
+                "shape": obj_name[b][k],
+                "color": color_name[b][k],
+                "rgba": rgba[b][k],
+                "size": r[b][k],
+                "material": mat_name[b][k],
+                "pose": theta[b, k].item(),
+                "position": (x[b, k].item(), y[b, k].item())
             })
         
         scenes.append(objects)
