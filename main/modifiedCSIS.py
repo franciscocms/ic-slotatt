@@ -145,13 +145,19 @@ class CSIS(Importance):
       if name not in ["image", "n_plate"] and vals["type"] == "sample" and name.split('_')[0] not in hidden_addr: 
         #if name == "N": self.n_objects = to_int(vals["value"])
 
-        #logger.info(f"{name} - {vals['value']}")
+        logger.info(f"{name} - {vals['value']}")
         
         # prior categorical distributed variables
         if isinstance(vals["fn"], CategoricalVals) or isinstance(vals["fn"], dist.Categorical): 
           prior_distribution = "categorical"
           proposal_distribution = "categorical"
           out_dim = vals["fn"].probs.shape[-1] if isinstance(vals["fn"], dist.Categorical) else vals["fn"].base_dist.probs.shape[-1]
+        
+        # prior uniform distributed variables
+        elif isinstance(vals["fn"], dist.Bernoulli): 
+          prior_distribution = "bernoulli"
+          proposal_distribution = "categorical"
+          out_dim = 1 
         
         # prior uniform distributed variables
         elif isinstance(vals["fn"], dist.Uniform): 
@@ -164,25 +170,6 @@ class CSIS(Importance):
           prior_distribution = "normal"
           proposal_distribution = "normal"
           out_dim = 1 # std is fixed!
-        
-        # prior uniform distributed variables
-        elif isinstance(vals["fn"], MyPoisson): 
-          prior_distribution = "poisson"
-          proposal_distribution = "normal"
-          out_dim = 1 # std is fixed!
-        
-        # prior poisson distributed variables
-        # elif isinstance(vals["fn"], dist.Poisson): 
-        #   prior_distribution = "poisson"
-        #   if p["N_proposal"] == "normal":
-        #     proposal_distribution = "normal"
-        #     out_dim = 2
-        #   elif p["N_proposal"] == "mixture":
-        #     proposal_distribution = "mixture"
-        #     MIXTURE_COMPONENTS = p["mixture_components"]
-        #     out_dim = 3*MIXTURE_COMPONENTS
-        #   else: raise ValueError(f"Unknown proposal for N: {p['N_proposal']}")
-          
         
 
         # delete this block, ignore instance and just add variables

@@ -232,7 +232,9 @@ class InvSlotAttentionGuide(nn.Module):
   
   def add_proposal_net(self, var, out_dim):
     add_flag = False
-    if var.proposal_distribution == "categorical": last_activ = nn.Softmax(dim=-1)
+    if var.proposal_distribution == "categorical": 
+       if var.name != "mask": last_activ = nn.Softmax(dim=-1)
+       else: last_activ = nn.Sigmoid()
     elif var.proposal_distribution == "normal": last_activ = nn.Sigmoid()
     elif var.proposal_distribution == "mixture": last_activ = nn.Identity()
     else: raise ValueError(f"Unknown distribution: {var.proposal_distribution}")
@@ -244,6 +246,8 @@ class InvSlotAttentionGuide(nn.Module):
       #nn.Linear(self.hid_dim, self.hid_dim), nn.ReLU(),
       nn.Linear(self.hid_dim, out_dim), last_activ
       )
+    
+    logger.info(proposal_net)
      
     self.prop_nets[var.address] = proposal_net.to(device) 
 
