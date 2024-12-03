@@ -70,10 +70,7 @@ class CSIS(Importance):
 
     Arguments are passed directly to model.
     """
-    self.validation_batch = [
-        self._sample_from_joint(*args, **kwargs)
-        for _ in range(self.validation_batch_size)
-    ]
+    self.validation_batch = self._sample_from_joint(*args, **kwargs)
 
   def step(self, s, *args, **kwargs):
     """
