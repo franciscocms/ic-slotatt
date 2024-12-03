@@ -311,6 +311,8 @@ class CSIS(Importance):
 
         loss.append(partial_loss)
     
+    logger.info(torch.stack(loss).shape)
+    
     loss = torch.stack(loss).reshape(1, 1, n_objects, n_latents)
 
     return loss

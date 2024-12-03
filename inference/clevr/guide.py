@@ -247,8 +247,6 @@ class InvSlotAttentionGuide(nn.Module):
      
     self.prop_nets[var.address] = proposal_net.to(device) 
 
-    logger.info(self.prop_nets)
-
     if var.address in self.prop_nets: add_flag = True 
     if not add_flag: logging.info(f"ERROR: proposal net for site {var.name} was not added!")
   
