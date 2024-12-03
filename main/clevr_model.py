@@ -111,6 +111,7 @@ def sample_clevr_scene(N):
     logger.info(f"num objects: {num_objects} with shape {num_objects.shape}")  
 
     mask = torch.arange(M).expand(B, M) < num_objects.unsqueeze(-1)  
+    logger.info(f"mask: {mask}")
     
     scenes = []
     
