@@ -255,9 +255,11 @@ bpy.context.scene.cycles.transparent_max_bounces = 8
 bpy.context.scene.cycles.device = 'GPU'
 bpy.context.preferences.addons['cycles'].preferences.compute_device_type = 'CUDA'
 
+bpy.context.preferences.addons['cycles'].preferences.get_devices()
 devices = bpy.context.preferences.addons['cycles'].preferences.devices
 
 logger.info(bpy.context.scene.cycles.device)
+logger.info(devices)
 logger.info(type(devices))
 logger.info(len(devices))
 logger.info(devices[0])
