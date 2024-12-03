@@ -471,7 +471,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}, objec
     B = params['batch_size']
 
     # Sample a CLEVR-like scene using Pyro
-    clevr_scenes = sample_clevr_scene(objects_mask)
+    clevr_scenes = sample_clevr_scene(mask=objects_mask)
 
     # Generate the Blender script for the sampled scene
     blender_scripts = [generate_blender_script(scene, idx) for idx, scene in enumerate(clevr_scenes)]
