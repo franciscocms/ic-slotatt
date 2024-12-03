@@ -291,6 +291,9 @@ class InvSlotAttentionGuide(nn.Module):
     
     self.img = observations["image"]
     self.img = self.img.to(device)
+
+    B, C, H, W = self.img.shape
+
     x = self.encoder_cnn(self.img)
     x = nn.LayerNorm(x.shape[1:]).to(device)(x)
     self.features_to_slots = self.mlp(x)
@@ -316,7 +319,7 @@ class InvSlotAttentionGuide(nn.Module):
 
       # THE # OF SLOTS WILL HAVE TO BE THE MAX NO. OF OBJECTS IN THE BATCH...
       # compute this
-
+    
 
 
 
@@ -325,8 +328,8 @@ class InvSlotAttentionGuide(nn.Module):
       self.slots, self.slot_pos, attn = self.slot_attention(self.features_to_slots, num_slots=n_s)
       
       min_slots = 1 if params["no_slots"] == "wo_background" else 1
-      if self.batch_idx == 0 and self.train and n_s > min_slots and self.step % 10 == 0:
-        aux_attn = attn.reshape((1, n_s, 128, 128)) if not params["strided_convs"] else attn.reshape((1, n_s, 32, 32))
+      if self.train and n_s > min_slots and self.step % 10 == 0:
+        aux_attn = attn.reshape((B, n_s, 128, 128)) if not params["strided_convs"] else attn.reshape((B, n_s, 32, 32))
         fig, ax = plt.subplots(ncols=n_s)
         for j in range(n_s):                                       
             im = ax[j].imshow(aux_attn[0, j, :, :].detach().cpu().numpy())
