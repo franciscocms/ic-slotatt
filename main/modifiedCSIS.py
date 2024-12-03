@@ -157,7 +157,7 @@ class CSIS(Importance):
           out_dim = vals["fn"].probs.shape[-1] if isinstance(vals["fn"], dist.Categorical) else vals["fn"].base_dist.probs.shape[-1]
         
         # prior uniform distributed variables
-        elif isinstance(vals["fn"], dist.Bernoulli): 
+        elif isinstance(vals["fn"], dist.Bernoulli) or isinstance(vals["fn"].base_dist, dist.Bernoulli): 
           prior_distribution = "bernoulli"
           proposal_distribution = "categorical"
           out_dim = 1 
