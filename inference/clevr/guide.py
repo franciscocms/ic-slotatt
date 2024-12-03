@@ -270,93 +270,15 @@ class InvSlotAttentionGuide(nn.Module):
       variable_prior_distribution = variable.prior_distribution
       variable_proposal_distribution = variable.proposal_distribution
     
-    if params['dataset'] == '2Dobjects':
+      
+    proposal_layer_input = obs.unsqueeze(0)
+    proposal = self.prop_nets[variable_address](proposal_layer_input)
     
-      # get input for proposal layers
-      if variable_address == "N": proposal_layer_input = self.count    
-      else: proposal_layer_input = obs.unsqueeze(0)
-
-      if len(proposal_layer_input.shape) == 1: proposal_layer_input = proposal_layer_input.unsqueeze(dim=0)
-      
-      # sample from prior when, in evaluation, certain prop_net is required and was not trained
-      hidden_addr = ["N"]
-      if params["loc_proposal"] == "wo_net": 
-        for a in ["locX", "locY"]: hidden_addr.append(a)
-
-      #if variable_name not in self.prop_nets and variable_address not in hidden_addr:
-      if variable_address not in self.prop_nets and variable_address not in hidden_addr:
-        if self.stage == "eval":
-          if variable_prior_distribution == "categorical": 
-            if variable_address == "shape": pd = CategoricalVals(vals=self.shape_vals, probs=torch.tensor([1/len(self.shape_vals) for _ in range(len(self.shape_vals))]))
-            elif variable_address == "color": pd = CategoricalVals(vals=self.color_vals, probs=torch.tensor([1/len(self.color_vals) for _ in range(len(self.color_vals))]))
-          elif variable_prior_distribution == "uniform": pd = dist.Uniform(0., 1.)
-          elif variable_prior_distribution == "poisson": pd = dist.Poisson(3., validate_args=False)
-          else: raise ValueError(f"Unknown prior distribution: {variable_prior_distribution}")
-          out = pyro.sample(variable_name, pd)
-          return out
-        else:
-          raise ValueError(f"Cannot sample from prior on stage: {self.stage}")
-      
-      else:
-        # get distribution proposal
-        if variable_address == "N": proposal = proposal_layer_input
-        elif variable_address in ["locX", "locY"]:
-          if params["loc_proposal"] == "wo_net": proposal = proposal_layer_input
-          else: proposal = self.prop_nets[variable_address](proposal_layer_input)
-        else: proposal = self.prop_nets[variable_address](proposal_layer_input)
-        
-        if variable_address == "N": 
-          if variable_proposal_distribution == "normal": out = pyro.sample(variable_name, dist.Normal(proposal, torch.tensor(params["N_prior_std"])))
-          else: raise ValueError(f"Unknown proposal distribution for N: {variable_proposal_distribution}")
-
-        elif variable_address[:2] == "bg": 
-          mu, logvar = proposal[:, 0].mean(dim=0), proposal[:, 1].mean(dim=0)
-          logvar = torch.sigmoid(logvar)
-          std = torch.exp(0.5*logvar)
-          std = std * 0.1
-          eps = torch.tensor(1e-8, device=device)
-          out = pyro.sample(variable_name, TruncatedNormal(mu, std + eps, 0., 1.))
-        
-        elif variable_address == "shape": out = pyro.sample(variable_name, CategoricalVals(vals=self.shape_vals, probs=proposal))
-
-        elif variable_address == "color": out = pyro.sample(variable_name, CategoricalVals(vals=self.color_vals, probs=proposal))
-
-        elif variable_address == "size": out = pyro.sample(variable_name, CategoricalVals(vals=self.size_vals, probs=proposal))
-        
-        elif variable_address in ["locX", "locY"]: 
-          
-          if params["loc_proposal"] == "wo_net": 
-            std = torch.tensor(params["loc_proposal_std"], device=device)
-            out = pyro.sample(variable_name, TruncatedNormal(proposal, std, 0., 1.))
-            if params["running_type"] == "inspect": logging.info(f"position proposal mean for {variable_name}: {proposal}")
-          
-          elif params["loc_proposal"] == "normal":
-            mu, logvar = proposal[:, 0].mean(dim=0), proposal[:, 1].mean(dim=0)
-            logvar = torch.sigmoid(logvar)
-            std = torch.exp(0.5*logvar)
-            std = std * 0.01
-            eps = torch.tensor(1e-8, device=device)
-            out = pyro.sample(variable_name, TruncatedNormal(mu, std + eps, 0., 1.))
-
-          else: raise ValueError(f"Unknown proposal distribution key for loc variables: {params['loc_proposal']}")
-        
-        else: raise ValueError(f"Unknown variable address: {variable_address}")
-      
-    elif params['dataset'] == 'clevr':
-      
-      proposal_layer_input = obs.unsqueeze(0)
-
-      proposal = self.prop_nets[variable_address](proposal_layer_input)
-      
-      if variable_proposal_distribution == "normal":
+    if variable_proposal_distribution == "normal":
         std = torch.tensor(params["loc_proposal_std"], device=device)
-        out = pyro.sample(variable_name, TruncatedNormal(proposal, std, 0., 1.))
-      elif variable_proposal_distribution == "categorical": out = pyro.sample(variable_name, dist.Categorical(probs=proposal))
-      else: raise ValueError(f"Unknown variable address: {variable_address}")
-      
-
-    else: raise ValueError(f"Unknown dataset: {params['dataset']}")
-      
+        out = pyro.sample(variable_name, dist.Normal(proposal, std))
+    elif variable_proposal_distribution == "categorical": out = pyro.sample(variable_name, dist.Categorical(probs=proposal))
+    else: raise ValueError(f"Unknown variable address: {variable_address}")      
     
     return out
   
