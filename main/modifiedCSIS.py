@@ -154,7 +154,7 @@ class CSIS(Importance):
         if isinstance(vals["fn"], CategoricalVals) or isinstance(vals["fn"], dist.Categorical): 
           prior_distribution = "categorical"
           proposal_distribution = "categorical"
-          out_dim = len(vals["fn"].probs)
+          out_dim = vals["fn"].probs.shape[-1] if isinstance(vals["fn"], dist.Categorical) else vals["fn"].base_dist.probs.shape[-1]
         
         # prior uniform distributed variables
         elif isinstance(vals["fn"], dist.Uniform): 
@@ -202,11 +202,8 @@ class CSIS(Importance):
           if var.address not in hidden_addr:
             logger.info(f"... proposal net was added for variable '{var.name}'")
             self.guide.add_proposal_net(var, out_dim)
-        #else: logging.info(f"... proposal net already existed for variable '{var.name}'")
         
         self.guide.current_trace.append(var)
-        # logger.info("\ncurrent trace\n")
-        # for v in self.guide.current_trace: logger.info(f"{v.name} - {v.value}")
       
     with poutine.trace(param_only=True) as particle_param_capture:
       guide_trace = self._get_matched_trace(model_trace, *args, **kwargs)
