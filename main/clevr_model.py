@@ -121,8 +121,8 @@ def sample_clevr_scene(N):
     #     with pyro.plate(f'obj_plate_{i}', size=n, dim=-1): # each sample statement draws a n-dim tensor from the prior distributions
 
     # Choose a random size
-    with pyro.poutine.block():
-        size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])).expand([B, M]).to_event(1))
+    #with pyro.poutine.block():
+    size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])).expand([B, M]).to_event(1))
     
     size_masked = pyro.sample(f"size_mask", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])), obs=size, obs_mask=mask)
 
