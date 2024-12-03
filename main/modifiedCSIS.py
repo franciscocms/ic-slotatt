@@ -200,7 +200,7 @@ class CSIS(Importance):
         #if var.name not in self.guide.prop_nets:
         if var.address not in self.guide.prop_nets:
           if var.address not in hidden_addr:
-            logging.info(f"... proposal net was added for variable '{var.name}'")
+            logger.info(f"... proposal net was added for variable '{var.name}'")
             self.guide.add_proposal_net(var, out_dim)
         #else: logging.info(f"... proposal net already existed for variable '{var.name}'")
         
