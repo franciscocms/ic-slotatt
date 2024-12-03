@@ -259,9 +259,10 @@ class CSIS(Importance):
         for name, vals in guide_trace.nodes.items():
           if vals["type"] == "sample": # only consider object-wise properties
             
-            logger.info(name)
+            logger.info(f"{name} - {vals['value'].shape}")
+            logger.info(true_latents[name][i, o].shape)
 
-            vals['value'] = true_latents[name][i, o]
+            vals['value'] = true_latents[name][i, o].repeat()
 
             logger.info(vals['value'])
 
