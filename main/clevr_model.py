@@ -123,16 +123,16 @@ def sample_clevr_scene(N):
 
     # Choose a random size
     #with pyro.poutine.block():
-    size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])).expand([B, M]).to_event(1))
+    with pyro.poutine.mask(mask=mask):
+        size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])).expand([B, M]).to_event(1))
     
-    size_masked = pyro.sample(f"size_mask", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])), obs=size, obs_mask=~mask)
-
-    logger.info(size) 
-    logger.info(size_masked)
+    logger.info(size)
             
     #logger.info(size)
 
-    size_mapping_list = list(map(get_size_mapping, size.tolist())) # list of tuples [('name', value)]
+    size_mapping_list = {b: list(map(get_size_mapping, size[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
+    logger.info(size_mapping_list)
+    
     size_name, r = [e[0] for e in size_mapping_list], [e[1] for e in size_mapping_list]
     #size_name, r = map(get_size_mapping, size.tolist())
     # logger.info(size_name)
