@@ -81,6 +81,7 @@ class CSIS(Importance):
     model and guide.
     """
 
+    logger.info("step")
     logger.info(*args)
     
     self.guide.train = True
