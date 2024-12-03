@@ -126,24 +126,24 @@ def sample_clevr_scene(N):
     with pyro.poutine.mask(mask=mask):
         size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])).expand([B, M]).to_event(1))
     
-    logger.info(size)
+    logger.info(f"{size}")
             
     #logger.info(size)
 
     size_mapping_list = {b: list(map(get_size_mapping, size[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
-    logger.info(size_mapping_list)
+    logger.info(f"{size_mapping_list}")
 
     size_name, r = {b: [e[0] for e in size_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in size_mapping_list[b]] for b in range(B)} 
     #size_name, r = map(get_size_mapping, size.tolist())
     # logger.info(size_name)
-    logger.info(r)
+    logger.info(f"{r}")
 
     # Choose random color and shape
     with pyro.poutine.mask(mask=mask):
         shape = pyro.sample(f"shape", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([B, M]).to_event(1))
-    shape_mapping_list = {b: list(map(get_shape_mapping, shape.tolist())) for b in range(B)} # list of tuples [('name', value)]
+    shape_mapping_list = {b: list(map(get_shape_mapping, shape[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
     obj_name, obj_name_out = {b: [e[0] for e in shape_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in shape_mapping_list[b]]  for b in range(B)}
-    logger.info(obj_name)
+    logger.info(f"\n{obj_name}")
 
     
     color = pyro.sample(f"color_{i}", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])))
