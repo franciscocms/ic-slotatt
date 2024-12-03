@@ -447,6 +447,8 @@ def render_scene_in_blender(blender_script):
         subprocess.call(cmd, stdout=log_file, stderr=log_file)
 
 def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}, show='all', save_obs=None, N=None):
+
+    logger.info(f"... using CUDA version {torch.version.cuda}")
     
     init_time = time.time()
     B = params['batch_size']
