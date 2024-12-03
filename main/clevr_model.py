@@ -257,7 +257,9 @@ bpy.context.preferences.addons['cycles'].preferences.compute_device_type = 'CUDA
 
 bpy.context.preferences.addons['cycles'].preferences.get_devices()
 devices = bpy.context.preferences.addons['cycles'].preferences.devices
-
+for device in devices:
+    device.use = True
+    
 logger.info(bpy.context.scene.cycles.device)
 logger.info(devices)
 logger.info(type(devices))
