@@ -271,15 +271,16 @@ class CSIS(Importance):
     # I need to compute the permutation invariant loss independently for each sample
 
 
-    #for b in range(self.batch_size):
-    #for name, vals in guide_trace.nodes.items():
-    #  logger.info(f"{name} - {vals}")
+    B = self.batch_size
 
 
-    for i in range(self.max_objects):
+    for i in range(B):
       # modify guide_trace considering the values in 'true_latents' and compute the loss
       for name, vals in guide_trace.nodes.items():
-        if vals["type"] == "sample" and len(name.split('_')) == 2: # only consider object-wise properties
+        if vals["type"] == "sample": # only consider object-wise properties
+          
+          logger.info(name)
+          
           alt_property = f"{name.split('_')[0]}_{i}"
           vals['value'] = true_latents[alt_property]
 
