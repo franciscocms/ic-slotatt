@@ -247,9 +247,11 @@ class CSIS(Importance):
     
     true_latents = {}
     for name, vals in guide_trace.nodes.items():
-      if vals["type"] == "sample" and len(name.split('_')) == 2: # only consider object-wise properties
+      if vals["type"] == "sample": # only consider object-wise properties
         true_latents[name] = vals['value']
     
+    logger.info(f"\ntrue latents: {true_latents}\n")
+
     self.n_latents = len(set([k.split('_')[0] for k in true_latents.keys()]))
 
     pdist = torch.tensor([], device=device)
