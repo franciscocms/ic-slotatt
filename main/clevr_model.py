@@ -145,26 +145,29 @@ def sample_clevr_scene(N):
     obj_name, obj_name_out = {b: [e[0] for e in shape_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in shape_mapping_list[b]]  for b in range(B)}
     logger.info(f"\n{obj_name}")
 
-    
-    color = pyro.sample(f"color_{i}", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])))
-    color_mapping_list = list(map(get_color_mapping, color.tolist())) # list of tuples [('name', value)]
-    color_name, rgba = [e[0] for e in color_mapping_list], [e[1] for e in color_mapping_list]
-    #logger.info(color_name)
+    with pyro.poutine.mask(mask=mask):
+        color = pyro.sample(f"color", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])).expand([B, M]).to_event(1))
+    color_mapping_list = {b: list(map(get_color_mapping, color[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
+    color_name, rgba = {b: [e[0] for e in color_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in color_mapping_list[b]] for b in range(B)}
+    logger.info(f"\n{color_name}")
 
     # For cube, adjust the size a bit
-    for k, name in enumerate(obj_name):
-        if name == 'Cube':
-            r[k] /= math.sqrt(2)
+    for b in range(B):
+        for k, name in enumerate(obj_name[b]):
+            if name == 'Cube':
+                r[b, k] /= math.sqrt(2)
     
     # Choose random orientation for the object.
-    theta = pyro.sample(f"pose_{i}", dist.Uniform(0., 1.)) * 360. 
-    #logger.info(theta)
+    with pyro.poutine.mask(mask=mask):
+        theta = pyro.sample(f"pose", dist.Uniform(0., 1.).expand([B, M]).to_event(1)) * 360. 
+    logger.info(f"{theta}")
 
     # Attach a random material
-    mat = pyro.sample(f"mat_{i}", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])))
-    mat_mapping_list = list(map(get_mat_mapping, mat.tolist())) # list of tuples [('name', value)]
-    mat_name, mat_name_out = [e[0] for e in mat_mapping_list], [e[1] for e in mat_mapping_list]
-    #logger.info(mat_name)
+    with pyro.poutine.mask(mask=mask):
+        mat = pyro.sample(f"mat", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([B, M]).to_event(1))
+    mat_mapping_list = {b: list(map(get_mat_mapping, mat[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
+    mat_name, mat_name_out = {b: [e[0] for e in mat_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in mat_mapping_list[b]] for b in range(B)}
+    logger.info(f"\n{mat_name}")
 
     t = 0
     dists_good = False
