@@ -106,7 +106,7 @@ def sample_clevr_scene(N):
     with pyro.plate('n_plate', size=B):
       num_objects = pyro.sample("N", MyPoisson(torch.tensor(3.), validate_args = False), obs=N)
 
-      logger.info(num_objects)    
+      #logger.info(num_objects)    
 
     scenes = []
     
