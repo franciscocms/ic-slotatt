@@ -101,118 +101,121 @@ def sample_clevr_scene(N):
         return material_mapping[int(mat)]
 
     B = params['batch_size']
+    M = max_objects
     
     # Sample scene 
     with pyro.poutine.block():
         n_probs = torch.tensor([1/(max_objects - min_objects) for _ in range(max_objects-min_objects)]).unsqueeze(0).expand(B, -1)
         num_objects = pyro.sample("N", dist.Categorical(probs=n_probs), obs=N) + 3 # [B]
 
-    logger.info(f"num objects: {num_objects} with shape {num_objects.shape}")    
+    logger.info(f"num objects: {num_objects} with shape {num_objects.shape}")  
+
+    mask = torch.arange(M).expand(B, M) < num_objects.unsqueeze(-1)  
     
 
     scenes = []
     
-    for i in range(B):
-        n = int(num_objects[i])
-        objects = []
+    # for i in range(B):
+    #     n = int(num_objects[i])
+    #     objects = []
 
-        with pyro.plate(f'obj_plate_{i}', size=n, dim=-1): # each sample statement draws a n-dim tensor from the prior distributions
+    #     with pyro.plate(f'obj_plate_{i}', size=n, dim=-1): # each sample statement draws a n-dim tensor from the prior distributions
 
-            # Choose a random size
-            size = pyro.sample(f"size_{i}", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))]))) 
+    # Choose a random size
+    size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])).expand([B, M].to_event(1))) 
 
-            logger.info(size.batch_shape)
-            logger.info(size.event_shape)
+    logger.info(size.shape)
+    
             
-            #logger.info(size)
+    #logger.info(size)
 
-            size_mapping_list = list(map(get_size_mapping, size.tolist())) # list of tuples [('name', value)]
-            size_name, r = [e[0] for e in size_mapping_list], [e[1] for e in size_mapping_list]
-            #size_name, r = map(get_size_mapping, size.tolist())
-            # logger.info(size_name)
-            # logger.info(r)
+    size_mapping_list = list(map(get_size_mapping, size.tolist())) # list of tuples [('name', value)]
+    size_name, r = [e[0] for e in size_mapping_list], [e[1] for e in size_mapping_list]
+    #size_name, r = map(get_size_mapping, size.tolist())
+    # logger.info(size_name)
+    # logger.info(r)
 
-            # Choose random color and shape
-            shape = pyro.sample(f"shape_{i}", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])))
-            shape_mapping_list = list(map(get_shape_mapping, shape.tolist())) # list of tuples [('name', value)]
-            obj_name, obj_name_out = [e[0] for e in shape_mapping_list], [e[1] for e in shape_mapping_list]
-            #logger.info(obj_name)
+    # Choose random color and shape
+    shape = pyro.sample(f"shape_{i}", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])))
+    shape_mapping_list = list(map(get_shape_mapping, shape.tolist())) # list of tuples [('name', value)]
+    obj_name, obj_name_out = [e[0] for e in shape_mapping_list], [e[1] for e in shape_mapping_list]
+    #logger.info(obj_name)
 
-            
-            color = pyro.sample(f"color_{i}", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])))
-            color_mapping_list = list(map(get_color_mapping, color.tolist())) # list of tuples [('name', value)]
-            color_name, rgba = [e[0] for e in color_mapping_list], [e[1] for e in color_mapping_list]
-            #logger.info(color_name)
+    
+    color = pyro.sample(f"color_{i}", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])))
+    color_mapping_list = list(map(get_color_mapping, color.tolist())) # list of tuples [('name', value)]
+    color_name, rgba = [e[0] for e in color_mapping_list], [e[1] for e in color_mapping_list]
+    #logger.info(color_name)
 
-            # For cube, adjust the size a bit
-            for k, name in enumerate(obj_name):
-              if name == 'Cube':
-                  r[k] /= math.sqrt(2)
-            
-            # Choose random orientation for the object.
-            theta = pyro.sample(f"pose_{i}", dist.Uniform(0., 1.)) * 360. 
-            #logger.info(theta)
+    # For cube, adjust the size a bit
+    for k, name in enumerate(obj_name):
+        if name == 'Cube':
+            r[k] /= math.sqrt(2)
+    
+    # Choose random orientation for the object.
+    theta = pyro.sample(f"pose_{i}", dist.Uniform(0., 1.)) * 360. 
+    #logger.info(theta)
 
-            # Attach a random material
-            mat = pyro.sample(f"mat_{i}", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])))
-            mat_mapping_list = list(map(get_mat_mapping, mat.tolist())) # list of tuples [('name', value)]
-            mat_name, mat_name_out = [e[0] for e in mat_mapping_list], [e[1] for e in mat_mapping_list]
-            #logger.info(mat_name)
+    # Attach a random material
+    mat = pyro.sample(f"mat_{i}", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])))
+    mat_mapping_list = list(map(get_mat_mapping, mat.tolist())) # list of tuples [('name', value)]
+    mat_name, mat_name_out = [e[0] for e in mat_mapping_list], [e[1] for e in mat_mapping_list]
+    #logger.info(mat_name)
 
-            t = 0
-            dists_good = False
-            margins_good = False
-            while not (dists_good and margins_good):
-              
-              positions = []
-              with pyro.poutine.block():
-                x_ = pyro.sample(f"x_{i}_{t}", dist.Uniform(-3., 3.).expand([n]))
-                y_ = pyro.sample(f"y_{i}_{t}", dist.Uniform(-3., 3.).expand([n]))
-                t += 1
-              
-              #logger.info(x_)
+    t = 0
+    dists_good = False
+    margins_good = False
+    while not (dists_good and margins_good):
+        
+        positions = []
+        with pyro.poutine.block():
+            x_ = pyro.sample(f"x_{i}_{t}", dist.Uniform(-3., 3.).expand([n]))
+            y_ = pyro.sample(f"y_{i}_{t}", dist.Uniform(-3., 3.).expand([n]))
+            t += 1
+        
+        #logger.info(x_)
 
-              # Store the positions and sizes of all objects
-              for k in range(n): positions.append((x_[k], y_[k], r[k]))
+        # Store the positions and sizes of all objects
+        for k in range(n): positions.append((x_[k], y_[k], r[k]))
 
-              for k in range(n):
-              
-                c_x, c_y, c_r = positions[k]
+        for k in range(n):
+        
+            c_x, c_y, c_r = positions[k]
 
-                dists_good = True
-                margins_good = True
+        dists_good = True
+        margins_good = True
 
-                for idx, (xx, yy, rr) in enumerate(positions):
-                    if idx > 0 and idx < k:
-                        dx, dy = c_x - xx, c_y - yy
-                        distance = math.sqrt(dx * dx + dy * dy)
-                        if distance - c_r - rr < min_dist:
-                            dists_good = False
-                        for direction_name in ['left', 'right', 'front', 'behind']:
-                            direction_vec = scene_struct['directions'][direction_name]
-                            assert direction_vec[2] == 0
-                            margin = dx * direction_vec[0] + dy * direction_vec[1]
-                            if 0 < margin < min_margin:
-                                margins_good = False
+        for idx, (xx, yy, rr) in enumerate(positions):
+            if idx > 0 and idx < k:
+                dx, dy = c_x - xx, c_y - yy
+                distance = math.sqrt(dx * dx + dy * dy)
+                if distance - c_r - rr < min_dist:
+                    dists_good = False
+                for direction_name in ['left', 'right', 'front', 'behind']:
+                    direction_vec = scene_struct['directions'][direction_name]
+                    assert direction_vec[2] == 0
+                    margin = dx * direction_vec[0] + dy * direction_vec[1]
+                    if 0 < margin < min_margin:
+                        margins_good = False
 
-            x = pyro.sample(f"x_{i}", dist.Normal(x_, 0.01))
-            y = pyro.sample(f"y_{i}", dist.Normal(y_, 0.01))
-            
-            positions = []
-            # Store the positions and sizes of all objects
-            for k in range(n): positions.append((x[k], y[k], r[k]))
+        x = pyro.sample(f"x_{i}", dist.Normal(x_, 0.01))
+        y = pyro.sample(f"y_{i}", dist.Normal(y_, 0.01))
+        
+        positions = []
+        # Store the positions and sizes of all objects
+        for k in range(n): positions.append((x[k], y[k], r[k]))
 
-            # Append the object attributes to the scene list
-            for k in range(n):
-              objects.append({
-                  "shape": obj_name[k],
-                  "color": color_name[k],
-                  "rgba": rgba[k],
-                  "size": r[k],
-                  "material": mat_name[k],
-                  "pose": theta[k].item(),
-                  "position": (x[k].item(), y[k].item())
-              })
+        # Append the object attributes to the scene list
+        for k in range(n):
+            objects.append({
+                "shape": obj_name[k],
+                "color": color_name[k],
+                "rgba": rgba[k],
+                "size": r[k],
+                "material": mat_name[k],
+                "pose": theta[k].item(),
+                "position": (x[k].item(), y[k].item())
+            })
         
         scenes.append(objects)
     return scenes
