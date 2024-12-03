@@ -125,7 +125,7 @@ def sample_clevr_scene(N):
     #with pyro.poutine.block():
     size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])).expand([B, M]).to_event(1))
     
-    size_masked = pyro.sample(f"size_mask", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])), obs=size, obs_mask=mask)
+    size_masked = pyro.sample(f"size_mask", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])), obs=size, obs_mask=~mask)
 
     logger.info(size) 
     logger.info(size_masked)
