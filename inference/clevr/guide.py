@@ -287,7 +287,7 @@ class InvSlotAttentionGuide(nn.Module):
     
     return out
   
-  def forward(self, observations={"image": torch.zeros((1, 3, 128, 128))}, objects_mask=None):
+  def forward(self, observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     # register networks to be optimized
     pyro.module("encoder_sa", self.encoder_cnn.encoder_sa, True)

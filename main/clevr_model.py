@@ -106,11 +106,9 @@ def sample_clevr_scene(objects_mask=None):
     # Sample scene 
     num_objects = torch.sum(objects_mask, dim=-1)
     logger.info(f"\nnum_objects: {num_objects}")
-
-    
     
     # Sample the mask to predict real objects
-    pyro.sample(f"mask", dist.Bernoulli(0.5), obs=objects_mask)
+    mask = pyro.sample(f"mask", dist.Bernoulli(0.5), obs=objects_mask)
     
     scenes = []
 
