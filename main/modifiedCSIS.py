@@ -239,11 +239,6 @@ class CSIS(Importance):
     return loss
 
   def _differentiable_loss_particle(self, guide_trace):
-      
-    """
-    save the GT latents separately
-    - since the DME is not being trained here, the error associated with 'N' is not considered
-    """
     
     true_latents = {}
     for name, vals in guide_trace.nodes.items():
@@ -252,36 +247,33 @@ class CSIS(Importance):
     
     logger.info(f"\ntrue latents: {true_latents}\n")
 
-    self.n_latents = len(set([k.split('_')[0] for k in true_latents.keys()]))
+    self.n_latents = len(set([k for k in true_latents.keys()]))
 
     pdist = torch.tensor([], device=device)
 
-    # here, the number of objects is not the same for all samples in the batch...
-    # I need to compute the permutation invariant loss independently for each sample
-
-
     B = self.batch_size
-
 
     for i in range(B):
       # modify guide_trace considering the values in 'true_latents' and compute the loss
-      for name, vals in guide_trace.nodes.items():
-        if vals["type"] == "sample": # only consider object-wise properties
-          
-          #logger.info(name)
-          
-          alt_property = f"{name.split('_')[0]}_{i}"
-          vals['value'] = true_latents[alt_property]
+      for o in range(self.max_objects):
+        for name, vals in guide_trace.nodes.items():
+          if vals["type"] == "sample": # only consider object-wise properties
+            
+            logger.info(name)
 
-      partial_loss = self.my_log_prob(guide_trace, max_objects, self.n_latents) # 'partial_loss' shape (1, 1, NOBJECTS, NLATENTS)
-      pdist = torch.cat((pdist, partial_loss), dim=-3)
+            vals['value'] = true_latents[name][i, o]
+
+            logger.info(vals['value'])
+
+        partial_loss = self.my_log_prob(guide_trace, max_objects, self.n_latents) # 'partial_loss' shape (1, 1, NOBJECTS, NLATENTS)
+        pdist = torch.cat((pdist, partial_loss), dim=-3)
 
     loss, _ = self.hungarian_loss(pdist)
     if len(loss.shape) == 1: loss = loss[0]
 
     return loss
 
-  def my_log_prob(self, guide_trace, n_objects, n_latents):
+  def my_log_prob(self, guide_trace):
     
     """
     returns a tensor with shape (1, NOBJECTS, NLATENTS) with the log_prob of the proposals for all object's properties
@@ -297,7 +289,7 @@ class CSIS(Importance):
         partial_loss = -vals['fn'].log_prob(vals['value'])
         if len(partial_loss.shape) == 1: partial_loss.unsqueeze_(0)
 
-        #logger.info(f"{name} - {partial_loss.shape}")
+        logger.info(f"{name} - partial loss shape: {partial_loss.shape}")
 
         loss.append(partial_loss)
     
