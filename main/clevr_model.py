@@ -203,8 +203,8 @@ def sample_clevr_scene():
             x_b_[b, :], y_b_[b, :] = x_b, y_b
     
     with pyro.poutine.mask(mask=objects_mask):
-        x = pyro.sample(f"x_{b}", dist.Normal(x_b_, 0.01))
-        y = pyro.sample(f"y_{b}", dist.Normal(y_b_, 0.01))
+        x = pyro.sample(f"x", dist.Normal(x_b_, 0.01))
+        y = pyro.sample(f"y", dist.Normal(y_b_, 0.01))
 
 
     # Store each scene's attributes
