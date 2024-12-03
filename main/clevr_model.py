@@ -132,11 +132,11 @@ def sample_clevr_scene(N):
 
     size_mapping_list = {b: list(map(get_size_mapping, size[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
     logger.info(size_mapping_list)
-    
-    size_name, r = [e[0] for e in size_mapping_list], [e[1] for e in size_mapping_list]
+
+    size_name, r = {b: [e[0] for e in size_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in size_mapping_list[b]] for b in range(B)} 
     #size_name, r = map(get_size_mapping, size.tolist())
     # logger.info(size_name)
-    # logger.info(r)
+    logger.info(r)
 
     # Choose random color and shape
     shape = pyro.sample(f"shape_{i}", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])))
