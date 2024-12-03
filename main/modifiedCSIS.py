@@ -83,7 +83,7 @@ class CSIS(Importance):
 
     logger.info("step")
     logger.info(*args)
-    logger.info(*kwargs)
+    logger.info(**kwargs)
     
     self.guide.train = True
     self.guide.step = s
