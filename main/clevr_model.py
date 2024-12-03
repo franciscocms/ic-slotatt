@@ -139,10 +139,11 @@ def sample_clevr_scene(N):
     logger.info(r)
 
     # Choose random color and shape
-    shape = pyro.sample(f"shape_{i}", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])))
-    shape_mapping_list = list(map(get_shape_mapping, shape.tolist())) # list of tuples [('name', value)]
-    obj_name, obj_name_out = [e[0] for e in shape_mapping_list], [e[1] for e in shape_mapping_list]
-    #logger.info(obj_name)
+    with pyro.poutine.mask(mask=mask):
+        shape = pyro.sample(f"shape", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([B, M]).to_event(1))
+    shape_mapping_list = {b: list(map(get_shape_mapping, shape.tolist())) for b in range(B)} # list of tuples [('name', value)]
+    obj_name, obj_name_out = {b: [e[0] for e in shape_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in shape_mapping_list[b]]  for b in range(B)}
+    logger.info(obj_name)
 
     
     color = pyro.sample(f"color_{i}", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])))
