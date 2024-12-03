@@ -237,6 +237,9 @@ logger.info('logging from the generated blender script!')
 # Set directory path
 dir_path = os.path.dirname(__file__)
 
+# Open main file
+bpy.ops.wm.open_mainfile(filepath=os.path.join(dir_path, "clevr_data", "base_scene.blend"))
+
 # Set render arguments so we can get pixel coordinates later.
 # We use functionality specific to the CYCLES renderer so BLENDER_RENDER
 # cannot be used.
@@ -259,16 +262,6 @@ bpy.context.preferences.addons['cycles'].preferences.get_devices()
 devices = bpy.context.preferences.addons['cycles'].preferences.devices
 for device in devices:
     device.use = True
-    
-logger.info(bpy.context.scene.cycles.device)
-logger.info(devices)
-logger.info(type(devices))
-logger.info(len(devices))
-logger.info(devices[0])
-
-
-# Open main file
-bpy.ops.wm.open_mainfile(filepath=os.path.join(dir_path, "clevr_data", "base_scene.blend"))
 
 # Load materials
 def load_materials(material_dir):
