@@ -276,7 +276,7 @@ class CSIS(Importance):
       for name, vals in guide_trace.nodes.items():
         if vals["type"] == "sample": # only consider object-wise properties
           
-          logger.info(name)
+          #logger.info(name)
           
           alt_property = f"{name.split('_')[0]}_{i}"
           vals['value'] = true_latents[alt_property]
@@ -300,7 +300,7 @@ class CSIS(Importance):
     for name, vals in guide_trace.nodes.items():
       if vals["type"] == "sample" and len(name.split('_')) == 2: # only consider object-wise properties
         
-        logger.info(f"{name} - {vals['fn']} - {vals['value']}")
+        #logger.info(f"{name} - {vals['fn']} - {vals['value']}")
         
         partial_loss = -vals['fn'].log_prob(vals['value'])
         if len(partial_loss.shape) == 1: partial_loss.unsqueeze_(0)
@@ -309,7 +309,7 @@ class CSIS(Importance):
 
         loss.append(partial_loss)
     
-    logger.info(torch.stack(loss).shape)
+    #logger.info(torch.stack(loss).shape)
 
     loss = torch.stack(loss).permute(1, 2, 0).unsqueeze(0) # [1, 1, n_objects, n_latents]
   

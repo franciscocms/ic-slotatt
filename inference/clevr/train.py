@@ -118,7 +118,7 @@ else:
       logger.info("Couldn't find training losses from previous epochs...")
       train_hist, valid_hist = [], []
 
-step_size = 1 if params["running_type"] == "debug" else 10
+step_size = 1 if params["running_type"] == "debug" else 1
 
 for s in range(resume_step, resume_step + nsteps):    
   

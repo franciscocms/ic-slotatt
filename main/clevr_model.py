@@ -119,25 +119,25 @@ def sample_clevr_scene(N):
             # Choose a random size
             size = pyro.sample(f"size_{i}", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))]))) 
             
-            logger.info(size)
+            #logger.info(size)
 
             size_mapping_list = list(map(get_size_mapping, size.tolist())) # list of tuples [('name', value)]
             size_name, r = [e[0] for e in size_mapping_list], [e[1] for e in size_mapping_list]
             #size_name, r = map(get_size_mapping, size.tolist())
-            logger.info(size_name)
-            logger.info(r)
+            # logger.info(size_name)
+            # logger.info(r)
 
             # Choose random color and shape
             shape = pyro.sample(f"shape_{i}", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])))
             shape_mapping_list = list(map(get_shape_mapping, shape.tolist())) # list of tuples [('name', value)]
             obj_name, obj_name_out = [e[0] for e in shape_mapping_list], [e[1] for e in shape_mapping_list]
-            logger.info(obj_name)
+            #logger.info(obj_name)
 
             
             color = pyro.sample(f"color_{i}", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])))
             color_mapping_list = list(map(get_color_mapping, color.tolist())) # list of tuples [('name', value)]
             color_name, rgba = [e[0] for e in color_mapping_list], [e[1] for e in color_mapping_list]
-            logger.info(color_name)
+            #logger.info(color_name)
 
             # For cube, adjust the size a bit
             for k, name in enumerate(obj_name):
@@ -146,13 +146,13 @@ def sample_clevr_scene(N):
             
             # Choose random orientation for the object.
             theta = pyro.sample(f"pose_{i}", dist.Uniform(0., 1.)) * 360. 
-            logger.info(theta)
+            #logger.info(theta)
 
             # Attach a random material
             mat = pyro.sample(f"mat_{i}", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])))
             mat_mapping_list = list(map(get_mat_mapping, mat.tolist())) # list of tuples [('name', value)]
             mat_name, mat_name_out = [e[0] for e in mat_mapping_list], [e[1] for e in mat_mapping_list]
-            logger.info(mat_name)
+            #logger.info(mat_name)
 
             t = 0
             dists_good = False
@@ -232,7 +232,7 @@ formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-logger.info('logging from the generated blender script!')
+# logger.info('logging from the generated blender script!')
 
 # Set directory path
 dir_path = os.path.dirname(__file__)
@@ -448,7 +448,7 @@ def render_scene_in_blender(blender_script):
 
 def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}, show='all', save_obs=None, N=None):
 
-    logger.info(f"... using CUDA version {torch.version.cuda}")
+    #logger.info(f"... using CUDA version {torch.version.cuda}")
     
     init_time = time.time()
     B = params['batch_size']
@@ -474,14 +474,14 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}, show=
     #plt.imshow(img[0].permute(1, 2, 0).numpy())
     #plt.show()
 
-    logger.info(img_batch.shape)
+    #logger.info(img_batch.shape)
 
     proc_img = preprocess_clevr(img_batch) # proc_img shape is (1, 4, 128, 128)
 
     #plt.imshow(proc_img[0].permute(1, 2, 0).numpy())
     #plt.show()
 
-    logger.info(proc_img.shape)
+    #logger.info(proc_img.shape)
 
     with pyro.plate(observations["image"].shape[0]):
         #pyro.sample("image", MyBernoulli(img, validate_args=False).to_event(3), obs=observations["image"])
@@ -490,4 +490,4 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}, show=
     
     batch_time = time.time() - init_time
     
-    logger.info(f"Batch generation duration: {batch_time}")
+    #logger.info(f"Batch generation duration: {batch_time}")
