@@ -51,7 +51,7 @@ def preprocess_clevr(image, resolution=(128, 128)):
     image = torch.clamp(image, 0., 1.)
     return image
 
-def sample_clevr_scene(objects_mask=None):
+def sample_clevr_scene():
     
     # Assuming the default camera position
     cam_default_pos = [7.358891487121582, -6.925790786743164, 4.958309173583984]
@@ -101,15 +101,13 @@ def sample_clevr_scene(objects_mask=None):
         return material_mapping[int(mat)]
 
     B = params['batch_size']
-    M = max_objects
-    
-    # Sample scene 
-    num_objects = torch.sum(objects_mask, dim=-1)
-    logger.info(f"\nnum_objects: {num_objects}")
+    M = max_objects 
     
     # Sample the mask to predict real objects
-    mask = pyro.sample(f"mask", dist.Bernoulli(0.5), obs=objects_mask)
-    
+    objects_mask = pyro.sample(f"mask", dist.Bernoulli(0.5).expand([B, M]).to_event(1))
+    num_objects = torch.sum(objects_mask, dim=-1)
+    logger.info(f"\nnum_objects: {num_objects}")
+
     scenes = []
 
     # Choose a random size
@@ -213,16 +211,17 @@ def sample_clevr_scene(objects_mask=None):
     for b in range(B):
         objects = []
         # Append the object attributes to the scene list
-        for k in range(num_objects[b]):
-            objects.append({
-                "shape": obj_name[b][k],
-                "color": color_name[b][k],
-                "rgba": rgba[b][k],
-                "size": r[b][k],
-                "material": mat_name[b][k],
-                "pose": theta[b, k].item(),
-                "position": (x[b, k].item(), y[b, k].item())
-            })
+        for k in range(M):
+            if objects_mask[b, k]:
+                objects.append({
+                    "shape": obj_name[b][k],
+                    "color": color_name[b][k],
+                    "rgba": rgba[b][k],
+                    "size": r[b][k],
+                    "material": mat_name[b][k],
+                    "pose": theta[b, k].item(),
+                    "position": (x[b, k].item(), y[b, k].item())
+                })
         
         scenes.append(objects)
     return scenes
@@ -461,17 +460,15 @@ def render_scene_in_blender(blender_script):
     with open(debug_log, "w") as log_file:
         subprocess.call(cmd, stdout=log_file, stderr=log_file)
 
-def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}, objects_mask=None):
+def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     #logger.info(f"... using CUDA version {torch.version.cuda}")
-
-    logger.info(f"inside clevr_gen_model: {objects_mask}")
     
     init_time = time.time()
     B = params['batch_size']
 
     # Sample a CLEVR-like scene using Pyro
-    clevr_scenes = sample_clevr_scene(objects_mask=objects_mask)
+    clevr_scenes = sample_clevr_scene()
 
     # Generate the Blender script for the sampled scene
     blender_scripts = [generate_blender_script(scene, idx) for idx, scene in enumerate(clevr_scenes)]
