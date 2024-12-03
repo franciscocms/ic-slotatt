@@ -267,6 +267,9 @@ class InvSlotAttentionGuide(nn.Module):
       variable_address = variable.address
       variable_prior_distribution = variable.prior_distribution
       variable_proposal_distribution = variable.proposal_distribution
+
+    
+    logger.info(f"input dim in {variable_name} infer_step: {obs.shape}")
     
       
     proposal_layer_input = obs.unsqueeze(0)
@@ -299,66 +302,69 @@ class InvSlotAttentionGuide(nn.Module):
     self.features_to_slots = self.mlp(x)
 
     if params["running_type"] == "inspect": # save input image
-      if not os.path.isdir(params["inspect_img_path"]): os.mkdir(params["inspect_img_path"]) # create dir to save inspect logs
+        if not os.path.isdir(params["inspect_img_path"]): os.mkdir(params["inspect_img_path"]) # create dir to save inspect logs
 
-      plt.imshow(self.img[0].permute(1, 2, 0).detach().cpu().numpy())
-      plt.savefig(f"{params['inspect_img_path']}/img.png")
-      plt.close()
+        plt.imshow(self.img[0].permute(1, 2, 0).detach().cpu().numpy())
+        plt.savefig(f"{params['inspect_img_path']}/img.png")
+        plt.close()
 
     if self.stage == "train":
 
-      # logger.info(len(self.current_trace))
-      
-      # for v in self.current_trace:
-      #   logger.info(f"{v.name} - {v.value}")
-      
-      assert N == None, f"During training, type of argument 'N' should be {type(None)}, not {type(N)}!"
+        # logger.info(len(self.current_trace))
+        
+        # for v in self.current_trace:
+        #   logger.info(f"{v.name} - {v.value}")
+        
+        assert N == None, f"During training, type of argument 'N' should be {type(None)}, not {type(N)}!"
 
-      #N = int(self.current_trace[0].value.item())
+        #N = int(self.current_trace[0].value.item())
 
 
-      # THE # OF SLOTS WILL HAVE TO BE THE MAX NO. OF OBJECTS IN THE BATCH...
-      # compute this
+        # THE # OF SLOTS WILL HAVE TO BE THE MAX NO. OF OBJECTS IN THE BATCH...
+        # compute this
     
 
 
 
 
-      n_s = 10
-      self.slots, self.slot_pos, attn = self.slot_attention(self.features_to_slots, num_slots=n_s)
+        n_s = 10
+        self.slots, self.slot_pos, attn = self.slot_attention(self.features_to_slots, num_slots=n_s)
       
-      min_slots = 1 if params["no_slots"] == "wo_background" else 1
-      if self.train and n_s > min_slots and self.step % 10 == 0:
-        aux_attn = attn.reshape((B, n_s, 128, 128)) if not params["strided_convs"] else attn.reshape((B, n_s, 32, 32))
-        fig, ax = plt.subplots(ncols=n_s)
-        for j in range(n_s):                                       
-            im = ax[j].imshow(aux_attn[0, j, :, :].detach().cpu().numpy())
-            ax[j].grid(False)
-            ax[j].axis('off')        
-        plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/attn.png")
-        plt.close()
+        min_slots = 1 if params["no_slots"] == "wo_background" else 1
+        if self.train and n_s > min_slots and self.step % 10 == 0:
+            aux_attn = attn.reshape((B, n_s, 128, 128)) if not params["strided_convs"] else attn.reshape((B, n_s, 32, 32))
+            fig, ax = plt.subplots(ncols=n_s)
+            for j in range(n_s):                                       
+                im = ax[j].imshow(aux_attn[0, j, :, :].detach().cpu().numpy())
+                ax[j].grid(False)
+                ax[j].axis('off')        
+            plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/attn.png")
+            plt.close()
 
-        plot_img = np.transpose(self.img[0].detach().cpu().numpy(), (1, 2, 0))
-        plt.imshow(plot_img)
-        plt.axis('off')
-        plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/img.png")
-        plt.close()
+            plot_img = np.transpose(self.img[0].detach().cpu().numpy(), (1, 2, 0))
+            plt.imshow(plot_img)
+            plt.axis('off')
+            plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/img.png")
+            plt.close()
 
-      hidden_vars = ["N"]
-      for var in self.current_trace:
-        if var.name not in hidden_vars:
-          obj = int(var.name.split("_")[1]) if var.address[:2] != "bg" else -1
-          # `slots` has shape: [batch_size, num_slots, slot_size].
-          if var.address == "locX": obs = self.slot_pos[:, obj, 0]
-          elif var.address == "locY": obs = self.slot_pos[:, obj, 1]
-          else: 
-            obs = self.slots[0, obj, :]
+        hidden_vars = ["N"]
+        for var in self.current_trace:
+            if var.name not in hidden_vars:
+                
+                logger.info(var.name)
 
-          # run the proposal for variable var
-          _ = self.infer_step(var, obs)
+                # obj = int(var.name.split("_")[1]) if var.address[:2] != "bg" else -1
+                # # `slots` has shape: [batch_size, num_slots, slot_size].
+                # if var.address == "locX": obs = self.slot_pos[:, obj, 0]
+                # elif var.address == "locY": obs = self.slot_pos[:, obj, 1]
+                # else: 
+                #     obs = self.slots
+
+                # run the proposal for variable var
+                _ = self.infer_step(var, self.slots)
       
-      del self.slots
-      self.current_trace = []
+        del self.slots
+        self.current_trace = []
     
     elif self.stage == "eval":
       with torch.no_grad():
