@@ -246,6 +246,9 @@ class InvSlotAttentionGuide(nn.Module):
       )
      
     self.prop_nets[var.address] = proposal_net.to(device) 
+
+    logger.info(self.prop_nets)
+
     if var.address in self.prop_nets: add_flag = True 
     if not add_flag: logging.info(f"ERROR: proposal net for site {var.name} was not added!")
   
@@ -343,8 +346,7 @@ class InvSlotAttentionGuide(nn.Module):
       
       proposal_layer_input = obs.unsqueeze(0)
 
-      if variable_address in ['x', 'y']: proposal = proposal_layer_input
-      else: proposal = self.prop_nets[variable_address](proposal_layer_input)
+      proposal = self.prop_nets[variable_address](proposal_layer_input)
       
       if variable_proposal_distribution == "normal":
         std = torch.tensor(params["loc_proposal_std"], device=device)

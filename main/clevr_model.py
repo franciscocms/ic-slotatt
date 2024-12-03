@@ -165,7 +165,7 @@ def sample_clevr_scene(N):
                 y_ = pyro.sample(f"y_{i}_{t}", dist.Uniform(-3., 3.).expand([n]))
                 t += 1
               
-              logger.info(x_)
+              #logger.info(x_)
 
               # Store the positions and sizes of all objects
               for k in range(n): positions.append((x_[k], y_[k], r[k]))
