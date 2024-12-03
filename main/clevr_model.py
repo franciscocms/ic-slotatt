@@ -186,7 +186,7 @@ def sample_clevr_scene(N):
             #logger.info(x_)
 
             # Store the positions and sizes of all objects
-            for k in range(M): positions.append((x_[k], y_[k], r[b, k]))
+            for k in range(M): positions.append((x_[k], y_[k], r[b][k]))
 
             for k in range(M):
                 c_x, c_y, c_r = positions[k]
