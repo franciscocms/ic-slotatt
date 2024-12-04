@@ -104,7 +104,7 @@ def sample_clevr_scene():
     M = max_objects 
     
     # Sample the mask to predict real objects
-    objects_mask = pyro.sample(f"mask", dist.Bernoulli(0.5).expand([B, M]).to_event(1)).to(torch.bool)
+    objects_mask = pyro.sample(f"mask", dist.Bernoulli(0.5).expand([B, M])).to(torch.bool)
     logger.info(f"\nmask: {objects_mask}")
     num_objects = torch.sum(objects_mask, dim=-1)
     logger.info(f"\nnum_objects: {num_objects}")
@@ -114,7 +114,7 @@ def sample_clevr_scene():
     # Choose a random size
     #with pyro.poutine.block():
     with pyro.poutine.mask(mask=objects_mask):
-        size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])).expand([B, M]).to_event(1))
+        size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])).expand([B, M]))
     
     #logger.info(f"{size}")
             
@@ -130,13 +130,13 @@ def sample_clevr_scene():
 
     # Choose random color and shape
     with pyro.poutine.mask(mask=objects_mask):
-        shape = pyro.sample(f"shape", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([B, M]).to_event(1))
+        shape = pyro.sample(f"shape", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([B, M]))
     shape_mapping_list = {b: list(map(get_shape_mapping, shape[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
     obj_name, obj_name_out = {b: [e[0] for e in shape_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in shape_mapping_list[b]]  for b in range(B)}
     #logger.info(f"\n{obj_name}")
 
     with pyro.poutine.mask(mask=objects_mask):
-        color = pyro.sample(f"color", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])).expand([B, M]).to_event(1))
+        color = pyro.sample(f"color", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])).expand([B, M]))
     color_mapping_list = {b: list(map(get_color_mapping, color[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
     color_name, rgba = {b: [e[0] for e in color_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in color_mapping_list[b]] for b in range(B)}
     #logger.info(f"\n{color_name}")
@@ -149,12 +149,12 @@ def sample_clevr_scene():
     
     # Choose random orientation for the object.
     with pyro.poutine.mask(mask=objects_mask):
-        theta = pyro.sample(f"pose", dist.Uniform(0., 1.).expand([B, M]).to_event(1)) * 360. 
+        theta = pyro.sample(f"pose", dist.Uniform(0., 1.).expand([B, M])) * 360. 
     #logger.info(f"{theta}")
 
     # Attach a random material
     with pyro.poutine.mask(mask=objects_mask):
-        mat = pyro.sample(f"mat", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([B, M]).to_event(1))
+        mat = pyro.sample(f"mat", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([B, M]))
     mat_mapping_list = {b: list(map(get_mat_mapping, mat[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
     mat_name, mat_name_out = {b: [e[0] for e in mat_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in mat_mapping_list[b]] for b in range(B)}
     #logger.info(f"\n{mat_name}")
