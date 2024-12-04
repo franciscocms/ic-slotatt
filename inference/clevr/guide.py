@@ -283,7 +283,7 @@ class InvSlotAttentionGuide(nn.Module):
         std = torch.tensor(params["loc_proposal_std"], device=device)
         out = pyro.sample(variable_name, dist.Normal(proposal, std))
     elif variable_proposal_distribution == "categorical": 
-       proposal = proposal.squeeze()
+       proposal = proposal.squeeze(0)
        
        logger.info(f"\nproposal shape for {variable_name}: {proposal.shape}\n")
        logger.info(f"{dist.Categorical(probs=proposal).to_event(1).batch_shape} - {dist.Categorical(probs=proposal).to_event(1).event_shape}")
