@@ -20,7 +20,8 @@ from utils.guide import minimize_entropy_of_sinkhorn, sinkhorn, assert_shape, to
 
 import logging
 import warnings
-warnings.filterwarnings("ignore")
+
+torch.autograd.set_detect_anomaly(True)
 
 logger = logging.getLogger("train")
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
