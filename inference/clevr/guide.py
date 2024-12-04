@@ -274,11 +274,10 @@ class InvSlotAttentionGuide(nn.Module):
     
     logger.info(f"input dim in {variable_name} infer_step: {obs.shape} and value shape: {variable.value.shape}")
     
-      
-    proposal_layer_input = obs.unsqueeze(0)
-    proposal = self.prop_nets[variable_address](proposal_layer_input)
+    proposal = self.prop_nets[variable_address](obs)
     
     if variable_proposal_distribution == "normal":
+        proposal = proposal.squeeze()
         std = torch.tensor(params["loc_proposal_std"], device=device)
         out = pyro.sample(variable_name, dist.Normal(proposal, std))
     elif variable_proposal_distribution == "categorical":        
