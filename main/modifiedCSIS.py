@@ -187,7 +187,7 @@ class CSIS(Importance):
         #if var.name not in self.guide.prop_nets:
         if var.address not in self.guide.prop_nets:
           if var.address not in hidden_addr:
-            logger.info(f"... proposal net was added for variable '{var.name}'")
+            #logger.info(f"... proposal net was added for variable '{var.name}'")
             self.guide.add_proposal_net(var, out_dim)
         
         self.guide.current_trace.append(var)
@@ -245,7 +245,7 @@ class CSIS(Importance):
       if vals["type"] == "sample": # only consider object-wise properties
         true_latents[name] = vals['value']
     
-    logger.info(f"\ntrue latents: {true_latents}\n")
+    #logger.info(f"\ntrue latents: {true_latents}\n")
 
     self.n_latents = len(set([k for k in true_latents.keys()]))
 
@@ -288,8 +288,8 @@ class CSIS(Importance):
     for name, vals in guide_trace.nodes.items():
       if vals["type"] == "sample":
         
-        logger.info(f"{name} - {vals['fn']} - {vals['value']}")
-        logger.info(f"{vals['fn'].batch_shape} - {vals['fn'].event_shape}")
+        # logger.info(f"{name} - {vals['fn']} - {vals['value']}")
+        # logger.info(f"{vals['fn'].batch_shape} - {vals['fn'].event_shape}")
         
         partial_loss = -vals['fn'].log_prob(vals['value'])
         if len(partial_loss.shape) == 1: partial_loss.unsqueeze_(0)
@@ -330,17 +330,13 @@ class CSIS(Importance):
     Arguments are passed to the model and guide.
     """
 
-    if p["running_type"] == "debug":
-      logging.info("\n\nComputing validation loss...\n")
-
-
     if self.validation_batch is None:
       self.set_validation_batch(*args, **kwargs)
     
     self.guide.train = False
     
     with torch.no_grad():
-      val_loss = self.loss_and_grads(False, self.validation_batch, step, *args, **kwargs)
+      val_loss = self.loss_and_grads(False, self.validation_batch, *args, **kwargs)
 
     return val_loss.item()
 

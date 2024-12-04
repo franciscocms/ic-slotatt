@@ -30,6 +30,8 @@ logger.addHandler(fh)
 
 main_dir = os.path.abspath(__file__+'/../../')
 
+torch.autograd.set_detect_anomaly(True)
+
 pyro.clear_param_store()
 
 """

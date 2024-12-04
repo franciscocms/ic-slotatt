@@ -246,7 +246,7 @@ class InvSlotAttentionGuide(nn.Module):
       nn.Linear(self.hid_dim, out_dim), last_activ
       )
     
-    logger.info(proposal_net)
+    #logger.info(proposal_net)
      
     self.prop_nets[var.address] = proposal_net.to(device) 
 
