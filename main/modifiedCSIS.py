@@ -83,8 +83,6 @@ class CSIS(Importance):
     Take a gradient step on the loss function. Arguments are passed to the
     model and guide.
     """
-
-    logger.info("step")
     
     self.guide.train = True
     self.guide.step = self.nstep

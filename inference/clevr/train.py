@@ -126,11 +126,6 @@ for s in range(resume_step, resume_step + nsteps):
   
   if CHECK_ATTN and s % step_size == 0: 
     if not os.path.isdir(f"{root_folder}/attn-step-{s}"): os.mkdir(f"{root_folder}/attn-step-{s}")  
-  
-#   num_objects = torch.randint(min_objects, max_objects, (params["batch_size"],))
-#   objects_mask = torch.arange(max_objects).expand(params["batch_size"], max_objects) < num_objects.unsqueeze(-1)  
-
-#   logger.info(f"\nobjects_mask: {objects_mask}")
 
   csis.nstep = s
 
