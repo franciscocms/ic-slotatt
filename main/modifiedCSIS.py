@@ -252,17 +252,20 @@ class CSIS(Importance):
     pdist = torch.tensor([], device=device)
 
     B = self.batch_size
+    M = self.max_objects
 
     for i in range(B):
       # modify guide_trace considering the values in 'true_latents' and compute the loss
+      
       for o in range(self.max_objects):
+        # computing log_prob as if object 'o' was the target one
         for name, vals in guide_trace.nodes.items():
-          if vals["type"] == "sample": # only consider object-wise properties
+          if vals["type"] == "sample":
             
             logger.info(f"{name} - {vals['value'].shape}")
             logger.info(true_latents[name][i, o].shape)
 
-            vals['value'] = true_latents[name][i, o].repeat()
+            vals['value'][i] = true_latents[name][i, o].unsqueeze(0).expand(M)
 
             logger.info(vals['value'])
 
