@@ -40,7 +40,10 @@ set image and checkpoints saving paths
 
 # start a new wandb run to track this script
 run = wandb.init(project="ICSA-CLEVR",
-                  name=f"{params['jobID']}"
+                  name=f"{params['jobID']}",
+                  config={"LR": params['lr'],
+                          "BS": params['batch_size'],
+                          }
                   )
 
 DEVICE = params["device"]
