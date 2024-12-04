@@ -273,7 +273,7 @@ class InvSlotAttentionGuide(nn.Module):
       variable_proposal_distribution = variable.proposal_distribution
 
     
-    logger.info(f"input dim in {variable_name} infer_step: {obs.shape} and value shape: {variable.value.shape}")
+    #logger.info(f"input dim in {variable_name} infer_step: {obs.shape} and value shape: {variable.value.shape}")
     
     proposal = self.prop_nets[variable_address](obs)
     
@@ -347,7 +347,7 @@ class InvSlotAttentionGuide(nn.Module):
         for var in self.current_trace:
             if var.name not in hidden_vars:
                 
-                logger.info(var.name)
+                #logger.info(var.name)
 
                 # obj = int(var.name.split("_")[1]) if var.address[:2] != "bg" else -1
                 # # `slots` has shape: [batch_size, num_slots, slot_size].
