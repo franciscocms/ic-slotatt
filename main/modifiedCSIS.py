@@ -148,7 +148,7 @@ class CSIS(Importance):
       if name not in ["image", "n_plate"] and vals["type"] == "sample" and name.split('_')[0] not in hidden_addr: 
         #if name == "N": self.n_objects = to_int(vals["value"])
 
-        logger.info(f"{name} - {vals['value']} - {vals['fn']}")
+        #logger.info(f"{name} - {vals['value']} - {vals['fn']}")
         
         # prior categorical distributed variables
         if isinstance(vals["fn"], CategoricalVals) or isinstance(vals["fn"], dist.Categorical): 
@@ -273,7 +273,7 @@ class CSIS(Importance):
         pdist = torch.cat((pdist, partial_loss), dim=-3)
 
     loss, _ = self.hungarian_loss(pdist)
-    logger.info(f"\nfinal loss: {loss}\n")
+    #logger.info(f"\nfinal loss: {loss}\n")
 
     return loss
 
