@@ -287,7 +287,7 @@ class InvSlotAttentionGuide(nn.Module):
        
        out = pyro.sample(variable_name, dist.Categorical(probs=proposal))
     elif variable_proposal_distribution == "bernoulli": 
-       proposal = proposal.squeeze(0)
+       proposal = proposal.squeeze()
        out = pyro.sample(variable_name, dist.Bernoulli(proposal))
     
     else: raise ValueError(f"Unknown variable address: {variable_address}")      
