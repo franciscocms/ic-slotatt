@@ -277,7 +277,6 @@ class InvSlotAttentionGuide(nn.Module):
     proposal = self.prop_nets[variable_address](obs)
     
     if variable_proposal_distribution == "normal":
-        proposal = proposal.squeeze()
         std = torch.tensor(params["loc_proposal_std"], device=device)
         out = pyro.sample(variable_name, dist.Normal(proposal, std))
     elif variable_proposal_distribution == "categorical":        
@@ -286,7 +285,6 @@ class InvSlotAttentionGuide(nn.Module):
        
        out = pyro.sample(variable_name, dist.Categorical(probs=proposal))
     elif variable_proposal_distribution == "bernoulli": 
-       proposal = proposal.squeeze()
        out = pyro.sample(variable_name, dist.Bernoulli(proposal))
     
     else: raise ValueError(f"Unknown variable address: {variable_address}")      
