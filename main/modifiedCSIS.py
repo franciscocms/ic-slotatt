@@ -288,7 +288,7 @@ class CSIS(Importance):
     for name, vals in guide_trace.nodes.items():
       if vals["type"] == "sample":
         
-        #logger.info(f"{name} - {vals['fn']} - {vals['value']}")
+        logger.info(f"{name} - {vals['fn']} - {vals['value']}")
         
         partial_loss = -vals['fn'].log_prob(vals['value'])
         if len(partial_loss.shape) == 1: partial_loss.unsqueeze_(0)
