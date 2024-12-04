@@ -273,7 +273,7 @@ class CSIS(Importance):
         pdist = torch.cat((pdist, partial_loss), dim=-3)
 
     loss, _ = self.hungarian_loss(pdist)
-    if len(loss.shape) == 1: loss = loss[0]
+    logger.info(f"\nfinal loss: {loss}\n")
 
     return loss
 
@@ -298,7 +298,7 @@ class CSIS(Importance):
 
         loss.append(partial_loss)
     
-    #logger.info(torch.stack(loss).shape)
+    logger.info(torch.stack(loss).shape)
 
     loss = torch.stack(loss).permute(1, 2, 0).unsqueeze(0) # [1, 1, n_objects, n_latents]
   
