@@ -43,6 +43,7 @@ run = wandb.init(project="ICSA-CLEVR",
                   name=f"{params['jobID']}",
                   config={"LR": params['lr'],
                           "BS": params['batch_size'],
+                          "likelihood_fn": "normal",
                           }
                   )
 
