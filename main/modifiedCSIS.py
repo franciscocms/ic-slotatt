@@ -266,8 +266,8 @@ class CSIS(Importance):
             
             #logger.info(f"{name} - {vals['value'].shape}")
             #logger.info(true_latents[name][i, o].shape)
-
-            vals['value'][i] = true_latents[name][i, o].unsqueeze(0).expand(M)
+            vals['value'] = vals['value'].clone()
+            vals['value'] = true_latents[name][i, o].unsqueeze(0).expand(M)
 
             #logger.info(vals['value'])
 
