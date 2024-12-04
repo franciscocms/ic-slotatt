@@ -296,11 +296,11 @@ class CSIS(Importance):
         partial_loss = -vals['fn'].log_prob(vals['value'])
         if len(partial_loss.shape) == 1: partial_loss.unsqueeze_(0)
 
-        logger.info(f"{name} - partial loss shape: {partial_loss.shape}")
+        #logger.info(f"{name} - partial loss shape: {partial_loss.shape}")
 
         loss.append(partial_loss)
     
-    logger.info(torch.stack(loss).shape)
+    #logger.info(torch.stack(loss).shape)
 
     loss = torch.stack(loss).permute(1, 2, 0).unsqueeze(0) # [1, B, n_objects, n_latents]
   
