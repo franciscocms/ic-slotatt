@@ -15,7 +15,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import time
 
-from utils.distributions import MyNormal, MyPoisson
+from utils.distributions import MyBernoulli
 from .setup import params
 
 import warnings
@@ -499,9 +499,9 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     #logger.info(proc_img.shape)
 
     with pyro.plate(observations["image"].shape[0]):
-        #pyro.sample("image", MyBernoulli(img, validate_args=False).to_event(3), obs=observations["image"])
-        likelihood_fn = MyNormal(proc_img, torch.tensor(0.1)).get_dist()
-        pyro.sample("image", likelihood_fn.to_event(3), obs=observations["image"])
+        pyro.sample("image", MyBernoulli(proc_img, validate_args=False).to_event(3), obs=observations["image"])
+        #likelihood_fn = MyNormal(proc_img, torch.tensor(0.1)).get_dist()
+        #pyro.sample("image", likelihood_fn.to_event(3), obs=observations["image"])
     
     batch_time = time.time() - init_time
     
