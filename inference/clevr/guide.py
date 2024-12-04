@@ -284,7 +284,7 @@ class InvSlotAttentionGuide(nn.Module):
         out = pyro.sample(variable_name, dist.Normal(proposal, std))
     elif variable_proposal_distribution == "categorical": 
        proposal = proposal.squeeze()
-       out = pyro.sample(variable_name, dist.Categorical(probs=proposal))
+       out = pyro.sample(variable_name, dist.Categorical(probs=proposal).to_event(1))
     else: raise ValueError(f"Unknown variable address: {variable_address}")      
     
     return out
