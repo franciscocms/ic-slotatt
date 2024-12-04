@@ -232,9 +232,8 @@ class InvSlotAttentionGuide(nn.Module):
   
   def add_proposal_net(self, var, out_dim):
     add_flag = False
-    if var.proposal_distribution == "categorical": 
-       if var.name != "mask": last_activ = nn.Softmax(dim=-1)
-       else: last_activ = nn.Sigmoid()
+    if var.proposal_distribution == "categorical": last_activ = nn.Softmax(dim=-1)
+    elif var.proposal_distribution == "bernoulli": last_activ = nn.Sigmoid()
     elif var.proposal_distribution == "normal": last_activ = nn.Sigmoid()
     elif var.proposal_distribution == "mixture": last_activ = nn.Identity()
     else: raise ValueError(f"Unknown distribution: {var.proposal_distribution}")
@@ -282,13 +281,13 @@ class InvSlotAttentionGuide(nn.Module):
     if variable_proposal_distribution == "normal":
         std = torch.tensor(params["loc_proposal_std"], device=device)
         out = pyro.sample(variable_name, dist.Normal(proposal, std))
-    elif variable_proposal_distribution == "categorical": 
-       proposal = proposal.squeeze(0)
+    elif variable_proposal_distribution == "categorical":        
+       # logger.info(f"\nproposal shape for {variable_name}: {proposal.shape}\n")
+       # logger.info(f"{dist.Categorical(probs=proposal).to_event(1).batch_shape} - {dist.Categorical(probs=proposal).to_event(1).event_shape}")
        
-       logger.info(f"\nproposal shape for {variable_name}: {proposal.shape}\n")
-       logger.info(f"{dist.Categorical(probs=proposal).to_event(1).batch_shape} - {dist.Categorical(probs=proposal).to_event(1).event_shape}")
-       
-       out = pyro.sample(variable_name, dist.Categorical(probs=proposal).to_event(1))
+       out = pyro.sample(variable_name, dist.Categorical(probs=proposal))
+    elif variable_proposal_distribution == "bernoulli": out = pyro.sample(variable_name, dist.Bernoulli(proposal))
+    
     else: raise ValueError(f"Unknown variable address: {variable_address}")      
     
     return out

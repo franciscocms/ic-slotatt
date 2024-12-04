@@ -159,7 +159,7 @@ class CSIS(Importance):
         # prior uniform distributed variables
         elif isinstance(vals["fn"], dist.Bernoulli): 
           prior_distribution = "bernoulli"
-          proposal_distribution = "categorical"
+          proposal_distribution = "bernoulli"
           out_dim = 1 
         
         # prior uniform distributed variables
