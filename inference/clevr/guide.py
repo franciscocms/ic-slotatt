@@ -318,7 +318,7 @@ class InvSlotAttentionGuide(nn.Module):
 
     if self.stage == "train":
 
-        n_s = 10
+        n_s = 6
         self.slots, attn = self.slot_attention(self.features_to_slots, num_slots=n_s)
 
         # for b in range(B):
