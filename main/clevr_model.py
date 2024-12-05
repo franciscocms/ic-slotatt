@@ -182,10 +182,7 @@ def sample_clevr_scene():
                     
                     size_ = pyro.sample(f"size_{m}_{t}", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])))
                     size_mapping_list = list(get_size_mapping(size_))
-                    
-                    logger.info(size_mapping_list)
-
-                    size_name, r = [e[0] for e in size_mapping_list], [e[1] for e in size_mapping_list]
+                    size_name, r = size_mapping_list
                     if obj_name[b][m] == 'Cube': r = r/math.sqrt(2)
 
 
@@ -215,7 +212,7 @@ def sample_clevr_scene():
                 y_b = pyro.sample(f"y_{m}_{b}", dist.Normal(y_/3., 0.001))*3.
                 size_b = pyro.sample(f"size_{m}_{t}", dist.Delta(size_))
                 size_mapping_list = list(get_size_mapping(size_b))
-                size_name, r = [e[0] for e in size_mapping_list], [e[1] for e in size_mapping_list]
+                size_name, r = size_mapping_list
                 if obj_name[b][m] == 'Cube': r = r/math.sqrt(2)
 
                 x_b_[b, m], y_b_[b, m] = x_b, y_b
