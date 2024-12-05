@@ -161,7 +161,6 @@ def sample_clevr_scene():
 
     x_b_ = torch.zeros(B, M)
     y_b_ = torch.zeros(B, M)
-    
 
     for b in range(B):
         
@@ -172,6 +171,8 @@ def sample_clevr_scene():
             dists_good = False
             margins_good = False
             while not (dists_good and margins_good):
+
+                logger.info(f"{b} - {m} - {t}")
                 
                 with pyro.poutine.block():
                     x_ = pyro.sample(f"x_{m}_{t}", dist.Uniform(-1., 1.))*3.
@@ -194,17 +195,16 @@ def sample_clevr_scene():
                             margins_good = False
             
             with pyro.poutine.block():
-                x_b = pyro.sample(f"x_{m}_{b}", dist.Uniform(-1., 1.), obs=x_/3.)*3.
-                y_b = pyro.sample(f"y_{m}_{b}", dist.Uniform(-1., 1.), obs=y_/3.)*3.
+                x_b = pyro.sample(f"x_{m}_{b}", dist.Normal(x_/3., 0.001))*3.
+                y_b = pyro.sample(f"y_{m}_{b}", dist.Normal(y_/3., 0.001))*3.
                 x_b_[b, m], y_b_[b, m] = x_b, y_b
             
             positions.append((x_b_[b, m], y_b_[b, m], r[b][m]))
     
     with pyro.poutine.mask(mask=objects_mask):
-        x = pyro.sample(f"x", dist.Uniform(-1., 1.), obs=x_b_/3.)*3.
-        y = pyro.sample(f"y", dist.Uniform(-1., 1.), obs=y_b_/3.)*3.
+        x = pyro.sample(f"x", dist.Normal(x_b_/3., 0.001))*3.
+        y = pyro.sample(f"y", dist.Normal(y_b_/3., 0.001))*3.
 
-    logger.info(x)
 
     # Store each scene's attributes
     scenes = []
