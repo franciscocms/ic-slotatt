@@ -161,34 +161,30 @@ def sample_clevr_scene():
 
     x_b_ = torch.zeros(B, M)
     y_b_ = torch.zeros(B, M)
+    
+
     for b in range(B):
-        t = 0
-        dists_good = False
-        margins_good = False
-        while not (dists_good and margins_good):
-            
-            positions = []
-            with pyro.poutine.block():
-                x_ = pyro.sample(f"x_{t}", dist.Uniform(-1., 1.).expand([M]))*3.
-                y_ = pyro.sample(f"y_{t}", dist.Uniform(-1., 1.).expand([M]))*3.
-                t += 1
-            
-            #logger.info(x_)
+        
+        positions = []
+        for m in range(M):
+        
+            t = 0
+            dists_good = False
+            margins_good = False
+            while not (dists_good and margins_good):
+                
+                with pyro.poutine.block():
+                    x_ = pyro.sample(f"x_{m}_{t}", dist.Uniform(-1., 1.))*3.
+                    y_ = pyro.sample(f"y_{m}_{t}", dist.Uniform(-1., 1.))*3.
+                    t += 1
 
-            # Store the positions and sizes of all objects
-            for k in range(M): positions.append((x_[k], y_[k], r[b][k]))
+                dists_good = True
+                margins_good = True
 
-            for k in range(M):
-                c_x, c_y, c_r = positions[k]
-
-            dists_good = True
-            margins_good = True
-
-            for idx, (xx, yy, rr) in enumerate(positions):
-                if idx > 0 and idx < k:
-                    dx, dy = c_x - xx, c_y - yy
+                for xx, yy, rr in positions:
+                    dx, dy = x_ - xx, y_ - yy
                     distance = math.sqrt(dx * dx + dy * dy)
-                    if distance - c_r - rr < min_dist:
+                    if distance - r[b][m] - rr < min_dist:
                         dists_good = False
                     for direction_name in ['left', 'right', 'front', 'behind']:
                         direction_vec = scene_struct['directions'][direction_name]
@@ -196,11 +192,13 @@ def sample_clevr_scene():
                         margin = dx * direction_vec[0] + dy * direction_vec[1]
                         if 0 < margin < min_margin:
                             margins_good = False
-        
-        with pyro.poutine.block():
-            x_b = pyro.sample(f"x_{b}", dist.Normal(x_/3., 0.01))*3.
-            y_b = pyro.sample(f"y_{b}", dist.Normal(y_/3., 0.01))*3.
-            x_b_[b, :], y_b_[b, :] = x_b, y_b
+            
+            with pyro.poutine.block():
+                x_b = pyro.sample(f"x_{m}_{b}", dist.Normal(x_/3., 0.01))*3.
+                y_b = pyro.sample(f"y_{m}_{b}", dist.Normal(y_/3., 0.01))*3.
+                x_b_[b, m], y_b_[b, m] = x_b, y_b
+            
+            positions.append(x_b_[b, m], y_b_[b, m], r[b][m])
     
     with pyro.poutine.mask(mask=objects_mask):
         x = pyro.sample(f"x", dist.Normal(x_b_/3., 0.01))*3.
@@ -267,7 +265,7 @@ render_args.resolution_percentage = 100
 # Some CYCLES-specific stuff
 bpy.data.worlds['World'].cycles.sample_as_light = True
 bpy.context.scene.cycles.blur_glossy = 2.0
-bpy.context.scene.cycles.samples = 64
+bpy.context.scene.cycles.samples = 128
 bpy.context.scene.cycles.transparent_min_bounces = 8
 bpy.context.scene.cycles.transparent_max_bounces = 8
 bpy.context.scene.cycles.device = 'GPU'
