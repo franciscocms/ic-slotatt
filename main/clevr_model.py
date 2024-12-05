@@ -113,17 +113,17 @@ def sample_clevr_scene():
 
     # Choose a random size
     #with pyro.poutine.block():
-    with pyro.poutine.mask(mask=objects_mask):
-        size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])).expand([B, M]))
+    #with pyro.poutine.mask(mask=objects_mask):
+    #    size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])).expand([B, M]))
     
     #logger.info(f"{size}")
             
     #logger.info(size)
 
-    size_mapping_list = {b: list(map(get_size_mapping, size[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
+    #size_mapping_list = {b: list(map(get_size_mapping, size[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
     #logger.info(f"{size_mapping_list}")
 
-    size_name, r = {b: [e[0] for e in size_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in size_mapping_list[b]] for b in range(B)} 
+    #size_name, r = {b: [e[0] for e in size_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in size_mapping_list[b]] for b in range(B)} 
     #size_name, r = map(get_size_mapping, size.tolist())
     # logger.info(size_name)
     #logger.info(f"{r}")
@@ -142,10 +142,10 @@ def sample_clevr_scene():
     #logger.info(f"\n{color_name}")
 
     # For cube, adjust the size a bit
-    for b in range(B):
-        for k, name in enumerate(obj_name[b]):
-            if name == 'Cube':
-                r[b, k] /= math.sqrt(2)
+    # for b in range(B):
+    #     for k, name in enumerate(obj_name[b]):
+    #         if name == 'Cube':
+    #             r[b, k] /= math.sqrt(2)
     
     # Choose random orientation for the object.
     with pyro.poutine.mask(mask=objects_mask):
@@ -161,6 +161,8 @@ def sample_clevr_scene():
 
     x_b_ = torch.zeros(B, M)
     y_b_ = torch.zeros(B, M)
+    r_b_ = torch.zeros(B, M)
+    size_b_ = torch.zeros(B, M)
 
     for b in range(B):
         
@@ -177,7 +179,15 @@ def sample_clevr_scene():
                 with pyro.poutine.block():
                     x_ = pyro.sample(f"x_{m}_{t}", dist.Uniform(-1., 1.))*3.
                     y_ = pyro.sample(f"y_{m}_{t}", dist.Uniform(-1., 1.))*3.
+                    
+                    size_ = pyro.sample(f"size_{m}_{t}", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])))
+                    size_mapping_list = list(map(get_size_mapping, size_.tolist()))
+                    size_name, r = [e[0] for e in size_mapping_list], [e[1] for e in size_mapping_list]
+                    if obj_name[b][m] == 'Cube': r = r/math.sqrt(2)
+
+
                     t += 1
+
 
                 dists_good = True
                 margins_good = True
@@ -188,7 +198,7 @@ def sample_clevr_scene():
                     for xx, yy, rr in positions:
                         dx, dy = x_ - xx, y_ - yy
                         distance = math.sqrt(dx * dx + dy * dy)
-                        if distance - r[b][m] - rr < min_dist:
+                        if distance - r - rr < min_dist:
                             dists_good = False
                         for direction_name in ['left', 'right', 'front', 'behind']:
                             direction_vec = scene_struct['directions'][direction_name]
@@ -200,13 +210,32 @@ def sample_clevr_scene():
             with pyro.poutine.block():
                 x_b = pyro.sample(f"x_{m}_{b}", dist.Normal(x_/3., 0.001))*3.
                 y_b = pyro.sample(f"y_{m}_{b}", dist.Normal(y_/3., 0.001))*3.
+                size_b = pyro.sample(f"size_{m}_{t}", dist.Delta(size_))
+                size_mapping_list = list(map(get_size_mapping, size_b.tolist()))
+                size_name, r = [e[0] for e in size_mapping_list], [e[1] for e in size_mapping_list]
+                if obj_name[b][m] == 'Cube': r = r/math.sqrt(2)
+
                 x_b_[b, m], y_b_[b, m] = x_b, y_b
+                r_b_[b, m] = r
+                size_b_[b, m] = size_b
+
             
-            positions.append((x_b_[b, m], y_b_[b, m], r[b][m]))
+            positions.append((x_b_[b, m], y_b_[b, m], r_b_[b, m]))
     
     with pyro.poutine.mask(mask=objects_mask):
         x = pyro.sample(f"x", dist.Normal(x_b_/3., 0.001))*3.
         y = pyro.sample(f"y", dist.Normal(y_b_/3., 0.001))*3.
+        
+        size = pyro.sample(f"size", dist.Delta(size_b_))
+        size_mapping_list = {b: list(map(get_size_mapping, size[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
+        size_name, r = {b: [e[0] for e in size_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in size_mapping_list[b]] for b in range(B)} 
+
+    # For 'Cube', adjust 'r'
+    for b in range(B):
+        for k, name in enumerate(obj_name[b]):
+            if name == 'Cube':
+                r[b][k] /= math.sqrt(2)
+
 
 
     # Store each scene's attributes
@@ -264,6 +293,8 @@ render_args = bpy.context.scene.render
 render_args.engine = "CYCLES"
 render_args.resolution_x = 320
 render_args.resolution_y = 240
+render_args.tile_x = 256
+render_args.tile_y = 256
 render_args.resolution_percentage = 100
 
 # Some CYCLES-specific stuff
