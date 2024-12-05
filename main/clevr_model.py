@@ -169,8 +169,8 @@ def sample_clevr_scene():
             
             positions = []
             with pyro.poutine.block():
-                x_ = pyro.sample(f"x_{t}", dist.Uniform(-3., 3.).expand([M]))
-                y_ = pyro.sample(f"y_{t}", dist.Uniform(-3., 3.).expand([M]))
+                x_ = pyro.sample(f"x_{t}", dist.Uniform(-1., 1.).expand([M]))*3.
+                y_ = pyro.sample(f"y_{t}", dist.Uniform(-1., 1.).expand([M]))*3.
                 t += 1
             
             #logger.info(x_)
@@ -198,13 +198,13 @@ def sample_clevr_scene():
                             margins_good = False
         
         with pyro.poutine.block():
-            x_b = pyro.sample(f"x_{b}", dist.Normal(x_, 0.01))
-            y_b = pyro.sample(f"y_{b}", dist.Normal(y_, 0.01))
+            x_b = pyro.sample(f"x_{b}", dist.Normal(x_/3., 0.01))*3.
+            y_b = pyro.sample(f"y_{b}", dist.Normal(y_/3., 0.01))*3.
             x_b_[b, :], y_b_[b, :] = x_b, y_b
     
     with pyro.poutine.mask(mask=objects_mask):
-        x = pyro.sample(f"x", dist.Normal(x_b_, 0.01))
-        y = pyro.sample(f"y", dist.Normal(y_b_, 0.01))
+        x = pyro.sample(f"x", dist.Normal(x_b_/3., 0.01))*3.
+        y = pyro.sample(f"y", dist.Normal(y_b_/3., 0.01))*3.
 
 
     # Store each scene's attributes
@@ -500,7 +500,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     with pyro.plate(observations["image"].shape[0]):
         #pyro.sample("image", MyBernoulli(proc_img, validate_args=False).to_event(3), obs=observations["image"])
-        likelihood_fn = MyNormal(proc_img, torch.tensor(0.05)).get_dist()
+        likelihood_fn = MyNormal(proc_img, torch.tensor(0.01)).get_dist()
         pyro.sample("image", likelihood_fn.to_event(3), obs=observations["image"])
     
     batch_time = time.time() - init_time

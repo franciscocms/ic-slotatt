@@ -81,11 +81,6 @@ class SlotAttention(nn.Module):
 
     if params["strided_convs"]: latent_resolution = (32, 32)
     else: latent_resolution = (128, 128)
-    
-    x_pos, y_pos = build_coords(1, latent_resolution)
-    grid = torch.cat([x_pos, y_pos], dim=-1)
-    grid = torch.flatten(grid, -3, -2) # 'grid' has shape (1, 16384, 2)
-    #grid_per_slot = grid.unsqueeze(-3).repeat(1, n_s, 1, 1) # 'grid_per_slot' has shape (1, n_s, 16384, 2)
 
     a = self.mlp_weight_input(inputs).squeeze(-1).softmax(-1) * n_s # 'a' shape (b_s, W*H)
 
@@ -109,9 +104,7 @@ class SlotAttention(nn.Module):
       # Compute the center of mass of each slot attention mask.
       # 'attn' has shape (1, n_s, 16384)
       # 'grid' has shape (1, 16384, 2)
-      # 'slot_pos' has shape (1, n_s, 2)
-      slot_pos = torch.einsum("...qk,...kd->...qd", attn, grid)
-      slot_pos = slot_pos.unsqueeze(-2)  
+      # 'slot_pos' has shape (1, n_s, 2) 
 
       slots = self.gru(
           updates.view(b_s * n_s, d),
@@ -122,7 +115,7 @@ class SlotAttention(nn.Module):
       assert_shape(slots.size(), (b_s, n_s, d))
       slots = slots + self.fc2(F.relu(self.fc1(self.norm_pre_ff(slots))))
       assert_shape(slots.size(), (b_s, n_s, d))    
-    return slots, slot_pos.reshape((b_s, n_s, 2)), attn#, scales
+    return slots, attn
 
 def build_grid(resolution):
   ranges = [np.linspace(0., 1., num=res) for res in resolution]
@@ -235,7 +228,9 @@ class InvSlotAttentionGuide(nn.Module):
     add_flag = False
     if var.proposal_distribution == "categorical": last_activ = nn.Softmax(dim=-1)
     elif var.proposal_distribution == "bernoulli": last_activ = nn.Sigmoid()
-    elif var.proposal_distribution == "normal": last_activ = nn.Sigmoid()
+    elif var.proposal_distribution == "normal": 
+       if var.name in ["x", "y"]: last_activ = nn.Tanh()
+       else: last_activ = nn.Sigmoid()
     elif var.proposal_distribution == "mixture": last_activ = nn.Identity()
     else: raise ValueError(f"Unknown distribution: {var.proposal_distribution}")
 
@@ -324,10 +319,18 @@ class InvSlotAttentionGuide(nn.Module):
     if self.stage == "train":
 
         n_s = 10
-        self.slots, self.slot_pos, attn = self.slot_attention(self.features_to_slots, num_slots=n_s)
+        self.slots, attn = self.slot_attention(self.features_to_slots, num_slots=n_s)
+
+        for b in range(B):
+            plot_img = np.transpose(self.img[b].detach().cpu().numpy(), (1, 2, 0))
+            plt.imshow(plot_img)
+            plt.axis('off')
+            plt.savefig(f"{params['check_attn_folder']}/img_{b}.png")
+            plt.close()
+
       
-        min_slots = 1 if params["no_slots"] == "wo_background" else 1
-        if self.train and n_s > min_slots and self.step % 10 == 0:
+
+        if self.step % 10 == 0:
             aux_attn = attn.reshape((B, n_s, 128, 128)) if not params["strided_convs"] else attn.reshape((B, n_s, 32, 32))
             fig, ax = plt.subplots(ncols=n_s)
             for j in range(n_s):                                       
@@ -346,15 +349,6 @@ class InvSlotAttentionGuide(nn.Module):
         hidden_vars = ["N"]
         for var in self.current_trace:
             if var.name not in hidden_vars:
-                
-                #logger.info(var.name)
-
-                # obj = int(var.name.split("_")[1]) if var.address[:2] != "bg" else -1
-                # # `slots` has shape: [batch_size, num_slots, slot_size].
-                # if var.address == "locX": obs = self.slot_pos[:, obj, 0]
-                # elif var.address == "locY": obs = self.slot_pos[:, obj, 1]
-                # else: 
-                #     obs = self.slots
 
                 # run the proposal for variable var
                 _ = self.infer_step(var, self.slots)
@@ -365,53 +359,9 @@ class InvSlotAttentionGuide(nn.Module):
     elif self.stage == "eval":
       with torch.no_grad():
         assert self.current_trace == [], "current_trace list is not empty in the begining of evaluation!"
-        assert type(N) == int, f"During inference, type of argument 'N' should be 'int', not {type(N)}!"
 
-        n_s = None
-        if params["no_slots"] == "wo_background": n_s = N
-        elif params["no_slots"] == "w_background": n_s = N + 1
-        if n_s != None: self.slots, self.slot_pos, attn = self.slot_attention(self.features_to_slots, num_slots=n_s) 
+        self.slots, self.slot_pos, attn = self.slot_attention(self.features_to_slots, num_slots=n_s) 
 
-        #print(self.slot_pos) 
-
-        # ood_img_dir = "synthetic_data/ood_samples"
-        # aux_attn = attn.reshape((1, n_s, 32, 32))
-        # fig, ax = plt.subplots(ncols=n_s)
-        # for j in range(n_s):                                       
-        #     im = ax[j].imshow(aux_attn[0, j, :, :].detach().cpu().numpy())
-        #     ax[j].grid(False)
-        #     ax[j].axis('off')        
-        # plt.savefig(f"{ood_img_dir}/attn.png")
-        # plt.close() 
-
-        
-        # CODE FOR SLOTS ANALYSIS #
-        #      DELETE AFTER       #
-        
-        # save_plots_dir = '/Users/franciscosilva/Downloads/slots_analysis'
-
-        # # check the higher index and save with the next
-        # if len(glob.glob(f"{save_plots_dir}/icsa_slots/*.npy")) != 0:
-          
-        #   sample_id = max([int(p.split('/')[-1].split('_')[-1].split('.')[0]) for p in os.listdir(f"{save_plots_dir}/icsa_slots") if p.split('.')[-1] == 'npy'])
-        #   sample_id += 1
-        # else: sample_id = 0
-        # print(sample_id)
-        # np.save(f"{save_plots_dir}/icsa_slots/slots_icsa_{params['guide_step']}_{str(sample_id).zfill(2)}.npy", self.slots.numpy())
-        # np.save(f"{save_plots_dir}/icsa_attn/attn_icsa_{params['guide_step']}_{str(sample_id).zfill(2)}.npy", attn.numpy())
-
-        # aux_attn = attn.reshape((1, n_s, 32, 32))
-        # fig, ax = plt.subplots(ncols=n_s)
-        # for j in range(n_s):                                       
-        #     im = ax[j].imshow(aux_attn[0, j, :, :].detach().cpu().numpy())
-        #     ax[j].grid(False)
-        #     ax[j].axis('off')        
-        # plt.savefig(f"{save_plots_dir}/attn_icsa_{params['guide_step']}.png")
-        # plt.close() 
-
-
-        # CODE FOR SLOTS ANALYSIS # 
-        #      DELETE AFTER       #
          
         if params["running_type"] == "inspect":
           logging.info(f"slot_pos: {self.slot_pos}")
