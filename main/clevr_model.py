@@ -168,7 +168,11 @@ def sample_clevr_scene():
         
         positions = []
         all_t = []
-        for m in range(M):
+        max_tries = 100
+        t = 0
+        m = 0
+
+        while m < M:
         
             t = 0
             dists_good = False
@@ -185,7 +189,6 @@ def sample_clevr_scene():
                     size_mapping_list = list(get_size_mapping(size_))
                     size_name, r = size_mapping_list
                     if obj_name[b][m] == 'Cube': r = r/math.sqrt(2)
-
 
                     t += 1
 
@@ -207,22 +210,31 @@ def sample_clevr_scene():
                             margin = dx * direction_vec[0] + dy * direction_vec[1]
                             if 0 < margin < min_margin:
                                 margins_good = False
+                
+                if t == max_tries:
+                    m = 0
+                    dists_good = False
+                    margins_good = False
+                    break
             
-            with pyro.poutine.block():
-                x_b = pyro.sample(f"x_{m}_{b}", dist.Normal(x_/3., 0.001))*3.
-                y_b = pyro.sample(f"y_{m}_{b}", dist.Normal(y_/3., 0.001))*3.
-                size_b = pyro.sample(f"size_{m}_{t}", dist.Delta(size_))
-                size_mapping_list = list(get_size_mapping(size_b))
-                size_name, r = size_mapping_list
-                if obj_name[b][m] == 'Cube': r = r/math.sqrt(2)
+            if dists_good and margins_good:
+                with pyro.poutine.block():
+                    x_b = pyro.sample(f"x_{m}_{b}", dist.Normal(x_/3., 0.001))*3.
+                    y_b = pyro.sample(f"y_{m}_{b}", dist.Normal(y_/3., 0.001))*3.
+                    size_b = pyro.sample(f"size_{m}_{t}", dist.Delta(size_))
+                    size_mapping_list = list(get_size_mapping(size_b))
+                    size_name, r = size_mapping_list
+                    if obj_name[b][m] == 'Cube': r = r/math.sqrt(2)
 
-                x_b_[b, m], y_b_[b, m] = x_b, y_b
-                r_b_[b, m] = r
-                size_b_[b, m] = size_b
+                    x_b_[b, m], y_b_[b, m] = x_b, y_b
+                    r_b_[b, m] = r
+                    size_b_[b, m] = size_b
 
-            
-            positions.append((x_b_[b, m], y_b_[b, m], r_b_[b, m]))
-            all_t.append(t)
+                
+                positions.append((x_b_[b, m], y_b_[b, m], r_b_[b, m]))
+                all_t.append(t)
+
+                m += 1
         
         if b % 10 == 0:
             logger.info(f"batch sample {b} - sampled all objects with tries {all_t}")
