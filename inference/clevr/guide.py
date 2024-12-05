@@ -327,6 +327,7 @@ class InvSlotAttentionGuide(nn.Module):
             plt.axis('off')
             plt.savefig(f"{params['check_attn_folder']}/img_{b}.png")
             plt.close()
+            logger.info(f"saved input image {b}...")
 
       
 
