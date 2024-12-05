@@ -194,15 +194,15 @@ def sample_clevr_scene():
                             margins_good = False
             
             with pyro.poutine.block():
-                x_b = pyro.sample(f"x_{m}_{b}", dist.Normal(x_/3., 0.01))*3.
-                y_b = pyro.sample(f"y_{m}_{b}", dist.Normal(y_/3., 0.01))*3.
+                x_b = pyro.sample(f"x_{m}_{b}", dist.Uniform(-1., 1.), obs=x_/3.)*3.
+                y_b = pyro.sample(f"y_{m}_{b}", dist.Uniform(-1., 1.), obs=y_/3.)*3.
                 x_b_[b, m], y_b_[b, m] = x_b, y_b
             
             positions.append((x_b_[b, m], y_b_[b, m], r[b][m]))
     
     with pyro.poutine.mask(mask=objects_mask):
-        x = pyro.sample(f"x", dist.Normal(x_b_/3., 0.01))*3.
-        y = pyro.sample(f"y", dist.Normal(y_b_/3., 0.01))*3.
+        x = pyro.sample(f"x", dist.Uniform(-1., 1.), obs=x_b_/3.)*3.
+        y = pyro.sample(f"y", dist.Uniform(-1., 1.), obs=y_b_/3.)*3.
 
 
     # Store each scene's attributes
@@ -265,7 +265,7 @@ render_args.resolution_percentage = 100
 # Some CYCLES-specific stuff
 bpy.data.worlds['World'].cycles.sample_as_light = True
 bpy.context.scene.cycles.blur_glossy = 2.0
-bpy.context.scene.cycles.samples = 128
+bpy.context.scene.cycles.samples = 512
 bpy.context.scene.cycles.transparent_min_bounces = 8
 bpy.context.scene.cycles.transparent_max_bounces = 8
 bpy.context.scene.cycles.device = 'GPU'
