@@ -321,13 +321,13 @@ class InvSlotAttentionGuide(nn.Module):
         n_s = 10
         self.slots, attn = self.slot_attention(self.features_to_slots, num_slots=n_s)
 
-        # for b in range(B):
-        #     plot_img = np.transpose(self.img[b].detach().cpu().numpy(), (1, 2, 0))
-        #     plt.imshow(plot_img)
-        #     plt.axis('off')
-        #     plt.savefig(f"{params['check_attn_folder']}/img_{b}.png")
-        #     plt.close()
-        #     logger.info(f"saved input image {b}...")
+        for b in range(B):
+            plot_img = np.transpose(self.img[b].detach().cpu().numpy(), (1, 2, 0))
+            plt.imshow(plot_img)
+            plt.axis('off')
+            plt.savefig(f"{params['check_attn_folder']}/img_{b}.png")
+            plt.close()
+            logger.info(f"saved input image {b}...")
 
       
 
