@@ -204,6 +204,7 @@ def sample_clevr_scene():
         x = pyro.sample(f"x", dist.Uniform(-1., 1.), obs=x_b_/3.)*3.
         y = pyro.sample(f"y", dist.Uniform(-1., 1.), obs=y_b_/3.)*3.
 
+    logger.info(x)
 
     # Store each scene's attributes
     scenes = []
