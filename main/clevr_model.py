@@ -182,7 +182,8 @@ def sample_clevr_scene():
                 dists_good = True
                 margins_good = True
 
-                if objects_mask[b, m]:
+                # only check for impossible sampled positions if objects will be rendered in the scene
+                if objects_mask[b, m]: 
 
                     for xx, yy, rr in positions:
                         dx, dy = x_ - xx, y_ - yy
