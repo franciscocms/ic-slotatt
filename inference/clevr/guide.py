@@ -226,11 +226,11 @@ class InvSlotAttentionGuide(nn.Module):
   
   def add_proposal_net(self, var, out_dim):
     add_flag = False
-    if var.proposal_distribution == "categorical": last_activ = nn.Softmax(dim=-1)
-    elif var.proposal_distribution == "bernoulli": last_activ = nn.Sigmoid()
+    if var.proposal_distribution == "categorical": last_activ = nn.Softmax(dim=-1) # size, shape, color, material
+    elif var.proposal_distribution == "bernoulli": last_activ = nn.Sigmoid() # mask
     elif var.proposal_distribution == "normal": 
-       if var.name in ["x", "y"]: last_activ = nn.Tanh()
-       else: last_activ = nn.Sigmoid()
+       if var.name in ["x", "y"]: last_activ = nn.Tanh() # position 
+       else: last_activ = nn.Sigmoid() # pose
     elif var.proposal_distribution == "mixture": last_activ = nn.Identity()
     else: raise ValueError(f"Unknown distribution: {var.proposal_distribution}")
 

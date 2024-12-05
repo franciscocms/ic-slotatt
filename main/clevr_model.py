@@ -182,17 +182,19 @@ def sample_clevr_scene():
                 dists_good = True
                 margins_good = True
 
-                for xx, yy, rr in positions:
-                    dx, dy = x_ - xx, y_ - yy
-                    distance = math.sqrt(dx * dx + dy * dy)
-                    if distance - r[b][m] - rr < min_dist:
-                        dists_good = False
-                    for direction_name in ['left', 'right', 'front', 'behind']:
-                        direction_vec = scene_struct['directions'][direction_name]
-                        assert direction_vec[2] == 0
-                        margin = dx * direction_vec[0] + dy * direction_vec[1]
-                        if 0 < margin < min_margin:
-                            margins_good = False
+                if objects_mask[b, m]:
+
+                    for xx, yy, rr in positions:
+                        dx, dy = x_ - xx, y_ - yy
+                        distance = math.sqrt(dx * dx + dy * dy)
+                        if distance - r[b][m] - rr < min_dist:
+                            dists_good = False
+                        for direction_name in ['left', 'right', 'front', 'behind']:
+                            direction_vec = scene_struct['directions'][direction_name]
+                            assert direction_vec[2] == 0
+                            margin = dx * direction_vec[0] + dy * direction_vec[1]
+                            if 0 < margin < min_margin:
+                                margins_good = False
             
             with pyro.poutine.block():
                 x_b = pyro.sample(f"x_{m}_{b}", dist.Normal(x_/3., 0.001))*3.
