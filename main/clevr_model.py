@@ -172,7 +172,7 @@ def sample_clevr_scene():
             margins_good = False
             while not (dists_good and margins_good):
 
-                logger.info(f"{b} - {m} - {t}")
+                # logger.info(f"{b} - {m} - {t}")
                 
                 with pyro.poutine.block():
                     x_ = pyro.sample(f"x_{m}_{t}", dist.Uniform(-1., 1.))*3.
