@@ -223,8 +223,9 @@ def sample_clevr_scene():
             
             positions.append((x_b_[b, m], y_b_[b, m], r_b_[b, m]))
             all_t.append(t)
-
-        #logger.info(f"batch sample {b} - sampled all objects with tries {all_t}")
+        
+        if b % 10 == 0:
+            logger.info(f"batch sample {b} - sampled all objects with tries {all_t}")
     
     
     with pyro.poutine.mask(mask=objects_mask):
