@@ -198,7 +198,7 @@ def sample_clevr_scene():
                 y_b = pyro.sample(f"y_{m}_{b}", dist.Normal(y_/3., 0.01))*3.
                 x_b_[b, m], y_b_[b, m] = x_b, y_b
             
-            positions.append(x_b_[b, m], y_b_[b, m], r[b][m])
+            positions.append((x_b_[b, m], y_b_[b, m], r[b][m]))
     
     with pyro.poutine.mask(mask=objects_mask):
         x = pyro.sample(f"x", dist.Normal(x_b_/3., 0.01))*3.
