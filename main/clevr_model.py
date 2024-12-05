@@ -167,6 +167,7 @@ def sample_clevr_scene():
     for b in range(B):
         
         positions = []
+        all_t = []
         for m in range(M):
         
             t = 0
@@ -221,6 +222,10 @@ def sample_clevr_scene():
 
             
             positions.append((x_b_[b, m], y_b_[b, m], r_b_[b, m]))
+            all_t.append(t)
+
+        logger.info(f"batch sample {b} - sampled all objects with tries {all_t}")
+    
     
     with pyro.poutine.mask(mask=objects_mask):
         x = pyro.sample(f"x", dist.Normal(x_b_/3., 0.001))*3.
@@ -236,6 +241,8 @@ def sample_clevr_scene():
             if name == 'Cube':
                 r[b][k] /= math.sqrt(2)
 
+    
+    
 
 
     # Store each scene's attributes
