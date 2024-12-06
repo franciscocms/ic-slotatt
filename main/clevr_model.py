@@ -313,8 +313,6 @@ render_args = bpy.context.scene.render
 render_args.engine = "CYCLES"
 render_args.resolution_x = 320
 render_args.resolution_y = 240
-render_args.tile_x = 256
-render_args.tile_y = 256
 render_args.resolution_percentage = 100
 
 # Some CYCLES-specific stuff
