@@ -122,9 +122,10 @@ class CSIS(Importance):
       #   self._sample_from_joint(*args, **kwargs)
       #   for _ in range(self.training_batch_size)
       # )
-      model_trace = self._sample_from_joint(*args, **kwargs)
-
+      
       logger.info("\ngenerating another batch for training")
+
+      model_trace = self._sample_from_joint(*args, **kwargs)
 
       # for name, vals in model_trace.nodes.items():
       #   logger.info(f"{name} - {vals['type']}")
