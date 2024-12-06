@@ -84,7 +84,7 @@ class CSIS(Importance):
     model and guide.
     """
     
-    logger.info("\nTRAIN STEP\n")
+    #logger.info("\nTRAIN STEP\n")
 
     self.guide.is_train = True
     self.guide.step = self.nstep
@@ -120,7 +120,7 @@ class CSIS(Importance):
     `args` and `kwargs` are passed to the model and guide.
     """
 
-    logger.info(f"\nbatch: {batch}\n")
+    #logger.info(f"\nbatch: {batch}\n")
 
     if batch is None:
       # batch = (
@@ -128,7 +128,7 @@ class CSIS(Importance):
       #   for _ in range(self.training_batch_size)
       # )
       
-      logger.info("\ngenerating another batch for training")
+      #logger.info("\ngenerating another batch for training")
 
       model_trace = self._sample_from_joint(*args, **kwargs)
 
@@ -340,7 +340,7 @@ class CSIS(Importance):
     Arguments are passed to the model and guide.
     """
 
-    logger.info("\nVALIDATION STEP\n")
+    #logger.info("\nVALIDATION STEP\n")
 
     if self.validation_batch is None:
       self.set_validation_batch(*args, **kwargs)
