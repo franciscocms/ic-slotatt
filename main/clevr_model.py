@@ -491,6 +491,8 @@ _add_object(objects[{i}])
 bpy.context.scene.render.image_settings.file_format = 'PNG'
 bpy.context.scene.render.filepath = os.path.join(dir_path, f"rendered_scene_{idx}.png")
 
+logger.info(os.path.join(dir_path, f"rendered_scene_{idx}.png"))
+
 # Render the scene
 bpy.ops.render.render(write_still=True)
     """
