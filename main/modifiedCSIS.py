@@ -157,7 +157,7 @@ class CSIS(Importance):
         elif isinstance(vals['fn'], dist.Delta): 
           prior_distribution = "categorical"
           proposal_distribution = "categorical"
-          out_dim = vals["fn"].probs.shape[-1]
+          out_dim = vals["fn"].v.shape[-1]
         
         # prior uniform distributed variables
         elif isinstance(vals["fn"], dist.Bernoulli): 
