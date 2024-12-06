@@ -149,7 +149,7 @@ class CSIS(Importance):
         # logger.info(f"{name} - {vals['value']}")
         
         # prior categorical distributed variables
-        if isinstance(vals["fn"], CategoricalVals) or isinstance(vals["fn"], dist.Categorical) or isinstance(vals['fn'], dist.Delta): 
+        if isinstance(vals["fn"], CategoricalVals) or isinstance(vals["fn"], dist.Categorical): 
           prior_distribution = "categorical"
           proposal_distribution = "categorical"
           out_dim = vals["fn"].probs.shape[-1] if isinstance(vals["fn"], dist.Categorical) else vals["fn"].base_dist.probs.shape[-1]
