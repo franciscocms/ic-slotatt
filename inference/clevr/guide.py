@@ -222,7 +222,6 @@ class InvSlotAttentionGuide(nn.Module):
     add_flag = False
     if var.proposal_distribution == "categorical": last_activ = nn.Softmax(dim=-1) # size, shape, color, material
     elif var.proposal_distribution == "bernoulli": last_activ = nn.Sigmoid() # mask
-    else: raise ValueError(f"Unknown distribution: {var.proposal_distribution}")
 
     if params["pos_from_attn"] == "attn-masks": input_dim = 1 if var.address in ["locX", "locY"] else self.hid_dim
     
