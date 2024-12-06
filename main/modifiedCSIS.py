@@ -290,6 +290,8 @@ class CSIS(Importance):
     loss = []
     for name, vals in guide_trace.nodes.items():
       if vals["type"] == "sample":
+
+        logger.info(name)
         
         # logger.info(f"{name} - {vals['fn']} - {vals['value']}")
         # logger.info(f"{vals['fn'].batch_shape} - {vals['fn'].event_shape}")
