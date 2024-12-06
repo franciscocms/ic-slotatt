@@ -124,13 +124,13 @@ for s in range(resume_step, resume_step + nsteps):
     csis.nstep = s
 
     loss = csis.step()
-    val_loss = csis.validation_loss(s)
+    val_loss = csis.validation_loss()
 
     # update prior logvar
     
 
 
-    
+
 
     if s % step_size == 0 or s == nsteps-1: 
         logger.info(f"step {s}/{resume_step + nsteps-1} - train_loss: {loss} - val_loss: {val_loss}")

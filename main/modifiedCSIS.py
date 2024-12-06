@@ -84,6 +84,8 @@ class CSIS(Importance):
     model and guide.
     """
     
+    logger.info("\nTRAIN STEP\n")
+
     self.guide.is_train = True
     self.guide.step = self.nstep
     
@@ -117,6 +119,9 @@ class CSIS(Importance):
 
     `args` and `kwargs` are passed to the model and guide.
     """
+
+    logger.info(f"\nbatch: {batch}\n")
+
     if batch is None:
       # batch = (
       #   self._sample_from_joint(*args, **kwargs)
@@ -323,7 +328,7 @@ class CSIS(Importance):
 
     return total_loss, dict(indices=indices)
 
-  def validation_loss(self, step, *args, **kwargs):
+  def validation_loss(self, *args, **kwargs):
     """
     :returns: loss estimated using validation batch
     :rtype: float
@@ -334,6 +339,8 @@ class CSIS(Importance):
 
     Arguments are passed to the model and guide.
     """
+
+    logger.info("\VALIDATION STEP\n")
 
     if self.validation_batch is None:
       self.set_validation_batch(*args, **kwargs)
