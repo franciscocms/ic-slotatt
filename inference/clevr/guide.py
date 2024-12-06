@@ -281,8 +281,8 @@ class InvSlotAttentionGuide(nn.Module):
     else: raise ValueError(f"Unknown variable address: {variable_address}")      
     
     if self.is_train and self.step % params['step_size'] == 0:
-        logger.info(f"\{variable_name} target values {variable.value[0]}")
-        logger.info(f"\{variable_name} proposed values {proposal[0]}")
+        logger.info(f"\n{variable_name} target values {variable.value[0]}")
+        logger.info(f"\n{variable_name} proposed values {proposal[0]}")
 
     return out
   
@@ -328,7 +328,7 @@ class InvSlotAttentionGuide(nn.Module):
 
       
 
-        if self.step % 10 == 0:
+        if self.is_train and self.step % params['step_size'] == 0:
             aux_attn = attn.reshape((B, n_s, 128, 128)) if not params["strided_convs"] else attn.reshape((B, n_s, 32, 32))
             fig, ax = plt.subplots(ncols=n_s)
             for j in range(n_s):                                       

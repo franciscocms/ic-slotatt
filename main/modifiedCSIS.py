@@ -149,7 +149,7 @@ class CSIS(Importance):
         # logger.info(f"{name} - {vals['value']}")
         
         # prior categorical distributed variables
-        if isinstance(vals["fn"], CategoricalVals) or isinstance(vals["fn"], dist.Categorical): 
+        if isinstance(vals["fn"], CategoricalVals) or isinstance(vals["fn"], dist.Categorical) or isinstance(vals['fn'], dist.Delta): 
           prior_distribution = "categorical"
           proposal_distribution = "categorical"
           out_dim = vals["fn"].probs.shape[-1] if isinstance(vals["fn"], dist.Categorical) else vals["fn"].base_dist.probs.shape[-1]
@@ -228,9 +228,9 @@ class CSIS(Importance):
         # logging.info("\n")
 
       # if p["running_type"] == "debug":
-      #   for name, param in self.guide.named_parameters():
-      #     #if name.split(".")[0] == "slot_attention":
-      #     logging.info(f"{name} - {param.requires_grad} - {param.grad}")
+        for name, param in self.guide.named_parameters():
+          #if name.split(".")[0] == "slot_attention":
+          logger.info(f"{name} - {param.requires_grad} - {param.grad}")
 
     loss += particle_loss
     #warn_if_nan(loss, "loss")
