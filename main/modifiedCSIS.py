@@ -340,7 +340,7 @@ class CSIS(Importance):
     Arguments are passed to the model and guide.
     """
 
-    logger.info("\VALIDATION STEP\n")
+    logger.info("\nVALIDATION STEP\n")
 
     if self.validation_batch is None:
       self.set_validation_batch(*args, **kwargs)
