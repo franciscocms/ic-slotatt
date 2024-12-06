@@ -548,7 +548,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     #logger.info("Scene rendered and saved...")
     img_batch = torch.stack(
-        [img_transform(Image.open(os.path.join(dir_path, f"rendered_scene_{idx}.png"))) for idx in range(B)]
+        [img_transform(Image.open(os.path.join(dir_path, f"rendered_scene_{str(idx).zfill(3)}.png"))) for idx in range(B)]
     )
 
     #plt.imshow(img[0].permute(1, 2, 0).numpy())
