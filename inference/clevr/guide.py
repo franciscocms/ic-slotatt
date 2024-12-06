@@ -26,15 +26,11 @@ torch.autograd.set_detect_anomaly(True)
 logger = logging.getLogger("train")
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-def build_coords(b_s, resolution=(128, 128)):
-  # x-cor and y-cor setting
-  nx, ny = resolution
-  x = np.linspace(0, 1, nx)
-  y = np.linspace(0, 1, ny)
-  xv, yv = np.meshgrid(x, y)
-  xv = torch.from_numpy(np.reshape(xv, [b_s, nx, nx, 1])).to(device, dtype=torch.float32)
-  yv = torch.from_numpy(np.reshape(yv, [b_s, ny, ny, 1])).to(device, dtype=torch.float32)
-  return xv, yv
+@torch.jit.script
+def cosine_distance(x, y):
+    x = F.normalize(x, dim=-1)
+    y = F.normalize(y, dim=-1)
+    return 1.0 - torch.bmm(x, y.transpose(1, 2))
 
 class SlotAttention(nn.Module):
   def __init__(self, num_slots, dim = 64, iters = 3, eps = 1e-8, hidden_dim = 128):
@@ -46,6 +42,13 @@ class SlotAttention(nn.Module):
     
     self.slots_mu = nn.Parameter(torch.randn(1, 1, dim))
     self.slots_sigma = nn.Parameter(torch.rand(1, 1, dim))
+
+    nn.init.xavier_uniform_(
+       self.slots_mu, gain=nn.init.calculate_gain("linear")
+       )
+    nn.init.xavier_uniform_(
+       self.slots_sigma, gain=nn.init.calculate_gain("linear")
+       )
 
     self.to_q = nn.Linear(dim, dim, bias=False)
     self.to_k = nn.Linear(dim, dim, bias=False)
@@ -69,7 +72,7 @@ class SlotAttention(nn.Module):
 
   def forward(self, inputs, num_slots = None):
     
-    b_s, n, d = inputs.shape # 'inputs' have shape (b_s, W*H, dim)
+    b_s, num_inputs, d = inputs.shape # 'inputs' have shape (b_s, W*H, dim)
     n_s = num_slots if num_slots is not None else self.num_slots
     
     mu = self.slots_mu.expand(b_s, n_s, -1)
@@ -94,17 +97,12 @@ class SlotAttention(nn.Module):
       
       q = self.to_q(slots) # 'q' shape (1, n_s, 64)
 
-      attn_logits = torch.cdist(k, q)      
+      attn_logits = cosine_distance(k, q)      
       attn_logits, p, q = minimize_entropy_of_sinkhorn(attn_logits, a, b, mesh_lr=params["mesh_lr"], n_mesh_iters=params["mesh_iters"]) 
           
       attn, _, _ = sinkhorn(attn_logits, a, b, u=p, v=q) # 'attn' shape (1, n, n_s)
       attn = attn.permute(0, 2, 1) # 'attn' shape (1, n_s, n)
       updates = torch.matmul(attn, v)
-
-      # Compute the center of mass of each slot attention mask.
-      # 'attn' has shape (1, n_s, 16384)
-      # 'grid' has shape (1, 16384, 2)
-      # 'slot_pos' has shape (1, n_s, 2) 
 
       slots = self.gru(
           updates.view(b_s * n_s, d),
@@ -177,7 +175,7 @@ class Encoder(nn.Module):
 
 """Slot Attention-based auto-encoder for object discovery."""
 class InvSlotAttentionGuide(nn.Module):
-  def __init__(self, resolution, num_iterations, hid_dim, stage, mixture_components=5):
+  def __init__(self, resolution, num_iterations, hid_dim, stage):
     """Builds the Slot Attention-based auto-encoder.
     Args:
     resolution: Tuple of integers specifying width and height of input image.
@@ -195,11 +193,8 @@ class InvSlotAttentionGuide(nn.Module):
     self.stage = stage
     assert self.stage in ["train", "eval"], "stage must be either 'train' or 'eval'"
     self.current_trace = []
-    self.train = True
+    self.is_train = True
 
-    self._mixture_components = mixture_components
-    self._low = 0.
-    self._high = 40.
     self.prior_stddevs = params["prior_stddevs"]
 
     self.encoder_cnn = Encoder(self.resolution, self.hid_dim)
@@ -279,14 +274,16 @@ class InvSlotAttentionGuide(nn.Module):
     elif variable_proposal_distribution == "categorical":        
        # logger.info(f"\nproposal shape for {variable_name}: {proposal.shape}\n")
        # logger.info(f"{dist.Categorical(probs=proposal).to_event(1).batch_shape} - {dist.Categorical(probs=proposal).to_event(1).event_shape}")
-       
        out = pyro.sample(variable_name, dist.Categorical(probs=proposal))
     elif variable_proposal_distribution == "bernoulli": 
-       proposal = proposal.squeeze(-1)
+       proposal = proposal.squeeze(-1)       
        out = pyro.sample(variable_name, dist.Bernoulli(proposal))
-    
     else: raise ValueError(f"Unknown variable address: {variable_address}")      
     
+    if self.is_train and self.step % params['step_size'] == 0:
+        logger.info(f"\{variable_name} target values {variable.value[0]}")
+        logger.info(f"\{variable_name} proposed values {proposal[0]}")
+
     return out
   
   def forward(self, 

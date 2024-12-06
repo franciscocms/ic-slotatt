@@ -56,7 +56,7 @@ for p in [GUIDE_PATH, LOSS_PATH]:
 logger.info(f"\n... saving model checkpoints in {GUIDE_PATH}")
 logger.info(f"... saving loss values in {LOSS_PATH}\n")
 
-guide = InvSlotAttentionGuide(resolution = (128, 128), num_iterations = 3, hid_dim = params["slot_dim"], stage="train", mixture_components=params["mixture_components"])
+guide = InvSlotAttentionGuide(resolution = (128, 128), num_iterations = 3, hid_dim = params["slot_dim"], stage="train")
 guide.to(DEVICE)
 
 run.watch(guide)
@@ -112,7 +112,7 @@ if CHECK_ATTN and TRAINING_FROM_SCRATCH:
   if len(os.listdir(root_folder)) == 0:
     logger.info("Folders for all steps deleted...")
 
-step_size = 1 if params["running_type"] == "debug" else 10
+step_size = params["step_size"]
 
 for s in range(resume_step, resume_step + nsteps):    
   

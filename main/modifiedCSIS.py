@@ -84,7 +84,7 @@ class CSIS(Importance):
     model and guide.
     """
     
-    self.guide.train = True
+    self.guide.is_train = True
     self.guide.step = self.nstep
     
     with poutine.trace(param_only=True) as param_capture:
@@ -331,7 +331,7 @@ class CSIS(Importance):
     if self.validation_batch is None:
       self.set_validation_batch(*args, **kwargs)
     
-    self.guide.train = False
+    self.guide.is_train = False
     
     with torch.no_grad():
       val_loss = self.loss_and_grads(False, self.validation_batch, *args, **kwargs)
