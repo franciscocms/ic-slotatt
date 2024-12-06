@@ -520,9 +520,12 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     # delete all blender scripts
     files = glob.glob(os.path.join(dir_path, "*.py"))
+    logger.info(files)
+
     for f in files:
         if f.split('_')[:3] == ["generate", "clevr", "scene"]: os.remove(f)
-    logger.info("\nall blender files removed...")
+    files = glob.glob(os.path.join(dir_path, "*.py"))
+    logger.info(files)
     
     # delete all generated imgs
     imgs = glob.glob(os.path.join(dir_path, "*.png"))

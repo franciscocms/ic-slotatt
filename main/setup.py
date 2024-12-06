@@ -22,7 +22,7 @@ params = {
     "training_from_scratch" : True,
     "lr" : 4e-4, 
     "batch_size" : 64, # 256
-    "training_iters": 100, # 10k
+    "training_iters": 1, # 10k
     "step_size": 5,
     "running_type": "train", # train, debug, eval, inspect
     "slot_dim" : 64,
