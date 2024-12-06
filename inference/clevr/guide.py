@@ -274,9 +274,10 @@ class InvSlotAttentionGuide(nn.Module):
         mean, logvar = proposal[0].squeeze(-1), proposal[1].squeeze(-1)
         std = torch.sqrt(torch.exp(logvar))
        
-        if variable_name in ['x', 'y']: out = pyro.sample(variable_name, TruncatedNormal(mean, std, -1., 1.))
-        elif variable_name in ['pose']: out = pyro.sample(variable_name, TruncatedNormal(mean, std, 0., 1.))
-    
+        #if variable_name in ['x', 'y']: out = pyro.sample(variable_name, TruncatedNormal(mean, std, -1., 1.))
+        #elif variable_name in ['pose']: out = pyro.sample(variable_name, TruncatedNormal(mean, std, 0., 1.))
+        out = pyro.sample(variable_name, dist.Normal(mean, std))
+
     elif variable_proposal_distribution == "categorical":        
        # logger.info(f"\nproposal shape for {variable_name}: {proposal.shape}\n")
        # logger.info(f"{dist.Categorical(probs=proposal).to_event(1).batch_shape} - {dist.Categorical(probs=proposal).to_event(1).event_shape}")
