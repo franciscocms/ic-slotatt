@@ -165,13 +165,13 @@ class CSIS(Importance):
         elif isinstance(vals["fn"], dist.Uniform): 
           prior_distribution = "uniform"
           proposal_distribution = "normal"
-          out_dim = 2
+          out_dim = 1
         
         # prior uniform distributed variables
         elif isinstance(vals["fn"], dist.Normal): 
           prior_distribution = "normal"
           proposal_distribution = "normal"
-          out_dim = 2
+          out_dim = 1
         
 
         # delete this block, ignore instance and just add variables
