@@ -475,7 +475,7 @@ objects = {}
     script += f"""
 
 # Pass the index of the batched sample
-idx = {str(id).zfill(3)}
+idx = {id}
 """
 
     # Insert the sampled objects
@@ -545,12 +545,12 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     # Call Blender to render the scene
     #with mp.Pool(processes=mp.cpu_count()) as pool:
-    with mp.Pool(processes=1) as pool:
+    with mp.Pool(processes=mp.cpu_count()) as pool:
       pool.map(render_scene_in_blender, blender_scripts)
 
     #logger.info("Scene rendered and saved...")
     img_batch = torch.stack(
-        [img_transform(Image.open(os.path.join(dir_path, f"rendered_scene_{str(idx).zfill(3)}.png"))) for idx in range(B)]
+        [img_transform(Image.open(os.path.join(dir_path, f"rendered_scene_{idx}.png"))) for idx in range(B)]
     )
 
     #plt.imshow(img[0].permute(1, 2, 0).numpy())
