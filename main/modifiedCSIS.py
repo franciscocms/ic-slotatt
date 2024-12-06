@@ -233,9 +233,10 @@ class CSIS(Importance):
         # logging.info("\n")
 
       # if p["running_type"] == "debug":
+      if self.nstep % p['step_size'] == 0:
         for name, param in self.guide.named_parameters():
           #if name.split(".")[0] == "slot_attention":
-          logger.info(f"{name} - {param.requires_grad} - {param.grad}")
+          logger.info(f"{name} - {param.requires_grad}")
 
     loss += particle_loss
     #warn_if_nan(loss, "loss")
