@@ -467,7 +467,7 @@ def _add_object(object_dir):
 
 # Sampled objects from Pyro
 
-logger.info("adding objects to blender scene...")
+# logger.info("adding objects to blender scene...")
 
 objects = {}
 """
@@ -545,7 +545,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     # Call Blender to render the scene
     #with mp.Pool(processes=mp.cpu_count()) as pool:
-    with mp.Pool(processes=mp.cpu_count()) as pool:
+    with mp.Pool(processes=1) as pool:
       pool.map(render_scene_in_blender, blender_scripts)
 
     #logger.info("Scene rendered and saved...")
