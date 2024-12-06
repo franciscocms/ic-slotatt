@@ -1,5 +1,6 @@
 from typing import Tuple, Union
 import torch
+import torch.nn as nn
 from torch import Tensor
 from torch.nn import functional as F
 from einops import reduce
@@ -29,6 +30,26 @@ def to_int(value: Tensor):
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters())
+
+class GaussianNet(nn.Module):
+    def __init__(self, input_dim, hid_dim, out_dim, activ):
+        super().__init__()
+
+        self.fc = nn.Sequential(
+            nn.Linear(input_dim, hid_dim),
+            nn.ReLU()
+        )
+        self.fc_mean = nn.Linear(hid_dim, out_dim)
+        self.fc_logvar = nn.Linear(hid_dim, out_dim)
+        self.activ = activ
+
+    def forward(self, x):
+        x = self.fc(x)
+        mean = self.activ(self.fc_mean(x))
+        logvar = self.fc_logvar(x)
+        return mean, logvar
+
+
 
 def get_pretrained_wts(guide, path):
     # loading the pre-trained weights from the density map estimator

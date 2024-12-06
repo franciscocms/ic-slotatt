@@ -16,7 +16,7 @@ sys.path.append(os.path.abspath(__file__+'/../../../'))
 from utils.distributions import CategoricalVals, TruncatedNormal, Mixture
 from utils.var import Variable
 from main.setup import params
-from utils.guide import minimize_entropy_of_sinkhorn, sinkhorn, assert_shape, to_int
+from utils.guide import minimize_entropy_of_sinkhorn, sinkhorn, assert_shape, to_int, GaussianNet
 
 import logging
 import warnings
@@ -150,11 +150,11 @@ class Encoder(nn.Module):
     
     self.encoder_sa = []
     in_channels = 3 if params['dataset'] == '2Dobjects' else 4
-    self.encoder_sa += [nn.Conv2d(in_channels, 64, 5, 1, 2), nn.ReLU(inplace=True)]
+    self.encoder_sa += [nn.Conv2d(in_channels, 64, 5, 1, 2), nn.ReLU()]
     for c in range(2):
-      if params["strided_convs"]: self.encoder_sa += [nn.Conv2d(64, 64, 5, 2, 2), nn.ReLU(inplace=True)]
-      else: self.encoder_sa += [nn.Conv2d(64, 64, 5, 1, 2), nn.ReLU(inplace=True)]
-    self.encoder_sa += [nn.Conv2d(64, 64, 5, 1, 2), nn.ReLU(inplace=True)]
+      if params["strided_convs"]: self.encoder_sa += [nn.Conv2d(64, 64, 5, 2, 2), nn.ReLU()]
+      else: self.encoder_sa += [nn.Conv2d(64, 64, 5, 1, 2), nn.ReLU()]
+    self.encoder_sa += [nn.Conv2d(64, 64, 5, 1, 2), nn.ReLU()]
     self.encoder_sa = nn.Sequential(*self.encoder_sa)
     
     #self.encoder_pos = SoftPositionEmbed(hid_dim, resolution)
@@ -201,7 +201,7 @@ class InvSlotAttentionGuide(nn.Module):
 
     self.mlp = nn.Sequential(
        nn.Linear(hid_dim, hid_dim), # used to be hid_dim, hid_dim
-       nn.ReLU(inplace=True),
+       nn.ReLU(),
        nn.Linear(hid_dim, hid_dim)
     )
 
@@ -216,33 +216,40 @@ class InvSlotAttentionGuide(nn.Module):
 
     self.batch_idx = 0
     self.step = 0
-
-    self.attention_overlap = torch.tensor(0., device=device)
+    self.prior_logvar = torch.tensor(-4)
   
   def add_proposal_net(self, var, out_dim):
     add_flag = False
     if var.proposal_distribution == "categorical": last_activ = nn.Softmax(dim=-1) # size, shape, color, material
     elif var.proposal_distribution == "bernoulli": last_activ = nn.Sigmoid() # mask
-    elif var.proposal_distribution == "normal": 
-       if var.name in ["x", "y"]: last_activ = nn.Tanh() # position 
-       else: last_activ = nn.Sigmoid() # pose
-    elif var.proposal_distribution == "mixture": last_activ = nn.Identity()
     else: raise ValueError(f"Unknown distribution: {var.proposal_distribution}")
 
     if params["pos_from_attn"] == "attn-masks": input_dim = 1 if var.address in ["locX", "locY"] else self.hid_dim
     
-    proposal_net = nn.Sequential(
-      nn.Linear(input_dim, self.hid_dim), nn.ReLU(),
-      #nn.Linear(self.hid_dim, self.hid_dim), nn.ReLU(),
-      nn.Linear(self.hid_dim, out_dim), last_activ
-      )
+    if var.name in ['x', 'y']:
+       proposal_net = GaussianNet(input_dim, self.hid_dim, out_dim, activ = nn.Tanh())
     
+    elif var.name in ['pose']:
+       proposal_net = GaussianNet(input_dim, self.hid_dim, out_dim, activ = nn.Sigmoid())
+    
+    else:
+        proposal_net = nn.Sequential(
+        nn.Linear(input_dim, self.hid_dim), nn.ReLU(),
+        #nn.Linear(self.hid_dim, self.hid_dim), nn.ReLU(),
+        nn.Linear(self.hid_dim, out_dim), last_activ
+        )
+        
     #logger.info(proposal_net)
      
     self.prop_nets[var.address] = proposal_net.to(device) 
 
     if var.address in self.prop_nets: add_flag = True 
     if not add_flag: logging.info(f"ERROR: proposal net for site {var.name} was not added!")
+  
+  def _compute_logvar_loss(self, logvar, prior_logvar=torch.tensor(-2.)):
+        prior_var = torch.exp(prior_logvar)
+        kl_div = 0.5 * (logvar - prior_logvar + prior_var / torch.exp(logvar) - 1).mean()
+        return kl_div
   
   def infer_step(self, variable, obs=None, proposal_distribution=None): 
 
@@ -261,16 +268,16 @@ class InvSlotAttentionGuide(nn.Module):
       variable_address = variable.address
       variable_prior_distribution = variable.prior_distribution
       variable_proposal_distribution = variable.proposal_distribution
-
-    
-    #logger.info(f"input dim in {variable_name} infer_step: {obs.shape} and value shape: {variable.value.shape}")
     
     proposal = self.prop_nets[variable_address](obs)
     
     if variable_proposal_distribution == "normal":
-        proposal = proposal.squeeze(-1)
-        std = torch.tensor(params["loc_proposal_std"], device=device)
-        out = pyro.sample(variable_name, dist.Normal(proposal, std))
+        mean, logvar = proposal[0].squeeze(-1), proposal[1].squeeze(-1)
+        std = torch.sqrt(torch.exp(logvar))
+       
+        if variable_name in ['x', 'y']: out = pyro.sample(variable_name, TruncatedNormal(mean, std, -1., 1.))
+        elif variable_name in ['pose']: out = pyro.sample(variable_name, TruncatedNormal(mean, std, 0., 1.))
+    
     elif variable_proposal_distribution == "categorical":        
        # logger.info(f"\nproposal shape for {variable_name}: {proposal.shape}\n")
        # logger.info(f"{dist.Categorical(probs=proposal).to_event(1).batch_shape} - {dist.Categorical(probs=proposal).to_event(1).event_shape}")
@@ -281,10 +288,18 @@ class InvSlotAttentionGuide(nn.Module):
     else: raise ValueError(f"Unknown variable address: {variable_address}")      
     
     if self.is_train and self.step % params['step_size'] == 0:
-        logger.info(f"\n{variable_name} target values {variable.value[0]}")
-        logger.info(f"\n{variable_name} proposed values {proposal[0]}")
+        if variable_name in ['x', 'y', 'pose']:
+            logger.info(f"\n{variable_name} target values {variable.value[0]}")
+            logger.info(f"\n{variable_name} proposed mean {mean[0]}")
+            logger.info(f"\n{variable_name} proposed logvar {logvar[0]}")
+        else:
+            logger.info(f"\n{variable_name} target values {variable.value[0]}")
+            logger.info(f"\n{variable_name} proposed values {proposal[0]}")
 
-    return out
+
+    if variable_name not in ['x', 'y', 'pose']: return out
+    else: return mean, logvar
+
   
   def forward(self, 
               observations={"image": torch.zeros((1, 3, 128, 128))}
@@ -326,8 +341,6 @@ class InvSlotAttentionGuide(nn.Module):
         #     plt.close()
         #     logger.info(f"saved input image {b}...")
 
-      
-
         if self.is_train and self.step % params['step_size'] == 0:
             aux_attn = attn.reshape((B, n_s, 128, 128)) if not params["strided_convs"] else attn.reshape((B, n_s, 32, 32))
             fig, ax = plt.subplots(ncols=n_s)
@@ -345,11 +358,17 @@ class InvSlotAttentionGuide(nn.Module):
             plt.close()
 
         hidden_vars = ["N"]
+        self.logvar_loss = 0.
+
         for var in self.current_trace:
             if var.name not in hidden_vars:
 
                 # run the proposal for variable var
-                _ = self.infer_step(var, self.slots)
+                if var.name not in ['x', 'y', 'pose']: _ = self.infer_step(var, self.slots)
+                else: 
+                   mean, logvar = self.infer_step(var, self.slots)
+                   self.logvar_loss += self._compute_logvar_loss(logvar, self.prior_logvar)
+                
       
         del self.slots
         self.current_trace = []

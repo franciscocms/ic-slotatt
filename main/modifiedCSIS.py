@@ -138,10 +138,6 @@ class CSIS(Importance):
     if p["loc_proposal"] == "wo_net": 
       hidden_addr.append("locX")
       hidden_addr.append("locY")
-    
-    #self.guide.batch_idx = 0
-    
-    #logger.info("\n\n")
 
     for name, vals in model_trace.nodes.items(): 
 
@@ -169,13 +165,13 @@ class CSIS(Importance):
         elif isinstance(vals["fn"], dist.Uniform): 
           prior_distribution = "uniform"
           proposal_distribution = "normal"
-          out_dim = 1 # std is fixed!
+          out_dim = 2
         
         # prior uniform distributed variables
         elif isinstance(vals["fn"], dist.Normal): 
           prior_distribution = "normal"
           proposal_distribution = "normal"
-          out_dim = 1 # std is fixed!
+          out_dim = 2
         
 
         # delete this block, ignore instance and just add variables
@@ -205,6 +201,9 @@ class CSIS(Importance):
     #self.guide.batch_idx += 1
 
     particle_loss = self._differentiable_loss_particle(guide_trace)
+    if p['dataset'] == 'clevr':
+      particle_loss += self.guide.logvar_loss
+    
 
     #logging.info(particle_loss)
 

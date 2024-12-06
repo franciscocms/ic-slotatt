@@ -114,22 +114,30 @@ if CHECK_ATTN and TRAINING_FROM_SCRATCH:
 
 step_size = params["step_size"]
 
-for s in range(resume_step, resume_step + nsteps):    
+
+
+for s in range(resume_step, resume_step + nsteps):     
   
-  if CHECK_ATTN and s % step_size == 0: 
-    if not os.path.isdir(f"{root_folder}/attn-step-{s}"): os.mkdir(f"{root_folder}/attn-step-{s}")  
+    if CHECK_ATTN and s % step_size == 0: 
+        if not os.path.isdir(f"{root_folder}/attn-step-{s}"): os.mkdir(f"{root_folder}/attn-step-{s}")  
 
-  csis.nstep = s
+    csis.nstep = s
 
-  loss = csis.step()
-  val_loss = csis.validation_loss(s)
+    loss = csis.step()
+    val_loss = csis.validation_loss(s)
 
-  if s % step_size == 0 or s == nsteps-1: 
-    logger.info(f"step {s}/{resume_step + nsteps-1} - train_loss: {loss} - val_loss: {val_loss}")
-    dict_to_log = {'train_loss': loss, 'val_loss': val_loss}
-    run.log(dict_to_log)
+    # update prior logvar
+    
 
-    torch.save(csis.guide.state_dict(), GUIDE_PATH+'/guide_'+str(s)+'.pth')    
+
+    
+
+    if s % step_size == 0 or s == nsteps-1: 
+        logger.info(f"step {s}/{resume_step + nsteps-1} - train_loss: {loss} - val_loss: {val_loss}")
+        dict_to_log = {'train_loss': loss, 'val_loss': val_loss}
+        run.log(dict_to_log)
+
+        torch.save(csis.guide.state_dict(), GUIDE_PATH+'/guide_'+str(s)+'.pth')    
 
 logger.info("\ntraining ended...")
 wandb.finish()
