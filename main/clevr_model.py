@@ -285,13 +285,11 @@ def generate_blender_script(objects, id, jobID):
     """
     Generate a Blender Python script to render the CLEVR-like scene.
     """
-    script = """
+    script = f"""
 import bpy
 import random
 import os
 import logging
-
-from main.setup import params
 
 from mathutils import Vector
 
@@ -309,7 +307,7 @@ logger.addHandler(handler)
 dir_path = os.path.dirname(__file__)
 
 # Set images and blender files path
-jobID = params['jobID']
+jobID = {jobID}
 imgs_path = os.path.join(dir_path, jobID)
 if not os.path.isdir: os.mkdir(imgs_path)
 
@@ -476,7 +474,9 @@ def _add_object(object_dir):
 # Sampled objects from Pyro
 
 # logger.info("adding objects to blender scene...")
-
+"""
+    script += """
+    
 objects = {}
 """
     
