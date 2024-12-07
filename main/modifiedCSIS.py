@@ -294,7 +294,7 @@ class CSIS(Importance):
 
       logger.info(f"B_pdist shape: {B_pdist.shape}")
 
-    loss, _ = self.hungarian_loss(pdist)
+    loss, _ = self.hungarian_loss(B_pdist)
     #logger.info(f"\nfinal loss: {loss}\n")
 
     return loss
