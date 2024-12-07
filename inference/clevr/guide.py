@@ -71,6 +71,8 @@ class SlotAttention(nn.Module):
     
     self.eps = torch.tensor(1e-8, device=device)
 
+    self.step = 0
+
   def forward(self, inputs, num_slots = None):
     
     b_s, num_inputs, d = inputs.shape # 'inputs' have shape (b_s, W*H, dim)
@@ -91,37 +93,58 @@ class SlotAttention(nn.Module):
     inputs = self.norm_input(inputs)      
     k, v = self.to_k(inputs), self.to_v(inputs) # 'k' and 'v' have shape (1, 16384, 64)
 
-    if params["strided_convs"]: latent_resolution = (32, 32)
-    else: latent_resolution = (128, 128)
+    if params["strided_convs"]: latent_res = (32, 32)
+    else: latent_res = (128, 128)
 
     a = self.mlp_weight_input(inputs).squeeze(-1).softmax(-1) * n_s # 'a' shape (b_s, W*H)
 
     for iteration in range(self.iters):
 
-      if params["running_type"] == "inspect": logging.info(f"\nSA iteration {iteration}")
-      
-      slots_prev = slots
-      slots = self.norm_slots(slots) # 'slots' shape (b_s, n_s, slot_dim)
-      b = self.mlp_weight_slots(slots).squeeze(-1).softmax(-1) * n_s  # 'b' shape (b_s, n_s)
-      
-      q = self.to_q(slots) # 'q' shape (1, n_s, 64)
+        if params["running_type"] == "inspect": logging.info(f"\nSA iteration {iteration}")
+        
+        slots_prev = slots
+        slots = self.norm_slots(slots) # 'slots' shape (b_s, n_s, slot_dim)
+        b = self.mlp_weight_slots(slots).squeeze(-1).softmax(-1) * n_s  # 'b' shape (b_s, n_s)
+        
+        q = self.to_q(slots) # 'q' shape (1, n_s, 64)
 
-      attn_logits = cosine_distance(k, q)      
-      attn_logits, p, q = minimize_entropy_of_sinkhorn(attn_logits, a, b, mesh_lr=params["mesh_lr"], n_mesh_iters=params["mesh_iters"]) 
-          
-      attn, _, _ = sinkhorn(attn_logits, a, b, u=p, v=q) # 'attn' shape (1, n, n_s)
-      attn = attn.permute(0, 2, 1) # 'attn' shape (1, n_s, n)
-      updates = torch.matmul(attn, v)
+        attn_logits = cosine_distance(k, q)  
+        
+        if self.step % params['step_size'] == 0 and iteration == self.iters - 1:
+            aux_attn = attn_logits.reshape((b_s, n_s, 128, 128)) if not params["strided_convs"] else attn_logits.reshape((b_s, n_s, 32, 32))
+            fig, ax = plt.subplots(ncols=n_s)
+            for j in range(n_s):                                       
+                im = ax[j].imshow(aux_attn[0, j, :, :].detach().cpu().numpy())
+                ax[j].grid(False)
+                ax[j].axis('off')        
+            plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/attn_logits.png")
+            plt.close()
 
-      slots = self.gru(
-          updates.view(b_s * n_s, d),
-          slots_prev.view(b_s * n_s, d),
-      )
+        attn_logits, p, q = minimize_entropy_of_sinkhorn(attn_logits, a, b, mesh_lr=params["mesh_lr"], n_mesh_iters=params["mesh_iters"]) 
 
-      slots = slots.view(b_s, n_s, d)
-      assert_shape(slots.size(), (b_s, n_s, d))
-      slots = slots + self.fc2(F.relu(self.fc1(self.norm_pre_ff(slots))))
-      assert_shape(slots.size(), (b_s, n_s, d))    
+        if self.step % params['step_size'] == 0 and iteration == self.iters - 1:
+            aux_attn = attn_logits.reshape((b_s, n_s, 128, 128)) if not params["strided_convs"] else attn_logits.reshape((b_s, n_s, 32, 32))
+            fig, ax = plt.subplots(ncols=n_s)
+            for j in range(n_s):                                       
+                im = ax[j].imshow(aux_attn[0, j, :, :].detach().cpu().numpy())
+                ax[j].grid(False)
+                ax[j].axis('off')        
+            plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/attn_logits_low_entropy.png")
+            plt.close()
+            
+        attn, _, _ = sinkhorn(attn_logits, a, b, u=p, v=q) # 'attn' shape (b_s, n, n_s)
+        attn = attn.permute(0, 2, 1) # 'attn' shape (1, n_s, n)
+        updates = torch.matmul(attn, v)
+
+        slots = self.gru(
+            updates.view(b_s * n_s, d),
+            slots_prev.view(b_s * n_s, d),
+        )
+
+        slots = slots.view(b_s, n_s, d)
+        assert_shape(slots.size(), (b_s, n_s, d))
+        slots = slots + self.fc2(F.relu(self.fc1(self.norm_pre_ff(slots))))
+        assert_shape(slots.size(), (b_s, n_s, d))    
     return slots, attn
 
 def build_grid(resolution):
@@ -323,6 +346,8 @@ class InvSlotAttentionGuide(nn.Module):
     
     self.img = observations["image"]
     self.img = self.img.to(device)
+
+    self.slot_attention.step = self.step
 
     B, C, H, W = self.img.shape
 

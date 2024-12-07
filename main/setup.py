@@ -31,7 +31,7 @@ params = {
     "softmax_temperature": 1.0,
     "strided_convs": True,
     "check_attn": True,
-    "jobID": 77, # 69 holds the results for ICSA trained on '2Dobjects'
+    "jobID": 78, # 69 holds the results for ICSA trained on '2Dobjects'
     "mesh_iters": 4,
     "mesh_lr": 5, # 76: 3, 77: 5
     "logprob_coeff": 1.,
