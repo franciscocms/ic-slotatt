@@ -304,7 +304,7 @@ logger.addHandler(handler)
 # logger.info('logging from the generated blender script!')
 
 # Set directory path
-dir_path = os.path.dirname(__file__)
+dir_path = os.path.dirname(os.path.dirname(__file__))
 
 # Set images and blender files path
 jobID = {str(jobID)}
