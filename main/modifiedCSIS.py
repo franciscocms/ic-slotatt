@@ -281,13 +281,13 @@ class CSIS(Importance):
 
             #logger.info(vals['value'])
 
-        partial_loss = self.my_log_prob(guide_trace) # 'partial_loss' shape (1, BS, NOBJECTS, NLATENTS)
+        partial_loss = self.my_log_prob(guide_trace) # 'partial_loss' shape (b_s, n_s)
         
-        logger.info(f"partial loss of object {o}: {partial_loss.shape}")   # [B, 1, N]
+        partial_loss = partial_loss.unsqueeze(-2) # (b_s, 1, n_s)
 
         pdist = torch.cat((pdist, partial_loss), dim=-2)
 
-        logger.info(f"pdist shape: {pdist.shape}")
+        logger.info(f"pdist shape: {pdist.shape}") # [b_s, n_s, n_s]
 
     loss, _ = self.hungarian_loss(pdist)
     #logger.info(f"\nfinal loss: {loss}\n")
@@ -315,16 +315,14 @@ class CSIS(Importance):
 
         loss += partial_loss
     
-    logger.info(f"loss after my_log_prob: {loss.shape}")
-
-    loss = torch.stack(loss).permute(1, 2, 0).unsqueeze(0) # [1, B, n_objects, n_latents]
+    logger.info(f"loss after my_log_prob: {loss.shape}") # [b_s, n_s]
   
 
     return loss
 
   def hungarian_loss(self, pdist):
     
-    pdist = pdist.mean(-1)
+    #pdist = pdist.mean(-1)
     pdist_ = pdist.detach().cpu().numpy()
 
     logger.info(f"final pdist shape: {pdist_.shape}")
