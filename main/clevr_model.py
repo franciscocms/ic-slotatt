@@ -524,6 +524,8 @@ def render_scene_in_blender(blender_script):
 def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     imgs_path = os.path.join(dir_path, str(params['jobID']))
+    logger.info(imgs_path)
+    logger.info(os.path.isdir(imgs_path))
     if not os.path.isdir: os.mkdir(imgs_path)
     
     #logger.info(f"... using CUDA version {torch.version.cuda}")
