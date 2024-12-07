@@ -476,7 +476,7 @@ def _add_object(object_dir):
 # logger.info("adding objects to blender scene...")
 """
     script += """
-    
+
 objects = {}
 """
     
@@ -548,7 +548,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     clevr_scenes = sample_clevr_scene()
 
     # Generate the Blender script for the sampled scene
-    blender_scripts = [generate_blender_script(scene, idx, params['jobID']) for idx, scene in enumerate(clevr_scenes)]
+    blender_scripts = [generate_blender_script(scene, idx, str(params['jobID'])) for idx, scene in enumerate(clevr_scenes)]
     
     #logger.info("started rendering...")
 
