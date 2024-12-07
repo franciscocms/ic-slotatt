@@ -291,6 +291,8 @@ import random
 import os
 import logging
 
+from .setup import params
+
 from mathutils import Vector
 
 logger = logging.getLogger('blender_logger')
@@ -551,7 +553,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     # Call Blender to render the scene
     #with mp.Pool(processes=mp.cpu_count()) as pool:
-    with mp.Pool(processes=10) as pool:
+    with mp.Pool(processes=1) as pool:
       pool.map(render_scene_in_blender, blender_scripts)
 
     #logger.info("Scene rendered and saved...")
