@@ -320,7 +320,12 @@ class CSIS(Importance):
     pdist = pdist.mean(-1)
     pdist_ = pdist.detach().cpu().numpy()
 
+    logger.info(pdist_.shape)
+    logger.info(pdist_)
+
     indices = np.array([linear_sum_assignment(p) for p in pdist_])
+
+    logger.info(indices)
 
     indices_ = indices.shape[2] * indices[:, 0] + indices[:, 1]
     losses = torch.gather(pdist.flatten(1,2), 1, torch.from_numpy(indices_).to(device=pdist.device))
