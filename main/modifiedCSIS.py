@@ -306,7 +306,7 @@ class CSIS(Importance):
     in a certain guide_trace
     """
 
-    loss = 0.
+    loss = torch.tensor([])
     for name, vals in guide_trace.nodes.items():
       if vals["type"] == "sample":
         
@@ -318,7 +318,7 @@ class CSIS(Importance):
 
         #logger.info(f"{name} - partial loss shape: {partial_loss.shape}")
 
-        loss += partial_loss
+        loss = torch.cat((loss, partial_loss), dim=-1) 
     
     logger.info(f"loss after my_log_prob: {loss.shape}") # [b_s, n_s]
   
@@ -327,6 +327,8 @@ class CSIS(Importance):
 
   def hungarian_loss(self, pdist):
     
+    B, M, N = pdist.shape
+
     #pdist = pdist.mean(-1)
     pdist_ = pdist.detach().cpu().numpy()
 
@@ -338,7 +340,8 @@ class CSIS(Importance):
     logger.info(indices)
 
     indices_ = indices.shape[2] * indices[:, 0] + indices[:, 1]
-    losses = torch.gather(pdist.flatten(1,2), 1, torch.from_numpy(indices_).to(device=pdist.device))
+    #losses = torch.gather(pdist.flatten(1,2), 1, torch.from_numpy(indices_).to(device=pdist.device))
+    losses = pdist[torch.arange(B)[:, None], indices[:, 0], indices[:, 1]]
     total_loss = losses.mean(1)
 
     return total_loss, dict(indices=indices)
