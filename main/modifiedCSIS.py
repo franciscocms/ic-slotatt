@@ -259,13 +259,15 @@ class CSIS(Importance):
 
     self.n_latents = len(set([k for k in true_latents.keys()]))
 
-    pdist = torch.tensor([], device=device)
+    B_pdist = torch.tensor([], device=device)
 
     B = self.batch_size
     M = self.max_objects
 
     for i in range(B):
       # modify guide_trace considering the values in 'true_latents' and compute the loss
+
+      pdist = torch.tensor([], device=device)
 
       logger.info(f"\nsample {i}")
       
@@ -281,13 +283,16 @@ class CSIS(Importance):
 
             #logger.info(vals['value'])
 
-        partial_loss = self.my_log_prob(guide_trace) # 'partial_loss' shape (b_s, n_s)
-        
-        partial_loss = partial_loss.unsqueeze(-2) # (b_s, 1, n_s)
+        partial_loss = self.my_log_prob(guide_trace)[i] # 'partial_loss' shape (n_s)
+        partial_loss = partial_loss.unsqueeze(0).unsqueeze(0) # (1, 1, n_s)
 
         pdist = torch.cat((pdist, partial_loss), dim=-2)
 
-        logger.info(f"pdist shape: {pdist.shape}") # [b_s, n_s, n_s]
+        logger.info(f"pdist shape: {pdist.shape}") # [1, n_s, n_s]
+      
+      B_pdist = torch.cat((B_pdist, pdist), dim=0)
+
+      logger.info(f"B_pdist shape: {B_pdist.shape}")
 
     loss, _ = self.hungarian_loss(pdist)
     #logger.info(f"\nfinal loss: {loss}\n")
