@@ -216,7 +216,7 @@ class CSIS(Importance):
 
     #logging.info(particle_loss)
 
-    particle_loss /= self.batch_size 
+    #particle_loss /= self.batch_size 
 
     if grads:
       guide_params = set(
@@ -269,7 +269,7 @@ class CSIS(Importance):
 
       pdist = torch.tensor([], device=device)
 
-      logger.info(f"\nsample {i}")
+      #logger.info(f"\nsample {i}")
       
       for o in range(self.max_objects):
         # computing log_prob as if object 'o' was the target one
@@ -288,11 +288,11 @@ class CSIS(Importance):
 
         pdist = torch.cat((pdist, partial_loss), dim=-3)
 
-        logger.info(f"pdist shape: {pdist.shape}") # [1, n_s, n_s, n_latents]
+        #logger.info(f"pdist shape: {pdist.shape}") # [1, n_s, n_s, n_latents]
       
       B_pdist = torch.cat((B_pdist, pdist), dim=0)
 
-      logger.info(f"B_pdist shape: {B_pdist.shape}")
+      #logger.info(f"B_pdist shape: {B_pdist.shape}")
 
     loss, _ = self.hungarian_loss(B_pdist)
     #logger.info(f"\nfinal loss: {loss}\n")
@@ -316,11 +316,11 @@ class CSIS(Importance):
         partial_loss = -vals['fn'].log_prob(vals['value'])
         partial_loss = partial_loss.unsqueeze(-1)
 
-        logger.info(f"{name} - partial loss shape: {partial_loss.shape}") 
+        #logger.info(f"{name} - partial loss shape: {partial_loss.shape}") 
 
         loss = torch.cat((loss, partial_loss), dim=-1) 
     
-    logger.info(f"loss after my_log_prob: {loss.shape}") # [b_s, n_s, n_latents]
+    #logger.info(f"loss after my_log_prob: {loss.shape}") # [b_s, n_s, n_latents]
   
 
     return loss
@@ -332,16 +332,16 @@ class CSIS(Importance):
     pdist = pdist.mean(-1)
     pdist_ = pdist.detach().cpu().numpy()
 
-    logger.info(f"final pdist shape: {pdist_.shape}")
+    #logger.info(f"final pdist shape: {pdist_.shape}")
     
     indices = np.array([linear_sum_assignment(p) for p in pdist_])
 
-    logger.info(indices)
+    #logger.info(indices)
 
     indices_ = indices.shape[2] * indices[:, 0] + indices[:, 1]
     losses = torch.gather(pdist.flatten(1,2), 1, torch.from_numpy(indices_).to(device=pdist.device))
 
-    logger.info(f"\nloss before final average: {losses.shape}")
+    #logger.info(f"\nloss before final average: {losses.shape}")
     total_loss = losses.mean()
 
     return total_loss, dict(indices=indices)
