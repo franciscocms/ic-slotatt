@@ -281,7 +281,7 @@ def sample_clevr_scene():
         scenes.append(objects)
     return scenes
 
-def generate_blender_script(objects, id):
+def generate_blender_script(objects, id, jobID):
     """
     Generate a Blender Python script to render the CLEVR-like scene.
     """
@@ -290,8 +290,6 @@ import bpy
 import random
 import os
 import logging
-
-from setup import params
 
 from mathutils import Vector
 
@@ -309,7 +307,7 @@ logger.addHandler(handler)
 dir_path = os.path.dirname(__file__)
 
 # Set images and blender files path
-imgs_path = os.path.join(dir_path, str(params['jobID']))
+imgs_path = os.path.join(dir_path, jobID))
 if not os.path.isdir: os.mkdir(imgs_path)
 
 # Open main file
@@ -547,7 +545,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     clevr_scenes = sample_clevr_scene()
 
     # Generate the Blender script for the sampled scene
-    blender_scripts = [generate_blender_script(scene, idx) for idx, scene in enumerate(clevr_scenes)]
+    blender_scripts = [generate_blender_script(scene, idx, params['jobID']) for idx, scene in enumerate(clevr_scenes)]
     
     #logger.info("started rendering...")
 
