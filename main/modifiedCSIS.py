@@ -266,6 +266,8 @@ class CSIS(Importance):
 
     for i in range(B):
       # modify guide_trace considering the values in 'true_latents' and compute the loss
+
+      logger.info(f"\nsample {i}")
       
       for o in range(self.max_objects):
         # computing log_prob as if object 'o' was the target one
@@ -280,7 +282,12 @@ class CSIS(Importance):
             #logger.info(vals['value'])
 
         partial_loss = self.my_log_prob(guide_trace) # 'partial_loss' shape (1, 1, NOBJECTS, NLATENTS)
+        
+        logger.info(f"partial loss of object {o}: {partial_loss.shape}")
+
         pdist = torch.cat((pdist, partial_loss), dim=-3)
+
+        logger.info(f"pdist shape: {pdist.shape}")
 
     loss, _ = self.hungarian_loss(pdist)
     #logger.info(f"\nfinal loss: {loss}\n")
@@ -320,8 +327,8 @@ class CSIS(Importance):
     pdist = pdist.mean(-1)
     pdist_ = pdist.detach().cpu().numpy()
 
-    logger.info(pdist_.shape)
-    logger.info(pdist_)
+    logger.info(f"final pdist shape: {pdist_.shape}")
+    
 
     indices = np.array([linear_sum_assignment(p) for p in pdist_])
 
