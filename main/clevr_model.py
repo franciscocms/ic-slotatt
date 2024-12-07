@@ -308,7 +308,7 @@ dir_path = os.path.dirname(__file__)
 
 # Set images and blender files path
 jobID = {str(jobID)}
-imgs_path = os.path.join(dir_path, jobID)
+imgs_path = os.path.join(dir_path, str(jobID))
 if not os.path.isdir: os.mkdir(imgs_path)
 
 # Open main file
