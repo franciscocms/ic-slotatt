@@ -283,12 +283,12 @@ class CSIS(Importance):
 
             #logger.info(vals['value'])
 
-        partial_loss = self.my_log_prob(guide_trace)[i] # 'partial_loss' shape (n_s)
-        partial_loss = partial_loss.unsqueeze(0).unsqueeze(0) # (1, 1, n_s)
+        partial_loss = self.my_log_prob(guide_trace)[i] # 'partial_loss' shape (n_s, n_latents)
+        partial_loss = partial_loss.unsqueeze(0).unsqueeze(0) # (1, 1, n_s, n_latents)
 
-        pdist = torch.cat((pdist, partial_loss), dim=-2)
+        pdist = torch.cat((pdist, partial_loss), dim=-3)
 
-        logger.info(f"pdist shape: {pdist.shape}") # [1, n_s, n_s]
+        logger.info(f"pdist shape: {pdist.shape}") # [1, n_s, n_s, n_latents]
       
       B_pdist = torch.cat((B_pdist, pdist), dim=0)
 
@@ -314,13 +314,13 @@ class CSIS(Importance):
         # logger.info(f"{vals['fn'].batch_shape} - {vals['fn'].event_shape}")
         
         partial_loss = -vals['fn'].log_prob(vals['value'])
-        if len(partial_loss.shape) == 1: partial_loss.unsqueeze_(0)
+        partial_loss = partial_loss.unsqueeze(-1)
 
-        #logger.info(f"{name} - partial loss shape: {partial_loss.shape}")
+        logger.info(f"{name} - partial loss shape: {partial_loss.shape}") 
 
         loss = torch.cat((loss, partial_loss), dim=-1) 
     
-    logger.info(f"loss after my_log_prob: {loss.shape}") # [b_s, n_s]
+    logger.info(f"loss after my_log_prob: {loss.shape}") # [b_s, n_s, n_latents]
   
 
     return loss
