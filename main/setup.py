@@ -33,7 +33,7 @@ params = {
     "check_attn": True,
     "jobID": 77, # 69 holds the results for ICSA trained on '2Dobjects'
     "mesh_iters": 4,
-    "mesh_lr": 3,
+    "mesh_lr": 5, # 76: 3, 77: 5
     "logprob_coeff": 1.,
     "slot_pos_learned_init": False,
     "perm_inv_loss": True,
@@ -44,6 +44,7 @@ params = {
 
 if not os.path.isdir(params['plots_dir']): os.mkdir(params['plots_dir'])
 
+if params['dataset'] == 'clevr': params['max_objects'] = 6
 
 params["no_slots"] = "w_background" if params["infer_background"] else "wo_background"
 

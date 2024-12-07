@@ -39,15 +39,16 @@ class SlotAttention(nn.Module):
     self.iters = iters
     self.eps = eps
     self.scale = dim ** -0.5
+    self.slots_dim = dim
     
     self.slots_mu = nn.Parameter(torch.randn(1, 1, dim))
-    self.slots_sigma = nn.Parameter(torch.rand(1, 1, dim))
+    self.slots_log_sigma = nn.Parameter(torch.rand(1, 1, dim))
 
     nn.init.xavier_uniform_(
        self.slots_mu, gain=nn.init.calculate_gain("linear")
        )
     nn.init.xavier_uniform_(
-       self.slots_sigma, gain=nn.init.calculate_gain("linear")
+       self.slots_log_sigma, gain=nn.init.calculate_gain("linear")
        )
 
     self.to_q = nn.Linear(dim, dim, bias=False)
@@ -75,10 +76,18 @@ class SlotAttention(nn.Module):
     b_s, num_inputs, d = inputs.shape # 'inputs' have shape (b_s, W*H, dim)
     n_s = num_slots if num_slots is not None else self.num_slots
     
-    mu = self.slots_mu.expand(b_s, n_s, -1)
-    sigma = self.slots_sigma.expand(b_s, n_s, -1)
-    slots = torch.distributions.Normal(mu, torch.abs(sigma) + self.eps).rsample() # 'slots' have shape (1, n_s, slot_dim=64)
- 
+    # mu = self.slots_mu.expand(b_s, n_s, -1)
+    # sigma = self.slots_sigma.expand(b_s, n_s, -1)
+    # slots = torch.distributions.Normal(mu, torch.abs(sigma) + self.eps).rsample() # 'slots' have shape (1, n_s, slot_dim=64)
+
+    # Initialize the slots. Shape: [batch_size, num_slots, d_slots].
+    slots_init = torch.randn(
+        (b_s, n_s, self.slots_dim),
+        device=inputs.device,
+        dtype=inputs.dtype,
+    )
+    slots = self.slots_mu + self.slots_log_sigma.exp() * slots_init
+
     inputs = self.norm_input(inputs)      
     k, v = self.to_k(inputs), self.to_v(inputs) # 'k' and 'v' have shape (1, 16384, 64)
 
@@ -330,7 +339,7 @@ class InvSlotAttentionGuide(nn.Module):
 
     if self.stage == "train":
 
-        n_s = 7
+        n_s = params['max_objects']
         self.slots, attn = self.slot_attention(self.features_to_slots, num_slots=n_s)
 
         # for b in range(B):
