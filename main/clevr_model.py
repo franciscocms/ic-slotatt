@@ -291,6 +291,8 @@ import random
 import os
 import logging
 
+from main.setup import params
+
 from mathutils import Vector
 
 logger = logging.getLogger('blender_logger')
@@ -307,6 +309,7 @@ logger.addHandler(handler)
 dir_path = os.path.dirname(__file__)
 
 # Set images and blender files path
+jobID = params['jobID']
 imgs_path = os.path.join(dir_path, jobID)
 if not os.path.isdir: os.mkdir(imgs_path)
 
