@@ -576,7 +576,11 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     with pyro.plate(observations["image"].shape[0]):
         #pyro.sample("image", MyBernoulli(proc_img, validate_args=False).to_event(3), obs=observations["image"])
-        likelihood_fn = MyNormal(proc_img, torch.tensor(0.01)).get_dist()
+        
+        # stddev = 0.01  in jobID 78
+        # stddev = 0.001 in jobID 79
+        
+        likelihood_fn = MyNormal(proc_img, torch.tensor(0.001)).get_dist() 
         pyro.sample("image", likelihood_fn.to_event(3), obs=observations["image"])
     
     batch_time = time.time() - init_time
