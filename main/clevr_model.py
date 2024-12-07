@@ -496,7 +496,7 @@ _add_object(objects[{i}])
 bpy.context.scene.render.image_settings.file_format = 'PNG'
 bpy.context.scene.render.filepath = os.path.join(imgs_path, f"rendered_scene_{idx}.png")
 
-# logger.info(os.path.join(imgs_path, f"rendered_scene_{idx}.png"))
+logger.info(os.path.join(imgs_path, f"rendered_scene_{idx}.png"))
 
 # Render the scene
 bpy.ops.render.render(write_still=True)
@@ -522,6 +522,9 @@ def render_scene_in_blender(blender_script):
         subprocess.call(cmd, stdout=log_file, stderr=log_file)
 
 def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
+
+    imgs_path = os.path.join(dir_path, str(params['jobID']))
+    if not os.path.isdir: os.mkdir(imgs_path)
     
     #logger.info(f"... using CUDA version {torch.version.cuda}")
 
