@@ -281,11 +281,11 @@ class CSIS(Importance):
 
             #logger.info(vals['value'])
 
-        partial_loss = self.my_log_prob(guide_trace) # 'partial_loss' shape (1, 1, NOBJECTS, NLATENTS)
+        partial_loss = self.my_log_prob(guide_trace) # 'partial_loss' shape (1, BS, NOBJECTS, NLATENTS)
         
-        logger.info(f"partial loss of object {o}: {partial_loss.shape}")
+        logger.info(f"partial loss of object {o}: {partial_loss.shape}")   # [B, 1, N]
 
-        pdist = torch.cat((pdist, partial_loss), dim=-3)
+        pdist = torch.cat((pdist, partial_loss), dim=-2)
 
         logger.info(f"pdist shape: {pdist.shape}")
 
@@ -301,7 +301,7 @@ class CSIS(Importance):
     in a certain guide_trace
     """
 
-    loss = []
+    loss = 0.
     for name, vals in guide_trace.nodes.items():
       if vals["type"] == "sample":
         
@@ -313,9 +313,9 @@ class CSIS(Importance):
 
         #logger.info(f"{name} - partial loss shape: {partial_loss.shape}")
 
-        loss.append(partial_loss)
+        loss += partial_loss
     
-    #logger.info(torch.stack(loss).shape)
+    logger.info(f"loss after my_log_prob: {loss.shape}")
 
     loss = torch.stack(loss).permute(1, 2, 0).unsqueeze(0) # [1, B, n_objects, n_latents]
   
