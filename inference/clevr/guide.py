@@ -107,8 +107,8 @@ class SlotAttention(nn.Module):
         b = self.mlp_weight_slots(slots).squeeze(-1).softmax(-1) * n_s  # 'b' shape (b_s, n_s)
         
         q = self.to_q(slots) # 'q' shape (1, n_s, 64)
-
-        attn_logits = cosine_distance(k, q)  
+        #attn_logits = cosine_distance(k, q)  
+        attn_logits = torch.cdist(k, q)  
         
         if self.step % params['step_size'] == 0 and iteration == self.iters - 1:
             aux_attn = attn_logits.reshape((b_s, n_s, 128, 128)) if not params["strided_convs"] else attn_logits.reshape((b_s, n_s, 32, 32))
