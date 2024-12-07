@@ -327,21 +327,19 @@ class CSIS(Importance):
 
   def hungarian_loss(self, pdist):
     
-    B, M, N = pdist.shape
+    B, M, N, n_latents = pdist.shape
 
-    #pdist = pdist.mean(-1)
+    pdist = pdist.mean(-1)
     pdist_ = pdist.detach().cpu().numpy()
 
     logger.info(f"final pdist shape: {pdist_.shape}")
     
-
     indices = np.array([linear_sum_assignment(p) for p in pdist_])
 
     logger.info(indices)
 
     indices_ = indices.shape[2] * indices[:, 0] + indices[:, 1]
-    #losses = torch.gather(pdist.flatten(1,2), 1, torch.from_numpy(indices_).to(device=pdist.device))
-    losses = pdist[torch.arange(B)[:, None], indices[:, 0], indices[:, 1]]
+    losses = torch.gather(pdist.flatten(1,2), 1, torch.from_numpy(indices_).to(device=pdist.device))
     total_loss = losses.mean(1)
 
     return total_loss, dict(indices=indices)
