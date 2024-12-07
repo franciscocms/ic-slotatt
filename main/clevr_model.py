@@ -307,7 +307,7 @@ logger.addHandler(handler)
 dir_path = os.path.dirname(__file__)
 
 # Set images and blender files path
-imgs_path = os.path.join(dir_path, jobID))
+imgs_path = os.path.join(dir_path, jobID)
 if not os.path.isdir: os.mkdir(imgs_path)
 
 # Open main file
