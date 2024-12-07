@@ -340,7 +340,9 @@ class CSIS(Importance):
 
     indices_ = indices.shape[2] * indices[:, 0] + indices[:, 1]
     losses = torch.gather(pdist.flatten(1,2), 1, torch.from_numpy(indices_).to(device=pdist.device))
-    total_loss = losses.mean(1)
+
+    logger.info(f"\nloss before final average: {losses.shape}")
+    total_loss = losses.mean()
 
     return total_loss, dict(indices=indices)
 
