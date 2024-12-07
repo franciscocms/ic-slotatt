@@ -37,6 +37,9 @@ max_retries = 50
 min_dist = 0.25
 min_margin = 0.4
 
+imgs_path = os.path.join(dir_path, str(params['jobID']))
+if not os.path.isdir: os.mkdir(imgs_path)
+
 def sample_loc(i):
     with pyro.poutine.block():     
         x_mu = pyro.sample(f"x_{i}", dist.Uniform(-3., 3.))
@@ -303,6 +306,10 @@ logger.addHandler(handler)
 # Set directory path
 dir_path = os.path.dirname(__file__)
 
+# Set images and blender files path
+imgs_path = os.path.join(dir_path, str(params['jobID']))
+if not os.path.isdir: os.mkdir(imgs_path)
+
 # Open main file
 bpy.ops.wm.open_mainfile(filepath=os.path.join(dir_path, "clevr_data", "base_scene.blend"))
 
@@ -487,16 +494,16 @@ _add_object(objects[{i}])
 
 # Set render settings
 bpy.context.scene.render.image_settings.file_format = 'PNG'
-bpy.context.scene.render.filepath = os.path.join(dir_path, f"rendered_scene_{idx}.png")
+bpy.context.scene.render.filepath = os.path.join(imgs_path, f"rendered_scene_{idx}.png")
 
-logger.info(os.path.join(dir_path, f"rendered_scene_{idx}.png"))
+# logger.info(os.path.join(imgs_path, f"rendered_scene_{idx}.png"))
 
 # Render the scene
 bpy.ops.render.render(write_still=True)
     """
     
     # Write the Blender script to a file
-    script_file = os.path.join(dir_path, f"generate_clevr_scene_{id}.py")
+    script_file = os.path.join(imgs_path, f"generate_clevr_scene_{id}.py")
     with open(script_file, "w") as f:
         f.write(script)
     
@@ -515,16 +522,16 @@ def render_scene_in_blender(blender_script):
         subprocess.call(cmd, stdout=log_file, stderr=log_file)
 
 def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
-
+    
     #logger.info(f"... using CUDA version {torch.version.cuda}")
 
     # delete all blender scripts
-    files = glob.glob(os.path.join(dir_path, "*.py"))
+    files = glob.glob(os.path.join(imgs_path, "*.py"))
     for f in files:
         if f.split('/')[-1].split('_')[:3] == ["generate", "clevr", "scene"]: os.remove(f)
     
     # delete all generated imgs
-    imgs = glob.glob(os.path.join(dir_path, "*.png"))
+    imgs = glob.glob(os.path.join(imgs_path, "*.png"))
     for img in imgs:
         if img.split('/')[-1].split('_')[:2] == ["rendered", "scene"]: os.remove(img)
 
@@ -546,7 +553,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     #logger.info("Scene rendered and saved...")
     img_batch = torch.stack(
-        [img_transform(Image.open(os.path.join(dir_path, f"rendered_scene_{idx}.png"))) for idx in range(B)]
+        [img_transform(Image.open(os.path.join(imgs_path, f"rendered_scene_{idx}.png"))) for idx in range(B)]
     )
 
     #plt.imshow(img[0].permute(1, 2, 0).numpy())
