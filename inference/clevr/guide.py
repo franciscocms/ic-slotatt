@@ -217,8 +217,14 @@ class Encoder(nn.Module):
     x = x.to(device)    
 
     x = self.encoder_sa(x)
+
+    logger.info(f"after encoder: {x.shape}")
+
     x = x.permute(0,2,3,1) # B, W, H, C -> put C in last dimension
-    x = self.encoder_pos(x)                 
+    x = self.encoder_pos(x)     
+    
+    logger.info(f"after encoder pos: {x.shape}")
+                
     # spatial flatten -> flatten the spatial dimensions
     x = torch.flatten(x, 1, 2) # B, W*H, C -> 64 features of size w*H
 
