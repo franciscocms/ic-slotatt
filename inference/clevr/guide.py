@@ -94,6 +94,9 @@ class SlotAttention(nn.Module):
     inputs = self.norm_input(inputs)      
     k, v = self.to_k(inputs), self.to_v(inputs) # 'k' and 'v' have shape (1, 16384, 64)
 
+    logger.info(f"inputs: {inputs.shape}")
+    logger.info(f"keys: {k.shape}")
+
     # if self.step % params['step_size'] == 0:
     #     aux_keys = k.reshape((b_s, l, l, d))
     #     fig, ax = plt.subplots(ncols=n_s)
@@ -120,8 +123,9 @@ class SlotAttention(nn.Module):
         q = self.to_q(slots) # 'q' shape (1, n_s, 64)
         #attn_logits = cosine_distance(k, q)      
         attn_logits = torch.cdist(k, q)    
-
-        logger.info(attn_logits.shape)     
+        
+        logger.info(f"queries: {q.shape}")
+        logger.info(f"attn logits: {attn_logits.shape}")     
         
         if self.step % params['step_size'] == 0 and iteration == self.iters - 1:
             #aux_attn = attn_logits.reshape((b_s, n_s, 128, 128)) if not params["strided_convs"] else attn_logits.reshape((b_s, n_s, 32, 32))
