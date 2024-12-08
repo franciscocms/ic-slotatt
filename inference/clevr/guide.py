@@ -94,8 +94,8 @@ class SlotAttention(nn.Module):
     inputs = self.norm_input(inputs)      
     k, v = self.to_k(inputs), self.to_v(inputs) # 'k' and 'v' have shape (1, 16384, 64)
 
-    logger.info(f"inputs: {inputs.shape}")
-    logger.info(f"keys: {k.shape}")
+    # logger.info(f"inputs: {inputs.shape}")
+    # logger.info(f"keys: {k.shape}")
 
     # if self.step % params['step_size'] == 0:
     #     aux_keys = k.reshape((b_s, l, l, d))
@@ -124,15 +124,15 @@ class SlotAttention(nn.Module):
         #attn_logits = cosine_distance(k, q)      
         attn_logits = torch.cdist(k, q)    
         
-        logger.info(f"queries: {q.shape}")
-        logger.info(f"attn logits: {attn_logits.shape}")     
+        # logger.info(f"queries: {q.shape}")
+        # logger.info(f"attn logits: {attn_logits.shape}")     
         
         if self.step % params['step_size'] == 0 and iteration == self.iters - 1:
             #aux_attn = attn_logits.reshape((b_s, n_s, 128, 128)) if not params["strided_convs"] else attn_logits.reshape((b_s, n_s, 32, 32))
-            aux_attn = torch.unflatten(attn_logits, -1, (l[0], l[1]))
+            aux_attn = torch.unflatten(attn_logits, 1, (l[0], l[1]))
             fig, ax = plt.subplots(ncols=n_s)
             for j in range(n_s):                                       
-                im = ax[j].imshow(aux_attn[0, j, :, :].detach().cpu().numpy())
+                im = ax[j].imshow(aux_attn[0, :, :, j].detach().cpu().numpy())
                 ax[j].grid(False)
                 ax[j].axis('off')        
             plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/attn_logits.png")
@@ -142,10 +142,10 @@ class SlotAttention(nn.Module):
 
         if self.step % params['step_size'] == 0 and iteration == self.iters - 1:
             #aux_attn = attn_logits.reshape((b_s, n_s, 128, 128)) if not params["strided_convs"] else attn_logits.reshape((b_s, n_s, 32, 32))
-            aux_attn = torch.unflatten(attn_logits, -1, (l[0], l[1]))
+            aux_attn = torch.unflatten(attn_logits, 1, (l[0], l[1]))
             fig, ax = plt.subplots(ncols=n_s)
             for j in range(n_s):                                       
-                im = ax[j].imshow(aux_attn[0, j, :, :].detach().cpu().numpy())
+                im = ax[j].imshow(aux_attn[0, :, :, j].detach().cpu().numpy())
                 ax[j].grid(False)
                 ax[j].axis('off')        
             plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/attn_logits_low_entropy.png")
@@ -216,14 +216,14 @@ class Encoder(nn.Module):
   def forward(self, x):
     x = x.to(device)    
 
-    x = self.encoder_sa(x)
+    x = self.encoder_sa(x) # B, C, W, H
 
-    logger.info(f"after encoder: {x.shape}")
+    # logger.info(f"after encoder: {x.shape}")
 
     x = x.permute(0,2,3,1) # B, W, H, C -> put C in last dimension
     x = self.encoder_pos(x)     
     
-    logger.info(f"after encoder pos: {x.shape}")
+    # logger.info(f"after encoder pos: {x.shape}")
                 
     # spatial flatten -> flatten the spatial dimensions
     x = torch.flatten(x, 1, 2) # B, W*H, C -> 64 features of size w*H
