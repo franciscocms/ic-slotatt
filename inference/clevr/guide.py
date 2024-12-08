@@ -77,6 +77,7 @@ class SlotAttention(nn.Module):
     
     b_s, num_inputs, d = inputs.shape # 'inputs' have shape (b_s, W*H, dim)
     n_s = num_slots if num_slots is not None else self.num_slots
+    l = int(np.sqrt(num_inputs))
     
     # mu = self.slots_mu.expand(b_s, n_s, -1)
     # sigma = self.slots_sigma.expand(b_s, n_s, -1)
@@ -93,6 +94,16 @@ class SlotAttention(nn.Module):
     inputs = self.norm_input(inputs)      
     k, v = self.to_k(inputs), self.to_v(inputs) # 'k' and 'v' have shape (1, 16384, 64)
 
+    # if self.step % params['step_size'] == 0:
+    #     aux_keys = k.reshape((b_s, l, l, d))
+    #     fig, ax = plt.subplots(ncols=n_s)
+    #     for j in range(n_s):                                       
+    #         im = ax[j].imshow(aux_keys[0, j, :, :].detach().cpu().numpy())
+    #         ax[j].grid(False)
+    #         ax[j].axis('off')        
+    #     plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/attn_logits.png")
+    #     plt.close()
+
     if params["strided_convs"]: latent_res = (32, 32)
     else: latent_res = (128, 128)
 
@@ -107,8 +118,8 @@ class SlotAttention(nn.Module):
         b = self.mlp_weight_slots(slots).squeeze(-1).softmax(-1) * n_s  # 'b' shape (b_s, n_s)
         
         q = self.to_q(slots) # 'q' shape (1, n_s, 64)
-        attn_logits = cosine_distance(k, q)      
-        #attn_logits = torch.cdist(k, q)         
+        #attn_logits = cosine_distance(k, q)      
+        attn_logits = torch.cdist(k, q)         
         
         if self.step % params['step_size'] == 0 and iteration == self.iters - 1:
             aux_attn = attn_logits.reshape((b_s, n_s, 128, 128)) if not params["strided_convs"] else attn_logits.reshape((b_s, n_s, 32, 32))
