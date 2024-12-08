@@ -133,7 +133,7 @@ class SlotAttention(nn.Module):
             plt.close()
             
         attn, _, _ = sinkhorn(attn_logits, a, b, u=p, v=q) # 'attn' shape (b_s, n, n_s)
-        attn = attn.permute(0, 2, 1) # 'attn' shape (1, n_s, n)
+        attn = attn.permute(0, 2, 1) # 'attn' shape (b_s, n_s, n)
         updates = torch.matmul(attn, v)
 
         slots = self.gru(
@@ -351,16 +351,9 @@ class InvSlotAttentionGuide(nn.Module):
 
     B, C, H, W = self.img.shape
 
-    x = self.encoder_cnn(self.img)
+    x = self.encoder_cnn(self.img) # [B, input_dim, C]
     x = nn.LayerNorm(x.shape[1:]).to(device)(x)
     self.features_to_slots = self.mlp(x)
-
-    if params["running_type"] == "inspect": # save input image
-        if not os.path.isdir(params["inspect_img_path"]): os.mkdir(params["inspect_img_path"]) # create dir to save inspect logs
-
-        plt.imshow(self.img[0].permute(1, 2, 0).detach().cpu().numpy())
-        plt.savefig(f"{params['inspect_img_path']}/img.png")
-        plt.close()
 
     if self.stage == "train":
 
