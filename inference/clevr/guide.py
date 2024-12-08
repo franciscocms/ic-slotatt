@@ -104,8 +104,8 @@ class SlotAttention(nn.Module):
     #     plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/attn_logits.png")
     #     plt.close()
 
-    if params["strided_convs"]: latent_res = (32, 32)
-    else: latent_res = (128, 128)
+    if params["strided_convs"]: l = (32, 32)
+    else: l = (128, 128)
 
     a = self.mlp_weight_input(inputs).squeeze(-1).softmax(-1) * n_s # 'a' shape (b_s, W*H)
 
@@ -122,7 +122,8 @@ class SlotAttention(nn.Module):
         attn_logits = torch.cdist(k, q)         
         
         if self.step % params['step_size'] == 0 and iteration == self.iters - 1:
-            aux_attn = attn_logits.reshape((b_s, n_s, 128, 128)) if not params["strided_convs"] else attn_logits.reshape((b_s, n_s, 32, 32))
+            #aux_attn = attn_logits.reshape((b_s, n_s, 128, 128)) if not params["strided_convs"] else attn_logits.reshape((b_s, n_s, 32, 32))
+            aux_attn = torch.unflatten(attn_logits, -1, (l[0], l[1]))
             fig, ax = plt.subplots(ncols=n_s)
             for j in range(n_s):                                       
                 im = ax[j].imshow(aux_attn[0, j, :, :].detach().cpu().numpy())
@@ -134,7 +135,8 @@ class SlotAttention(nn.Module):
         attn_logits, p, q = minimize_entropy_of_sinkhorn(attn_logits, a, b, mesh_lr=params["mesh_lr"], n_mesh_iters=params["mesh_iters"]) 
 
         if self.step % params['step_size'] == 0 and iteration == self.iters - 1:
-            aux_attn = attn_logits.reshape((b_s, n_s, 128, 128)) if not params["strided_convs"] else attn_logits.reshape((b_s, n_s, 32, 32))
+            #aux_attn = attn_logits.reshape((b_s, n_s, 128, 128)) if not params["strided_convs"] else attn_logits.reshape((b_s, n_s, 32, 32))
+            aux_attn = torch.unflatten(attn_logits, -1, (l[0], l[1]))
             fig, ax = plt.subplots(ncols=n_s)
             for j in range(n_s):                                       
                 im = ax[j].imshow(aux_attn[0, j, :, :].detach().cpu().numpy())
