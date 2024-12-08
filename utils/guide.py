@@ -68,14 +68,16 @@ def sinkhorn(C: Tensor, a: Tensor, b: Tensor, n_sh_iters: int = 5, temperature: 
     log_a = torch.log(a)
     log_b = torch.log(b)
 
+    # C is [B, num_inputs, num_slots]
+
     if u is None:
         u = torch.zeros_like(a)
     if v is None:
         v = torch.zeros_like(b)
 
     for _ in range(n_sh_iters):
-        u = log_a - torch.logsumexp(p + v.unsqueeze(1), dim=2)
-        v = log_b - torch.logsumexp(p + u.unsqueeze(2), dim=1)
+        u = log_a - torch.logsumexp(p + v.unsqueeze(1), dim=2) # rows normalization, logsumexp occurs over slots dimension -> normalize slots for each feature
+        v = log_b - torch.logsumexp(p + u.unsqueeze(2), dim=1) # cols normalization, logsumexp occurs over features dimension -> normalize features for each slot
 
     logT = p + u.unsqueeze(2) + v.unsqueeze(1)
     return logT.exp(), u, v
