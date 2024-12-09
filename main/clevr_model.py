@@ -558,13 +558,13 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     with mp.Pool(processes=10) as pool:
       pool.map(render_scene_in_blender, blender_scripts)
 
-    img = np.asarray(Image.open(os.path.join(imgs_path, f"rendered_scene_0.png")))
-    logger.info(img.shape)
-    
+    #img = np.asarray(Image.open(os.path.join(imgs_path, f"rendered_scene_0.png")))
+    #logger.info(img.shape)
+
 
     #logger.info("Scene rendered and saved...")
     img_batch = torch.stack(
-        [torch.from_numpy(np.asarray(Image.open(os.path.join(imgs_path, f"rendered_scene_{idx}.png")))) for idx in range(B)]
+        [torch.from_numpy(np.asarray(Image.open(os.path.join(imgs_path, f"rendered_scene_{idx}.png")))).permute(2, 0, 1) for idx in range(B)]
     )
 
     #plt.imshow(img[0].permute(1, 2, 0).numpy())
