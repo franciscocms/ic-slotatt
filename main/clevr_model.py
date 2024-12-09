@@ -5,6 +5,7 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor
 from torchvision import transforms
+import numpy as np
 
 import subprocess
 import multiprocessing as mp
@@ -559,7 +560,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     #logger.info("Scene rendered and saved...")
     img_batch = torch.stack(
-        [img_transform(Image.open(os.path.join(imgs_path, f"rendered_scene_{idx}.png"))) for idx in range(B)]
+        [torch.from_numpy(np.asarray(Image.open(os.path.join(imgs_path, f"rendered_scene_{idx}.png")))) for idx in range(B)]
     )
 
     #plt.imshow(img[0].permute(1, 2, 0).numpy())
