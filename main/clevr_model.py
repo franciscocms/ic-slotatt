@@ -50,9 +50,9 @@ def to_int(value: Tensor):
     return int(torch.round(value))
 
 def preprocess_clevr(image, resolution=(128, 128)):
-    #image = ((image / 255.0) - 0.5) * 2.0  # Rescale to [-1, 1].
+    image = ((image / 255.0) - 0.5) * 2.0  # Rescale to [-1, 1].
     image = F.interpolate(input=image, size=resolution, mode='bilinear', antialias=True)
-    image = torch.clamp(image, 0., 1.)
+    image = torch.clamp(image, -1., 1.)
     return image
 
 def sample_clevr_scene():
