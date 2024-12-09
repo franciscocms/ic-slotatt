@@ -27,7 +27,7 @@ logger = logging.getLogger("train")
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def visualize(x):
-   return (x/2. + 0.5) * 255.
+   return ((x/2. + 0.5) * 255.).astype(int)
 
 def save_intermediate_output(x, step, layer):
    # x is [B, C, W, H]
