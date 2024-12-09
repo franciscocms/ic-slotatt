@@ -26,6 +26,21 @@ torch.autograd.set_detect_anomaly(True)
 logger = logging.getLogger("train")
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+def save_intermediate_output(x, layer):
+   # x is [B, C, W, H]
+
+    fig, axes = plt.subplots(int(np.sqrt(x.shape[1])), int(np.sqrt(x.shape[1])), figsize=(10, 10))
+    axes = axes.flatten()  # Flatten the grid to access each subplot easily
+    # Plot each of the C figures
+
+    for i in range(x.shape[1]):  # 64 slots to match the tensor's last dimension
+        ax = axes[i]
+        ax.imshow(x[0, i, :, :].detach().cpu().numpy())  # Customize colormap if needed
+        ax.axis('off')  # Hide axes for a cleaner look
+    plt.tight_layout()
+    plt.savefig(f"{params['check_attn_folder']}/{layer}.png")
+    plt.close()
+
 @torch.jit.script
 def cosine_distance(x, y):
     x = F.normalize(x, dim=-1)
@@ -202,24 +217,30 @@ class Encoder(nn.Module):
   def __init__(self, resolution, hid_dim):
     super().__init__()
     
-    self.encoder_sa = []
     in_channels = 3
-    self.encoder_sa += [nn.Conv2d(in_channels, 64, 5, 1, 2), nn.ReLU()]
-    for c in range(2):
-      if params["strided_convs"]: self.encoder_sa += [nn.Conv2d(64, 64, 5, 2, 2), nn.ReLU()]
-      else: self.encoder_sa += [nn.Conv2d(64, 64, 5, 1, 2), nn.ReLU()]
-    self.encoder_sa += [nn.Conv2d(64, 64, 5, 1, 2), nn.ReLU()]
-    self.encoder_sa = nn.Sequential(*self.encoder_sa)
+    self.conv1 = nn.Conv2d(in_channels, hid_dim, 5, 1, 2)
+    self.conv2 = nn.Conv2d(hid_dim, hid_dim, 5, 2, 2)
+    self.conv3 = nn.Conv2d(hid_dim, hid_dim, 5, 2, 2)
+    self.conv4 = nn.Conv2d(hid_dim, hid_dim, 5, 1, 2)
+    self.relu = nn.ReLU()
     
     #self.encoder_pos = SoftPositionEmbed(hid_dim, resolution)
     if params["strided_convs"]: resolution = (32, 32)
     else: resolution = (128, 128)
     self.encoder_pos = SoftPositionEmbed(64, resolution)
 
+    self.step = 0
+
   def forward(self, x):
     x = x.to(device)    
-
-    x = self.encoder_sa(x) # B, C, W, H
+    x = self.relu(self.conv1(x))
+    if self.step % params['step_size'] == 0: save_intermediate_output(x, "conv1")
+    x = self.relu(self.conv2(x))
+    if self.step % params['step_size'] == 0: save_intermediate_output(x, "conv2")
+    x = self.relu(self.conv3(x))
+    if self.step % params['step_size'] == 0: save_intermediate_output(x, "conv3")
+    x = self.relu(self.conv4(x))
+    if self.step % params['step_size'] == 0: save_intermediate_output(x, "conv4")
 
     # logger.info(f"after encoder: {x.shape}")
 
@@ -373,6 +394,7 @@ class InvSlotAttentionGuide(nn.Module):
     self.img = observations["image"]
     self.img = self.img.to(device)
     self.slot_attention.step = self.step
+    self.encoder_cnn.step = self.step
     B, C, H, W = self.img.shape
 
     x = self.encoder_cnn(self.img[:, :3]) # [B, input_dim, C]
