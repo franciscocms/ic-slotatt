@@ -26,7 +26,7 @@ torch.autograd.set_detect_anomaly(True)
 logger = logging.getLogger("train")
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-def save_intermediate_output(x, layer):
+def save_intermediate_output(x, step, layer):
    # x is [B, C, W, H]
 
     fig, axes = plt.subplots(int(np.sqrt(x.shape[1])), int(np.sqrt(x.shape[1])), figsize=(10, 10))
@@ -38,7 +38,7 @@ def save_intermediate_output(x, layer):
         ax.imshow(x[0, i, :, :].detach().cpu().numpy())  # Customize colormap if needed
         ax.axis('off')  # Hide axes for a cleaner look
     plt.tight_layout()
-    plt.savefig(f"{params['check_attn_folder']}/{layer}.png")
+    plt.savefig(f"{params['check_attn_folder']}/attn-step-{step}/{layer}.png")
     plt.close()
 
 @torch.jit.script
@@ -234,13 +234,13 @@ class Encoder(nn.Module):
   def forward(self, x):
     x = x.to(device)    
     x = self.relu(self.conv1(x))
-    if self.step % params['step_size'] == 0: save_intermediate_output(x, "conv1")
+    if self.step % params['step_size'] == 0: save_intermediate_output(x, self.step, "conv1")
     x = self.relu(self.conv2(x))
-    if self.step % params['step_size'] == 0: save_intermediate_output(x, "conv2")
+    if self.step % params['step_size'] == 0: save_intermediate_output(x, self.step, "conv2")
     x = self.relu(self.conv3(x))
-    if self.step % params['step_size'] == 0: save_intermediate_output(x, "conv3")
+    if self.step % params['step_size'] == 0: save_intermediate_output(x, self.step, "conv3")
     x = self.relu(self.conv4(x))
-    if self.step % params['step_size'] == 0: save_intermediate_output(x, "conv4")
+    if self.step % params['step_size'] == 0: save_intermediate_output(x, self.step, "conv4")
 
     # logger.info(f"after encoder: {x.shape}")
 
