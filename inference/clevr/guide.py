@@ -360,14 +360,12 @@ class InvSlotAttentionGuide(nn.Module):
     if variable_name not in ['x', 'y', 'pose']: return out
     else: return mean, logvar
 
-  
   def forward(self, 
               observations={"image": torch.zeros((1, 3, 128, 128))}
               ):
 
     # register networks to be optimized
-    pyro.module("encoder_sa", self.encoder_cnn.encoder_sa, True)
-    pyro.module("encoder_slots", self.encoder_cnn.encoder_pos, True)
+    pyro.module("encoder", self.encoder_cnn, True)
     pyro.module("proposal_nets", self.prop_nets, True)
     pyro.module("sa", self.slot_attention, True)
     pyro.module("mlp", self.mlp, True)
@@ -379,6 +377,8 @@ class InvSlotAttentionGuide(nn.Module):
 
     B, C, H, W = self.img.shape
 
+    logger.info(f"image shape: {self.img.shape}")
+
     x = self.encoder_cnn(self.img) # [B, input_dim, C]
     x = nn.LayerNorm(x.shape[1:]).to(device)(x)
     self.features_to_slots = self.mlp(x)
@@ -388,13 +388,23 @@ class InvSlotAttentionGuide(nn.Module):
         n_s = params['max_objects']
         self.slots, attn = self.slot_attention(self.features_to_slots, num_slots=n_s)
 
-        # for b in range(B):
-        #     plot_img = np.transpose(self.img[b].detach().cpu().numpy(), (1, 2, 0))
-        #     plt.imshow(plot_img)
-        #     plt.axis('off')
-        #     plt.savefig(f"{params['check_attn_folder']}/img_{b}.png")
-        #     plt.close()
-        #     logger.info(f"saved input image {b}...")
+        for b in range(B):
+            plot_img = np.transpose(self.img[b].detach().cpu().numpy(), (1, 2, 0))
+            plt.imshow(plot_img)
+            plt.axis('off')
+            plt.savefig(f"{params['check_attn_folder']}/img_{b}.png")
+            plt.close()
+            logger.info(f"saved input image {b}...")
+        
+        for b in range(B):
+            plot_img = np.transpose(self.img[b, :3].detach().cpu().numpy(), (1, 2, 0))
+            plt.imshow(plot_img)
+            plt.axis('off')
+            plt.savefig(f"{params['check_attn_folder']}/img3_{b}.png")
+            plt.close()
+            logger.info(f"saved input image {b}...")
+        
+
 
         if self.is_train and self.step % params['step_size'] == 0:
             aux_attn = attn.reshape((B, n_s, 128, 128)) if not params["strided_convs"] else attn.reshape((B, n_s, 32, 32))

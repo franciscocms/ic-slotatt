@@ -21,8 +21,8 @@ params = {
     "pos_from_attn" : "attn-masks", # "attn-masks" if computing locations from slot attention masks (alternative: "dme" from the estimated density maps)
     "training_from_scratch" : True,
     "lr" : 4e-4, 
-    "batch_size" : 64, # 64
-    "training_iters": 10000, # 10k
+    "batch_size" : 5, # 64
+    "training_iters": 1, # 10k
     "step_size": 10,
     "running_type": "train", # train, debug, eval, inspect
     "slot_dim" : 64,
@@ -31,7 +31,7 @@ params = {
     "softmax_temperature": 1.0,
     "strided_convs": True,
     "check_attn": True,
-    "jobID": 83, # 69 holds the results for ICSA trained on '2Dobjects'
+    "jobID": 84, # 69 holds the results for ICSA trained on '2Dobjects'
     "mesh_iters": 4,
     "mesh_lr": 5, # 76: 3, 77: 5
     "logprob_coeff": 1.,
