@@ -26,6 +26,9 @@ torch.autograd.set_detect_anomaly(True)
 logger = logging.getLogger("train")
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+def visualize(x):
+   return (x/2. + 0.5) * 255.
+
 def save_intermediate_output(x, step, layer):
    # x is [B, C, W, H]
 
@@ -432,7 +435,7 @@ class InvSlotAttentionGuide(nn.Module):
             plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/attn.png")
             plt.close()
 
-            plot_img = np.transpose(self.img[0, :3].detach().cpu().numpy(), (1, 2, 0))
+            plot_img = visualize(np.transpose(self.img[0, :3].detach().cpu().numpy(), (1, 2, 0)))
             plt.imshow(plot_img)
             plt.axis('off')
             plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/img.png")
