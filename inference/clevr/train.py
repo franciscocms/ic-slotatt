@@ -15,7 +15,6 @@ from main.models import model
 from main.modifiedCSIS import CSIS
 from utils.var import Variable
 from main.setup import params
-from utils.loss import save_loss, save_loss_plot
 from utils.guide import get_pretrained_wts, load_trained_guide
 from main.clevr_model import clevr_gen_model, min_objects, max_objects
 
@@ -50,11 +49,9 @@ run = wandb.init(project="ICSA-CLEVR",
 DEVICE = params["device"]
 TRAINING_FROM_SCRATCH = params["training_from_scratch"]
 GUIDE_PATH = f"{main_dir}/checkpoint-{params['jobID']}"
-LOSS_PATH = f"{main_dir}/loss-{params['jobID']}"
-for p in [GUIDE_PATH, LOSS_PATH]: 
+for p in [GUIDE_PATH]: 
   if not os.path.isdir(p): os.mkdir(p)
 logger.info(f"\n... saving model checkpoints in {GUIDE_PATH}")
-logger.info(f"... saving loss values in {LOSS_PATH}\n")
 
 guide = InvSlotAttentionGuide(resolution = (128, 128), num_iterations = 3, hid_dim = params["slot_dim"], stage="train")
 guide.to(DEVICE)
@@ -114,8 +111,6 @@ if CHECK_ATTN and TRAINING_FROM_SCRATCH:
 
 step_size = params["step_size"]
 
-
-
 for s in range(resume_step, resume_step + nsteps):     
   
     if CHECK_ATTN and s % step_size == 0: 
@@ -125,12 +120,6 @@ for s in range(resume_step, resume_step + nsteps):
 
     loss = csis.step()
     val_loss = csis.validation_loss()
-
-    # update prior logvar
-    
-
-
-
 
     if s % step_size == 0 or s == nsteps-1: 
         logger.info(f"step {s}/{resume_step + nsteps-1} - train_loss: {loss} - val_loss: {val_loss}")

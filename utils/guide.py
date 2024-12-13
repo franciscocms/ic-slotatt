@@ -183,6 +183,50 @@ def load_trained_guide(guide, GUIDE_PATH):
     return guide
 
 
+def load_trained_guide_clevr(guide, GUIDE_PATH, mappings):
+    
+    # material_mapping = mappings['mat_map']
+    # object_mapping = mappings['object_map']
+    # size_mapping = mappings['size_map']
+    # color_mapping = mappings['color_map']
+    
+    out_dim = 0
+    pretrained_guide = torch.load(GUIDE_PATH) if params['device'] == torch.device('cuda:0') else torch.load(GUIDE_PATH, map_location='cpu')
+    guide_dict = guide.state_dict()
+    for k, v in pretrained_guide.items():
+        if k not in guide_dict.keys():
+            prior_distribution = None
+            proposal_distribution = None
+            name = k.split(".")[1]
+            
+            if name == 'mask':
+                proposal_distribution = "bernoulli"
+                out_dim = 1
+            elif name in ['shape', 'color', 'mat', 'size']:
+                proposal_distribution = "categorical"
+                out_dim = len(mappings[f"{name}_map"].keys())
+            elif name in ['pose', 'x', 'y']:
+                proposal_distribution = "normal"
+                out_dim = 1
+
+            # for now, instance will be set on 0!
+            var = Variable(name=name,
+                            value=None,
+                            prior_distribution=prior_distribution,
+                            proposal_distribution=proposal_distribution,
+                            address=name.split("_")[0]
+                            )
+            
+            if k.split("_")[0] == "prop": guide.add_proposal_net(var=var,
+                                                                    out_dim=out_dim)
+    guide_dict = guide.state_dict() 
+    state_dict = {k: v for k, v in pretrained_guide.items() if k in guide_dict.keys()}
+    guide_dict.update(state_dict)
+    guide.load_state_dict(guide_dict)
+    logging.info("ICSA guide successfully loaded...")
+    return guide
+
+
 def compute_log_w(trace: TracePosterior, model, obs):    
     
     masked_vars = []

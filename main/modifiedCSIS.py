@@ -159,6 +159,7 @@ class CSIS(Importance):
           proposal_distribution = "categorical"
           out_dim = vals["fn"].probs.shape[-1] if isinstance(vals["fn"], dist.Categorical) else vals["fn"].base_dist.probs.shape[-1]
         
+        # for final 'size' drawn samples, the # of 'size' classes are 2
         elif isinstance(vals['fn'], dist.Delta): 
           prior_distribution = "categorical"
           proposal_distribution = "categorical"
@@ -181,9 +182,6 @@ class CSIS(Importance):
           prior_distribution = "normal"
           proposal_distribution = "normal"
           out_dim = 1
-        
-
-        # delete this block, ignore instance and just add variables
         
         var = Variable(name=name,
                       value=vals["value"],
@@ -294,6 +292,8 @@ class CSIS(Importance):
 
       #logger.info(f"B_pdist shape: {B_pdist.shape}")
 
+    # 'B_pdist' shape is [B, n_s, n_s, n_latents]
+    
     loss, _ = self.hungarian_loss(B_pdist)
     #logger.info(f"\nfinal loss: {loss}\n")
 
