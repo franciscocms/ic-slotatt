@@ -300,7 +300,7 @@ class InvSlotAttentionGuide(nn.Module):
 
     self.batch_idx = 0
     self.step = 0
-    self.prior_logvar = torch.tensor(-4)
+    self.prior_logvar = torch.tensor(-4.5)
   
   def add_proposal_net(self, var, out_dim):
     add_flag = False
@@ -356,7 +356,7 @@ class InvSlotAttentionGuide(nn.Module):
     
     if variable_proposal_distribution == "normal":
         mean, logvar = proposal[0].squeeze(-1), proposal[1].squeeze(-1)
-        std = torch.sqrt(torch.exp(logvar))
+        std = torch.exp(0.5*logvar)
        
         #if variable_name in ['x', 'y']: out = pyro.sample(variable_name, TruncatedNormal(mean, std, -1., 1.))
         #elif variable_name in ['pose']: out = pyro.sample(variable_name, TruncatedNormal(mean, std, 0., 1.))
@@ -451,7 +451,7 @@ class InvSlotAttentionGuide(nn.Module):
                 if var.name not in ['x', 'y', 'pose']: _ = self.infer_step(var, self.slots)
                 else: 
                    mean, logvar = self.infer_step(var, self.slots)
-                   self.logvar_loss += self._compute_logvar_loss(logvar, self.prior_logvar)
+                   self.logvar_loss = self.logvar_loss + self._compute_logvar_loss(logvar, self.prior_logvar)
                 
       
         del self.slots

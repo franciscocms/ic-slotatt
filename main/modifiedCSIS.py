@@ -248,6 +248,88 @@ class CSIS(Importance):
 
   def _differentiable_loss_particle(self, guide_trace):
     
+    """
+    save the GT latents separately
+    """
+    
+    true_latents = {}
+    for name, vals in guide_trace.nodes.items():
+      if vals["type"] == "sample": # only consider object-wise properties
+        true_latents[name] = vals['value']
+    
+    # for k, v in true_latents.items():
+    #   logger.info(f"{k} - {v}")
+
+    self.n_latents = len(set([k for k in true_latents.keys()]))
+    B = self.batch_size
+    M = self.max_objects
+
+    B_pdist = torch.tensor([], requires_grad=self.guide.is_train)
+
+    for b in range(B):
+
+      #logger.info(f"\nSAMPLE {b}/{B-1}")
+
+      N_pdist = torch.tensor([], requires_grad=self.guide.is_train)
+      
+      for i in range(self.M):
+        
+        #logger.info(f"\nOBJECT {i}")
+
+        pdist = torch.tensor([], requires_grad=self.guide.is_train)
+
+        # computing loss as if object i was the ground-truth
+        for name, vals in guide_trace.nodes.items():
+          if vals["type"] == "sample": # only consider object-wise properties
+            #if name not in ['vx', 'vy']:
+
+            #logger.info(name)
+          
+            aux_latents = true_latents[name][b, i].unsqueeze(0).expand(M)
+
+            #logger.info(aux_latents)
+            
+            if isinstance(vals['fn'], dist.Normal):
+              aux_mean, aux_std, min, max = vals['fn'].loc[b], vals['fn'].scale[b], vals['fn'].a[b], vals['fn'].b[b]
+              
+              #logger.info(f"{name} - {aux_mean} - {aux_std} - {min} - {max} - {aux_latents}")
+              if name in ['locX', 'locY']: min, max = torch.zeros(M), torch.ones(M)
+              elif name in ['vx', 'vy']: min, max = torch.ones(M)*-1, torch.ones(M)
+              
+              #logger.info(aux_mean)
+              
+              aux_logprob = -dist.Normal(aux_mean, aux_std, min, max).log_prob(aux_latents)
+
+            elif isinstance(vals['fn'], dist.Bernoulli):
+              aux_probs = vals['fn'].probs[b].squeeze(-1)
+              aux_logprob = -dist.Bernoulli(aux_probs).log_prob(aux_latents)
+            
+            elif isinstance(vals['fn'], dist.Categorical):
+              aux_probs = vals['fn'].probs[b]
+              aux_logprob = -dist.Categorical(aux_probs).log_prob(aux_latents)
+
+            # logger.info(f"{name} - probs shape: {aux_probs.shape}")
+            # logger.info(f"{name} - latents shape: {aux_latents.shape}")
+            
+            aux_logprob = aux_logprob.unsqueeze(-1)
+            # logger.info(f"{name} - aux log prob shape: {aux_logprob.shape}")
+
+            pdist = torch.cat((pdist, aux_logprob), dim=-1) # [n_slots, n_latents]
+            #logger.info(pdist.shape)
+        
+        pdist = pdist.unsqueeze(0).unsqueeze(0)
+        N_pdist = torch.cat((N_pdist, pdist), dim=-3)
+            
+      B_pdist = torch.cat((B_pdist, N_pdist), dim=0)
+
+    #logger.info(f"B_pdist shape: {B_pdist.shape}")
+
+    # pdist shape is (b_s, N, N, n_latents)
+    loss, _ = self.hungarian_loss(B_pdist)
+    return loss
+  
+  def _old_differentiable_loss_particle(self, guide_trace):
+    
     true_latents = {}
     for name, vals in guide_trace.nodes.items():
       if vals["type"] == "sample": # only consider object-wise properties
