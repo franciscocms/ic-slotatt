@@ -290,15 +290,8 @@ class CSIS(Importance):
             #logger.info(aux_latents)
             
             if isinstance(vals['fn'], dist.Normal):
-              aux_mean, aux_std, min, max = vals['fn'].loc[b], vals['fn'].scale[b], vals['fn'].a[b], vals['fn'].b[b]
-              
-              #logger.info(f"{name} - {aux_mean} - {aux_std} - {min} - {max} - {aux_latents}")
-              if name in ['locX', 'locY']: min, max = torch.zeros(M), torch.ones(M)
-              elif name in ['vx', 'vy']: min, max = torch.ones(M)*-1, torch.ones(M)
-              
-              #logger.info(aux_mean)
-              
-              aux_logprob = -dist.Normal(aux_mean, aux_std, min, max).log_prob(aux_latents)
+              aux_mean, aux_std = vals['fn'].loc[b], vals['fn'].scale[b]              
+              aux_logprob = -dist.Normal(aux_mean, aux_std).log_prob(aux_latents)
 
             elif isinstance(vals['fn'], dist.Bernoulli):
               aux_probs = vals['fn'].probs[b].squeeze(-1)
