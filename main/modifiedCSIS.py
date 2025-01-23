@@ -272,7 +272,7 @@ class CSIS(Importance):
 
       N_pdist = torch.tensor([], requires_grad=self.guide.is_train)
       
-      for i in range(self.M):
+      for i in range(M):
         
         #logger.info(f"\nOBJECT {i}")
 
