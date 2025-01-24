@@ -79,7 +79,7 @@ def process_targets(target_dict):
     for o, object in enumerate(target_dict['objects']):
         
         for idx, tup in enumerate(object_mapping):
-            logger.info(f"{idx} - {tup} - {tup[1] == object['shape']}")
+            logger.info(f"{idx} - {tup} - {tup[1] == object['shape']} - {object['shape']}")
         
         
         logger.info(torch.tensor([idx for idx, tup in enumerate(object_mapping) if tup[1] == object['shape']]))
