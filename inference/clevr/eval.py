@@ -39,8 +39,8 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 torch.set_default_device(device)
 main_dir = os.path.abspath(__file__+'/../../../')
 
-properties_json_path = os.path.join(main_dir, "clevr_data", "properties.json")
-dataset_path = '/nas-ctm01/datasets/public/CLEVR/CLEVR_v1.0'
+properties_json_path = os.path.join(main_dir, "main", "clevr_data", "properties.json")
+dataset_path = "/nas-ctm01/datasets/public/CLEVR/CLEVR_v1.0"
 
 # Load the property file
 with open(properties_json_path, 'r') as f:
