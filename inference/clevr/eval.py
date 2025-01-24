@@ -101,7 +101,7 @@ def main():
                                     stage = "eval"
                                     ).to(device)
         
-        GUIDE_PATH = f"{main_dir}/checkpoint-{params['jobID']}/guide_{params['guide_step']}.pth"
+        GUIDE_PATH = os.path.join(main_dir, "inference", f"checkpoint-{params['jobID']}", f"guide_{params['guide_step']}.pth")
         if os.path.isfile(GUIDE_PATH): guide = load_trained_guide_clevr(guide, GUIDE_PATH, 
                                                                         dict(mat_map=material_mapping,
                                                                              shape_map=object_mapping,
