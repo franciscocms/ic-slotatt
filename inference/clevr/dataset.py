@@ -24,9 +24,6 @@ class CLEVRDataset(Dataset):
     logger.info(img.shape)
     img = preprocess_clevr(img).squeeze(0)
     target = self.target['scenes'][index]
-
-    logger.info(img.shape)
-    logger.info(target)
     
     return img, target
   

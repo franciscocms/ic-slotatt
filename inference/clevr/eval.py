@@ -54,6 +54,11 @@ with open(properties_json_path, 'r') as f:
     size_mapping = list(properties['sizes'].items())
     color_mapping = list(color_name_to_rgba.items())
 
+logger.info(object_mapping)
+logger.info(size_mapping)
+logger.info(color_mapping)
+logger.info(material_mapping)
+
 PRINT_INFERENCE_TIME = False
 
 def process_preds(trace, n):
@@ -74,8 +79,11 @@ def process_preds(trace, n):
 
 def process_targets(target_dict):   
     
-    n = int(target_dict['scene_attr']['N'])
     target = torch.zeros(n, 11) # 11 - the dimension of all latent variables (countinuous and discrete after OHE)
+    for o, object in enumerate(target_dict['objects']):
+        target[o, :len(object_mapping)] = F.one_hot(torch.tensor(object_mapping[object['shape']]), len(object_mapping))
+
+    
     for n in range(int(target_dict['scene_attr']['N'])):
         target[n, :2] = F.one_hot(torch.tensor(shape_vals[target_dict['scene_attr'][f'object_{n}']['shape']]), len(shape_vals))
         target[n, 2:5] = F.one_hot(torch.tensor(size_vals[target_dict['scene_attr'][f'object_{n}']['size']]), len(size_vals))
@@ -132,9 +140,9 @@ def main():
 
         guide.eval()
         with torch.no_grad():
-            for img, target in testloader:
+            for img, target_dict in testloader:
                 img = img.to(device)
-                target = target.to(device)
+                target = process_targets(target_dict)
 
                 break
 
