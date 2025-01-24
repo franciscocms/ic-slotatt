@@ -31,7 +31,7 @@ params = {
     "softmax_temperature": 1.0,
     "strided_convs": True,
     "check_attn": True,
-    "jobID": 88, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects
+    "jobID": 90, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects
     "mesh_iters": 4,
     "mesh_lr": 5, # 76: 3, 77: 5
     "logprob_coeff": 1.,
@@ -44,7 +44,7 @@ params = {
 
 if not os.path.isdir(params['plots_dir']): os.mkdir(params['plots_dir'])
 
-if params['dataset'] == 'clevr': params['max_objects'] = 6
+if params['dataset'] == 'clevr': params['max_objects'] = 10
 
 params["no_slots"] = "w_background" if params["infer_background"] else "wo_background"
 
