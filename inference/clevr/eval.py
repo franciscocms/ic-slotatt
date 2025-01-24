@@ -145,7 +145,11 @@ def main():
         with torch.no_grad():
             for img, target_dict in testloader:
                 img = img.to(device)
+                
+                logger.info(target_dict)
+                
                 target = process_targets(target_dict)
+                
 
                 posterior = csis.run(observations={"image": img})
                 traces = posterior.prop_traces

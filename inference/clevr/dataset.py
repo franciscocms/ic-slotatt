@@ -15,6 +15,9 @@ class CLEVRDataset(Dataset):
       transforms.PILToTensor()
       ])
     self.target = properties
+
+    
+    # for now use only images with up to 6 objects (this might need exploring the whole json file, which might take a while...)
     
   
   def __getitem__(self, index):
