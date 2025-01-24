@@ -76,14 +76,10 @@ def process_preds(trace, n):
 def process_targets(target_dict):   
     features_dim = 19
     target = torch.zeros(params['max_objects'], features_dim)
-    for o, object in enumerate(target_dict['objects']):
-        
-        for idx, tup in enumerate(object_mapping):
-            logger.info(f"{idx} - {tup} - {tup[1] == object['shape'][0]} - {object['shape'][0]}")
-        
-        
-        logger.info(torch.tensor([idx for idx, tup in enumerate(object_mapping) if tup[1] == object['shape'][0]]))
-        
+    
+    logger.info(f"# of objects: {len(target_dict['objects'])}")
+
+    for o, object in enumerate(target_dict['objects']):               
         target[o, :3] = F.one_hot(torch.tensor([idx for idx, tup in enumerate(object_mapping) if tup[1] == object['shape'][0]]), len(object_mapping))
         target[o, 3:11] = F.one_hot(torch.tensor([idx for idx, tup in enumerate(color_mapping) if tup[0] == object['color'][0]]), len(color_mapping))
         target[o, 11:13] = F.one_hot(torch.tensor([idx for idx, tup in enumerate(size_mapping) if tup[0] == object['size'][0]]), len(size_mapping))
