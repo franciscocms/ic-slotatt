@@ -16,8 +16,8 @@ class CLEVRDataset(Dataset):
       ])
     self.all_target = properties
     
-    self.data_path = []
-    self.target = []
+    self.data_path = []  # REMOVE WHEN USING ALL SCENES
+    self.target = []     # REMOVE WHEN USING ALL SCENES
 
     
     # for now use only images with up to 6 objects (this might need exploring the whole json file, which might take a while...)
@@ -29,13 +29,12 @@ class CLEVRDataset(Dataset):
     logger.info(f'{len(self.target)} - {len(self.data_path)} examples with 6 or - objects!')
     
   
-  def __getitem__(self, index):
-    #logger.info(self.all_scenes[index])
-    
+  def __getitem__(self, index):    
     img = self.img_transform(Image.open(self.data_path[index])).unsqueeze(0)
     logger.info(img.shape)
     img = preprocess_clevr(img).squeeze(0)
-    target = self.target['scenes'][index]
+    #target = self.target['scenes'][index]    ------> when using all scenes!
+    target = self.target[index]
     
     return img, target
   
