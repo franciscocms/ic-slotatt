@@ -25,16 +25,15 @@ fh = logging.FileHandler(logfile_name, mode='w')
 logger.addHandler(fh)
 
 from main.clevr_model import clevr_gen_model, preprocess_clevr
-from main import modifiedCSIS as mcsis
-from main import modifiedImportance as mImportance
+from main.modifiedCSIS import CSIS
+#from main import modifiedImportance as mImportance
 from guide import InvSlotAttentionGuide
-from utils.distributions import Empirical
+#from utils.distributions import Empirical
 from utils.baseline import compute_AP
 from utils.guide import load_trained_guide_clevr
-from main import setup
+from main.setup import params
 from dataset import CLEVRDataset
 
-params = setup.params
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 torch.set_default_device(device)
@@ -114,7 +113,7 @@ def main():
         logger.info(GUIDE_PATH)
 
         optimiser = pyro.optim.Adam({'lr': 1e-4})
-        csis = mcsis.CSIS(model, guide, optimiser, training_batch_size=256, num_inference_samples=params["num_inference_samples"])
+        csis = CSIS(model, guide, optimiser, training_batch_size=256, num_inference_samples=params["num_inference_samples"])
 
         plots_dir = os.path.abspath("set_prediction_plots")
         if not os.path.isdir(plots_dir): os.mkdir(plots_dir)
