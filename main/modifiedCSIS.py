@@ -242,6 +242,9 @@ class CSIS(Importance):
       #   for name, param in self.guide.named_parameters():
       #     logger.info(f"{name} - {param.requires_grad}")
 
+      for name, param in self.guide.named_parameters():
+        if param.grad == None: logger.info(f"{name} - {param.requires_grad}") 
+
     loss += particle_loss
     #warn_if_nan(loss, "loss")
     return loss
@@ -317,8 +320,15 @@ class CSIS(Importance):
 
     #logger.info(f"B_pdist shape: {B_pdist.shape}")
 
+    logger.info(B_pdist.requires_grad)
+    logger.info(B_pdist.grad_fn)
+
     # pdist shape is (b_s, N, N, n_latents)
     loss, _ = self.hungarian_loss(B_pdist)
+
+    logger.info(loss.requires_grad)
+    logger.info(loss.grad_fn)
+
     return loss
   
   def _old_differentiable_loss_particle(self, guide_trace):

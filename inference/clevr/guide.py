@@ -463,12 +463,21 @@ class InvSlotAttentionGuide(nn.Module):
 
         self.slots, self.slot_pos, attn = self.slot_attention(self.features_to_slots, num_slots=n_s) 
 
-         
-        if params["running_type"] == "inspect":
-          logging.info(f"slot_pos: {self.slot_pos}")
         
-        new_var = Variable(name="N", value=N, prior_distribution="poisson", proposal_distribution=params["N_proposal"], address="N")
-        self.current_trace.append(new_var)
+        
+        
+        # define the latent variables
+        # infer the posterior of each latent variable
+        # first, without ordering to evaluate with IS
+        # then, let's try with some ordering scheme better than euclidean distance
+
+
+
+
+
+
+
+
         
         """
         Permute the slots to rank by euclidean distance of the attention maps
