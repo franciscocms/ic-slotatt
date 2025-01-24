@@ -88,7 +88,6 @@ def process_targets(target_dict):
         target[o, 16:18] = torch.tensor(object['3d_coords'][:2])/3.
         target[o, 18] = torch.tensor(1.)
     
-    target[params['max_objects'] - o, :] = torch.zeros(params['max_objects'] - o, features_dim)
     return target
     
 def main():   
