@@ -10,14 +10,23 @@ logger = logging.getLogger("eval")
 
 class CLEVRDataset(Dataset):
   def __init__(self, data_path, properties):
-    self.data_path = data_path
+    self.all_data_path = data_path
     self.img_transform = transforms.Compose([
       transforms.PILToTensor()
       ])
-    self.target = properties
+    self.all_target = properties
+    
+    self.data_path = []
+    self.target = []
 
     
     # for now use only images with up to 6 objects (this might need exploring the whole json file, which might take a while...)
+    for idx, scene in enumerate(self.all_target):
+      if len(scene['objects'] <= 6):
+        self.target.append(scene)
+        self.data_path.append(data_path[idx])
+    
+    logger.info(f'{len(self.target) - len(self.data_path)} examples with 6 or - objects!')
     
   
   def __getitem__(self, index):
