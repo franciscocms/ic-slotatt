@@ -284,6 +284,8 @@ class CSIS(Importance):
         if vals["type"] == "sample": # only consider object-wise properties
         
           aux_latents = true_latents[name][:, i].unsqueeze(-1).expand(-1, M) 
+
+          logger.info(aux_latents)
           
           if isinstance(vals['fn'], dist.Normal):
             aux_mean, aux_std = vals['fn'].loc, vals['fn'].scale             
