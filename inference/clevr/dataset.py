@@ -20,9 +20,9 @@ class CLEVRDataset(Dataset):
   def __getitem__(self, index):
     #logger.info(self.all_scenes[index])
     
-    img = self.img_transform(Image.open(self.data_path[index]))
+    img = self.img_transform(Image.open(self.data_path[index])).unsqueeze(0)
     logger.info(img.shape)
-    img = preprocess_clevr(img)
+    img = preprocess_clevr(img).squeeze(0)
     target = self.target['scenes'][index]
 
     logger.info(img.shape)
