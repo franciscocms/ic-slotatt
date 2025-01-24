@@ -77,6 +77,9 @@ def process_targets(target_dict):
     features_dim = 19
     target = torch.zeros(params['max_objects'], features_dim)
     for o, object in enumerate(target_dict['objects']):
+        
+        logger.info(torch.tensor([idx for idx, tup in enumerate(object_mapping) if tup[1] == object['shape']]))
+        
         target[o, :3] = F.one_hot(torch.tensor([idx for idx, tup in enumerate(object_mapping) if tup[1] == object['shape']]), len(object_mapping))
         target[o, 3:11] = F.one_hot(torch.tensor([idx for idx, tup in enumerate(color_mapping) if tup[0] == object['color']]), len(color_mapping))
         target[o, 11:13] = F.one_hot(torch.tensor([idx for idx, tup in enumerate(size_mapping) if tup[0] == object['size']]), len(size_mapping))
