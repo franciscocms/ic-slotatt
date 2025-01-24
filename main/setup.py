@@ -7,7 +7,7 @@ main_dir = os.path.abspath(__file__+'/../../')
 params = {
     "dataset": "clevr", # 'clevr' or '2Dobjects'
     "mixture_components": 10,
-    "guide_step" : 10000,
+    "guide_step" : 9999,
     "print_distributions": False,
     "print_importance_sampling": False,
     "bernoulli_inf_reduction": 'none',
