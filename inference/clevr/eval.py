@@ -82,14 +82,14 @@ def process_targets(target_dict):
             logger.info(f"{idx} - {tup} - {tup[1] == object['shape'][0]} - {object['shape'][0]}")
         
         
-        logger.info(torch.tensor([idx for idx, tup in enumerate(object_mapping) if tup[1] == object['shape']]))
+        logger.info(torch.tensor([idx for idx, tup in enumerate(object_mapping) if tup[1] == object['shape'][0]]))
         
         target[o, :3] = F.one_hot(torch.tensor([idx for idx, tup in enumerate(object_mapping) if tup[1] == object['shape'][0]]), len(object_mapping))
         target[o, 3:11] = F.one_hot(torch.tensor([idx for idx, tup in enumerate(color_mapping) if tup[0] == object['color'][0]]), len(color_mapping))
         target[o, 11:13] = F.one_hot(torch.tensor([idx for idx, tup in enumerate(size_mapping) if tup[0] == object['size'][0]]), len(size_mapping))
         target[o, 13:15] = F.one_hot(torch.tensor([idx for idx, tup in enumerate(material_mapping) if tup[1] == object['material'][0]]), len(material_mapping))
         target[o, 15] = torch.tensor(object['rotation']/360.)
-        target[o, 16:18] = torch.tensor(object['3d_coords'][:2]/3.)
+        target[o, 16:18] = torch.tensor(object['3d_coords'][:2])/3.
         target[o, 18] = torch.tensor(1.)
     
     target[params['max_objects'] - o, :] = torch.zeros(params['max_objects'] - o, features_dim)
