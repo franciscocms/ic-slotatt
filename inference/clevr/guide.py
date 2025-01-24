@@ -338,11 +338,8 @@ class InvSlotAttentionGuide(nn.Module):
 
     # evaluation
     if isinstance(variable, str): 
-      variable_name = variable
-      variable_address = variable.split("_")[0]
-      if variable_address == "N": variable_prior_distribution = "poisson"
-      elif variable_address == "shape": variable_prior_distribution = "categorical"
-      elif variable_address in ["locX", "locY"]: variable_prior_distribution = "uniform"
+      # "mask", "shape", "color", "pose", "mat", "size", "x", "y"
+      variable_name = variable      
       variable_proposal_distribution = proposal_distribution
     
     # training
@@ -352,7 +349,7 @@ class InvSlotAttentionGuide(nn.Module):
       variable_prior_distribution = variable.prior_distribution
       variable_proposal_distribution = variable.proposal_distribution
     
-    proposal = self.prop_nets[variable_address](obs)
+    proposal = self.prop_nets[variable_name](obs)
     
     if variable_proposal_distribution == "normal":
         mean, logvar = proposal[0].squeeze(-1), proposal[1].squeeze(-1)
@@ -369,7 +366,7 @@ class InvSlotAttentionGuide(nn.Module):
     elif variable_proposal_distribution == "bernoulli": 
        proposal = proposal.squeeze(-1)       
        out = pyro.sample(variable_name, dist.Bernoulli(proposal))
-    else: raise ValueError(f"Unknown variable address: {variable_address}")      
+    else: raise ValueError(f"Unknown variable address: {variable_name}")      
     
     if self.is_train and self.step % params['step_size'] == 0:
         if variable_name in ['x', 'y', 'pose']:
@@ -461,60 +458,35 @@ class InvSlotAttentionGuide(nn.Module):
       with torch.no_grad():
         assert self.current_trace == [], "current_trace list is not empty in the begining of evaluation!"
 
-        self.slots, self.slot_pos, attn = self.slot_attention(self.features_to_slots, num_slots=n_s) 
-
-        
-        
+        self.slots, self.slot_pos, attn = self.slot_attention(self.features_to_slots, num_slots=n_s)         
         
         # define the latent variables
         # infer the posterior of each latent variable
         # first, without ordering to evaluate with IS
         # then, let's try with some ordering scheme better than euclidean distance
 
-
-
-
-
-
-
-
-        
-        """
-        Permute the slots to rank by euclidean distance of the attention maps
-        """
-        
-        # 'slot_pos' shape (b_s, n_s, 2)
-        # 'slots' shape (b_s, n_s, dim)
-        euc_dist = {}
-        for s in range(self.slot_pos.shape[-2]): # iterate over slots
-          euc_dist[s] = torch.sqrt(torch.square(self.slot_pos[0, s, 0]) + torch.square(self.slot_pos[0, s, 1]))
-        sorted_euc_dist = {k: v for k, v in sorted(euc_dist.items(), key=lambda item: item[1])}
-        
-        obj_properties = ["shape", "size", "color", "locX", "locY"]
-        for n in range(N):
+        latents = ["mask", "shape", "color", "pose", "mat", "size", "x", "y"]
+        for var in latents:
+          if var in ["mask"]: 
+             proposal_distribution = "bernoulli"
+             prior_distribution = "bernoulli"
+          elif var in ["shape", "color", "mat", "size"]: 
+             proposal_distribution = "categorical"
+             prior_distribution = "categorical"
+          elif var in ["x", "y", "pose"]: 
+             proposal_distribution = "normal"
+             prior_distribution = "uniform"
           
-          # set 'slot_idx' according to the euclidean distance ranking of the slots (not following random initial order)
-          slot_idx = list(sorted_euc_dist.keys())[n]
-          
-          for prop in obj_properties:
-            if params["pos_from_attn"] == "attn-masks":
-                if prop == "locX": obs = self.slot_pos[0, slot_idx, 0] 
-                elif prop == "locY": obs = self.slot_pos[0, slot_idx, 1]
-                else: obs = self.slots[0, slot_idx, :]
-            else: obs = self.slots[0, slot_idx, :]
+          out  = self.infer_step(var, self.slots)
 
-            prop_name = prop + "_" + str(n)
-            prior_distribution = "uniform" if prop_name[:3] == "loc" else "categorical"
-            proposal_distribution = params["loc_proposal"] if prop_name[:3] == "loc" else "categorical"
-            
-            out = self.infer_step(prop_name, obs, proposal_distribution)
-            new_var = Variable(name=prop_name,
+          new_var = Variable(name=var,
                                 value=out,
                                 prior_distribution=prior_distribution,
                                 proposal_distribution=proposal_distribution,
-                                address=prop
+                                address=var
                                 )
-            self.current_trace.append(new_var)
+          self.current_trace.append(new_var)
+
         self.current_trace = []
         return 
    
