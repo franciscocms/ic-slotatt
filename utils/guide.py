@@ -204,7 +204,7 @@ def load_trained_guide_clevr(guide, GUIDE_PATH, mappings):
                 out_dim = 1
             elif name in ['shape', 'color', 'mat', 'size']:
                 proposal_distribution = "categorical"
-                out_dim = len(mappings[f"{name}_map"].keys())
+                out_dim = len(mappings[f"{name}_map"])
             elif name in ['pose', 'x', 'y']:
                 proposal_distribution = "normal"
                 out_dim = 1
