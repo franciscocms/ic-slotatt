@@ -15,7 +15,7 @@ import time
 
 # add project path to sys to import relative modules
 import sys
-sys.path.append(os.path.abspath(__file__+'/../../'))
+sys.path.append(os.path.abspath(__file__+'/../../../'))
 
 import logging
 logfile_name = f'eval.log'
