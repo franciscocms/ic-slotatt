@@ -401,9 +401,9 @@ class InvSlotAttentionGuide(nn.Module):
     x = nn.LayerNorm(x.shape[1:]).to(device)(x)
     self.features_to_slots = self.mlp(x)
 
-    if self.stage == "train":
+    n_s = params['max_objects']
 
-        n_s = params['max_objects']
+    if self.stage == "train":        
         self.slots, attn = self.slot_attention(self.features_to_slots, num_slots=n_s)
 
         # for b in range(B):
