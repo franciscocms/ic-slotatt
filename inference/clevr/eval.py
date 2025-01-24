@@ -54,10 +54,6 @@ with open(properties_json_path, 'r') as f:
     size_mapping = list(properties['sizes'].items())
     color_mapping = list(color_name_to_rgba.items())
 
-logger.info(object_mapping)
-logger.info(size_mapping)
-logger.info(color_mapping)
-logger.info(material_mapping)
 
 PRINT_INFERENCE_TIME = False
 
@@ -93,7 +89,12 @@ def process_targets(target_dict):
         target[n, 10] = torch.tensor(1.)
     return target
     
-def main():    
+def main():   
+
+    logger.info(object_mapping)
+    logger.info(size_mapping)
+    logger.info(color_mapping)
+    logger.info(material_mapping) 
 
     logger.info(device)
 
