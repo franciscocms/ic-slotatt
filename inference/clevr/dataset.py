@@ -22,12 +22,11 @@ class CLEVRDataset(Dataset):
     
     # for now use only images with up to 6 objects (this might need exploring the whole json file, which might take a while...)
     for idx, scene in enumerate(self.all_target['scenes']):
-      logger.info(len(scene['objects']))
       if len(scene['objects']) <= 6:
         self.target.append(scene)
         self.data_path.append(data_path[idx])
     
-    logger.info(f'{len(self.target) - len(self.data_path)} examples with 6 or - objects!')
+    logger.info(f'{len(self.target)} - {len(self.data_path)} examples with 6 or - objects!')
     
   
   def __getitem__(self, index):
