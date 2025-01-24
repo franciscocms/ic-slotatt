@@ -304,15 +304,8 @@ class CSIS(Importance):
             
       #B_pdist = torch.cat((B_pdist, N_pdist), dim=0) # [B, n_slots, n_slots, n_latents]
 
-    logger.info(N_pdist.requires_grad)
-    logger.info(N_pdist.grad_fn)
-
     # pdist shape is (b_s, N, N, n_latents)
     loss, _ = self.hungarian_loss(N_pdist)
-
-    logger.info(loss.requires_grad)
-    logger.info(loss.grad_fn)
-
     return loss
   
   def _old_differentiable_loss_particle(self, guide_trace):

@@ -21,8 +21,8 @@ params = {
     "pos_from_attn" : "attn-masks", # "attn-masks" if computing locations from slot attention masks (alternative: "dme" from the estimated density maps)
     "training_from_scratch" : True,
     "lr" : 4e-4, 
-    "batch_size" : 2, # 64
-    "training_iters": 1, # 10k
+    "batch_size" : 64, # 64
+    "training_iters": 10000, # 10k
     "step_size": 50,
     "running_type": "train", # train, debug, eval, inspect
     "slot_dim" : 64,
