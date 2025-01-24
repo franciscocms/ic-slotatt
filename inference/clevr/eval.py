@@ -74,19 +74,18 @@ def process_preds(trace, n):
     return preds
 
 def process_targets(target_dict):   
-    
-    target = torch.zeros(n, 11) # 11 - the dimension of all latent variables (countinuous and discrete after OHE)
+    features_dim = 19
+    target = torch.zeros(params['max_objects'], features_dim)
     for o, object in enumerate(target_dict['objects']):
-        target[o, :len(object_mapping)] = F.one_hot(torch.tensor(object_mapping[object['shape']]), len(object_mapping))
-
+        target[o, :3] = F.one_hot(torch.tensor([idx for idx, tup in enumerate(object_mapping) if tup[1] == object['shape']]), len(object_mapping))
+        target[o, 3:11] = F.one_hot(torch.tensor([idx for idx, tup in enumerate(color_mapping) if tup[0] == object['color']]), len(color_mapping))
+        target[o, 11:13] = F.one_hot(torch.tensor([idx for idx, tup in enumerate(size_mapping) if tup[0] == object['size']]), len(size_mapping))
+        target[o, 13:15] = F.one_hot(torch.tensor([idx for idx, tup in enumerate(material_mapping) if tup[1] == object['material']]), len(material_mapping))
+        target[o, 15] = torch.tensor(object['rotation']/360.)
+        target[o, 16:18] = torch.tensor(object['3d_coords'][:2]/3.)
+        target[o, 18] = torch.tensor(1.)
     
-    for n in range(int(target_dict['scene_attr']['N'])):
-        target[n, :2] = F.one_hot(torch.tensor(shape_vals[target_dict['scene_attr'][f'object_{n}']['shape']]), len(shape_vals))
-        target[n, 2:5] = F.one_hot(torch.tensor(size_vals[target_dict['scene_attr'][f'object_{n}']['size']]), len(size_vals))
-        target[n, 5:8] = F.one_hot(torch.tensor(color_vals[target_dict['scene_attr'][f'object_{n}']['color']]), len(color_vals))
-        target[n, 8] = target_dict['scene_attr'][f'object_{n}']['initLocX']
-        target[n, 9] = target_dict['scene_attr'][f'object_{n}']['initLocY']
-        target[n, 10] = torch.tensor(1.)
+    target[params['max_objects'] - o, :] = torch.zeros(params['max_objects'] - o, features_dim)
     return target
     
 def main():   
@@ -144,6 +143,15 @@ def main():
             for img, target_dict in testloader:
                 img = img.to(device)
                 target = process_targets(target_dict)
+
+                posterior = csis.run(observations={"image": img})
+                traces = posterior.prop_traces
+
+                for tr in traces:
+                    for name, site in tr.nodes.items():
+                        if site['type'] == 'sample': 
+                            logger.info(f"{name} - {site['value']}")
+
 
                 break
 
