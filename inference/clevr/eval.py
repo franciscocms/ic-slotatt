@@ -149,6 +149,8 @@ def main():
                 posterior = csis.run(observations={"image": img})
                 traces = posterior.prop_traces
 
+                logger.info(f"{len(traces)} posterior traces!")
+
                 for tr in traces:
                     for name, site in tr.nodes.items():
                         if site['type'] == 'sample': 
