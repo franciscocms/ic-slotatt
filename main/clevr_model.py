@@ -467,8 +467,7 @@ def _add_object(object_dir):
     
     # Add material for the object
     add_material(object_dir['material'], Color=object_dir['rgba'])
-    
-    return obj
+
 
 # Sampled objects from Pyro
 
@@ -489,8 +488,8 @@ idx = {id}
     for i, obj in enumerate(objects):
         script += f"""
 objects[{i}] = {obj}
-blender_obj = _add_object(objects[{i}])
-blender_objects.append(blender_obj)
+_add_object(objects[{i}])
+
 """
     
     script += """
@@ -510,7 +509,7 @@ bpy.ops.render.render(write_still=True)
     with open(script_file, "w") as f:
         f.write(script)
     
-    return dict(script=script_file, objects=blender_objects)
+    return script_file
 
 def render_scene_in_blender(blender_script):
     """
@@ -546,13 +545,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     clevr_scenes = sample_clevr_scene()
 
     # Generate the Blender script for the sampled scene
-    out = [generate_blender_script(scene, idx, str(params['jobID'])) for idx, scene in enumerate(clevr_scenes)]
-    logger.info(out)
-    
-    blender_scripts = [o['script'] for o in out]
-    blender_objects = [o['objects'] for o in out]
-
-    logger.info(blender_objects)
+    blender_scripts = [generate_blender_script(scene, idx, str(params['jobID'])) for idx, scene in enumerate(clevr_scenes)]
     
     #logger.info("started rendering...")
 
@@ -561,26 +554,12 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     with mp.Pool(processes=10) as pool:
       pool.map(render_scene_in_blender, blender_scripts)
 
-    #img = np.asarray(Image.open(os.path.join(imgs_path, f"rendered_scene_0.png")))
-    #logger.info(img.shape)
-
-
     #logger.info("Scene rendered and saved...")
     img_batch = torch.stack(
         [torch.from_numpy(np.asarray(Image.open(os.path.join(imgs_path, f"rendered_scene_{idx}.png")))).permute(2, 0, 1) for idx in range(B)]
     )
 
-    #plt.imshow(img[0].permute(1, 2, 0).numpy())
-    #plt.show()
-
-    #logger.info(img_batch.shape)
-
     proc_img = preprocess_clevr(img_batch) # proc_img shape is (1, 4, 128, 128)
-
-    #plt.imshow(proc_img[0].permute(1, 2, 0).numpy())
-    #plt.show()
-
-    #logger.info(proc_img.shape)
 
     with pyro.plate(observations["image"].shape[0]):
         #pyro.sample("image", MyBernoulli(proc_img, validate_args=False).to_event(3), obs=observations["image"])
