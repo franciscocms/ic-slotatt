@@ -510,7 +510,7 @@ bpy.ops.render.render(write_still=True)
     with open(script_file, "w") as f:
         f.write(script)
     
-    return script_file, blender_objects
+    return dict(script=script_file, objects=blender_objects)
 
 def render_scene_in_blender(blender_script):
     """
@@ -548,7 +548,9 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     clevr_scenes = sample_clevr_scene()
 
     # Generate the Blender script for the sampled scene
-    blender_scripts, blender_objects = [generate_blender_script(scene, idx, str(params['jobID'])) for idx, scene in enumerate(clevr_scenes)]
+    out = [generate_blender_script(scene, idx, str(params['jobID'])) for idx, scene in enumerate(clevr_scenes)]
+    blender_scripts = [o['script'] for o in out]
+    blender_objects = [o['objects'] for o in out]
 
     logger.info(blender_objects)
     
