@@ -23,7 +23,7 @@ from .var import Variable
 params = setup.params
 
 import logging
-logging.getLogger(__name__)
+logger = logging.getLogger("eval")
 
 def to_int(value: Tensor):
     return int(torch.round(value))
@@ -223,7 +223,7 @@ def load_trained_guide_clevr(guide, GUIDE_PATH, mappings):
     state_dict = {k: v for k, v in pretrained_guide.items() if k in guide_dict.keys()}
     guide_dict.update(state_dict)
     guide.load_state_dict(guide_dict)
-    logging.info("ICSA guide successfully loaded...")
+    logger.info("ICSA guide successfully loaded...")
     return guide
 
 
