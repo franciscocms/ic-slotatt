@@ -258,10 +258,6 @@ def sample_clevr_scene():
             if name == 'Cube':
                 r[b][k] /= math.sqrt(2)
 
-    
-    
-
-
     # Store each scene's attributes
     scenes = []
     for b in range(B):
@@ -282,7 +278,7 @@ def sample_clevr_scene():
         scenes.append(objects)
     return scenes
 
-def generate_blender_script(objects, id, jobID):
+def generate_blender_script(objects, id, jobID, blender_objects=[]):
     """
     Generate a Blender Python script to render the CLEVR-like scene.
     """
@@ -471,6 +467,8 @@ def _add_object(object_dir):
     
     # Add material for the object
     add_material(object_dir['material'], Color=object_dir['rgba'])
+    
+    return obj
 
 # Sampled objects from Pyro
 
@@ -486,12 +484,13 @@ objects = {}
 # Pass the index of the batched sample
 idx = {id}
 """
-
+    
     # Insert the sampled objects
     for i, obj in enumerate(objects):
         script += f"""
 objects[{i}] = {obj}
-_add_object(objects[{i}])
+blender_obj = _add_object(objects[{i}])
+blender_objects.append(blender_obj)
 """
     
     script += """
@@ -511,7 +510,7 @@ bpy.ops.render.render(write_still=True)
     with open(script_file, "w") as f:
         f.write(script)
     
-    return script_file
+    return script_file, blender_objects
 
 def render_scene_in_blender(blender_script):
     """
@@ -549,7 +548,9 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     clevr_scenes = sample_clevr_scene()
 
     # Generate the Blender script for the sampled scene
-    blender_scripts = [generate_blender_script(scene, idx, str(params['jobID'])) for idx, scene in enumerate(clevr_scenes)]
+    blender_scripts, blender_objects = [generate_blender_script(scene, idx, str(params['jobID'])) for idx, scene in enumerate(clevr_scenes)]
+
+    logger.info(blender_objects)
     
     #logger.info("started rendering...")
 
