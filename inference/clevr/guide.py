@@ -458,7 +458,7 @@ class InvSlotAttentionGuide(nn.Module):
       with torch.no_grad():
         assert self.current_trace == [], "current_trace list is not empty in the begining of evaluation!"
 
-        self.slots, self.slot_pos, attn = self.slot_attention(self.features_to_slots, num_slots=n_s)         
+        self.slots, attn = self.slot_attention(self.features_to_slots, num_slots=n_s)         
         
         # define the latent variables
         # infer the posterior of each latent variable
