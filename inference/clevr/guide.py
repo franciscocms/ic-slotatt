@@ -368,14 +368,15 @@ class InvSlotAttentionGuide(nn.Module):
        out = pyro.sample(variable_name, dist.Bernoulli(proposal))
     else: raise ValueError(f"Unknown variable address: {variable_name}")      
     
-    if self.is_train and self.step % params['step_size'] == 0:
+    if self.stage == 'train':
+      if self.is_train and self.step % params['step_size'] == 0:
         if variable_name in ['x', 'y', 'pose']:
-            logger.info(f"\n{variable_name} target values {variable.value[0]}")
-            logger.info(f"\n{variable_name} proposed mean {mean[0]}")
-            logger.info(f"\n{variable_name} proposed logvar {logvar[0]}")
+          logger.info(f"\n{variable_name} target values {variable.value[0]}")
+          logger.info(f"\n{variable_name} proposed mean {mean[0]}")
+          logger.info(f"\n{variable_name} proposed logvar {logvar[0]}")
         else:
-            logger.info(f"\n{variable_name} target values {variable.value[0]}")
-            logger.info(f"\n{variable_name} proposed values {proposal[0]}")
+          logger.info(f"\n{variable_name} target values {variable.value[0]}")
+          logger.info(f"\n{variable_name} proposed values {proposal[0]}")
 
 
     if variable_name not in ['x', 'y', 'pose']: return out
