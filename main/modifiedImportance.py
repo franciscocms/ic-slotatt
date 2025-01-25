@@ -17,7 +17,7 @@ from sys import stdout
 from .setup import params
 
 import logging
-logger = logging.getLogger("icsa_set_prediction")
+logger = logging.getLogger("eval")
 
 
 class Importance(TracePosterior):
@@ -165,7 +165,7 @@ class Importance(TracePosterior):
             
             guide_trace = poutine.trace(self.guide).get_trace(*args, **kwargs)  
 
-            guide_trace = self._reorder_trace(guide_trace)
+            #guide_trace = self._reorder_trace(guide_trace)
 
             """
             check if 'guide_trace' is a valid trace:
@@ -200,6 +200,12 @@ class Importance(TracePosterior):
 
             if flag:
                 model_trace = poutine.trace(poutine.replay(self.model, trace=guide_trace)).get_trace(*args, **kwargs)         
+                
+                logger.info('\nMODEL TRACE\n')
+                for name, site in model_trace.nodes.items():
+                    logger.info(f"{name} - {site}")
+                
+                
                 log_weight = model_trace.log_prob_sum() - guide_trace.log_prob_sum()
                 #yield (model_trace, log_weight)
                 yield (model_trace, guide_trace, log_weight)
