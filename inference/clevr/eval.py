@@ -149,14 +149,22 @@ def main():
                 logger.info(target_dict)
 
                 posterior = csis.run(observations={"image": img})
-                traces = posterior.prop_traces
+                #traces = posterior.prop_traces
+                traces = posterior.exec_traces
 
                 logger.info(f"{len(traces)} posterior traces!")
 
-                for tr in traces:
+                for t, tr in enumerate(traces):
                     for name, site in tr.nodes.items():
-                        logger.info(f"{name} - {site}")
-                        #if site['type'] == 'sample': 
+                        if site['type'] == 'sample' and name != 'image':
+                            logger.info(f"{name} - {site['value']}")
+                        
+                        if name == 'image':
+                            plt.imshow(site["fn"].mean.squeeze().permute(1, 2, 0).cpu().numpy())
+                            plt.savefig(os.path.join(plots_dir), f"trace_{t}.png")
+                            plt.close()
+                            
+                            # save generated image and compare with 'img'
                             
 
 
