@@ -203,7 +203,8 @@ class Importance(TracePosterior):
                 
                 logger.info('\nMODEL TRACE\n')
                 for name, site in model_trace.nodes.items():
-                    logger.info(f"{name} - {site}")
+                    if site['type'] == 'sample':
+                        logger.info(f"{name} - {site}")
                 
                 
                 log_weight = model_trace.log_prob_sum() - guide_trace.log_prob_sum()
