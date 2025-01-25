@@ -477,7 +477,7 @@ class InvSlotAttentionGuide(nn.Module):
              proposal_distribution = "normal"
              prior_distribution = "uniform"
           
-          out  = self.infer_step(var, self.slots)
+          out  = self.infer_step(var, self.slots, proposal_distribution)
 
           new_var = Variable(name=var,
                                 value=out,
