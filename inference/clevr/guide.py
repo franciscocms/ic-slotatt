@@ -350,6 +350,8 @@ class InvSlotAttentionGuide(nn.Module):
       variable_proposal_distribution = variable.proposal_distribution
     
     proposal = self.prop_nets[variable_name](obs)
+
+    logger.info(f"{variable} - {proposal}")
     
     if variable_proposal_distribution == "normal":
         mean, logvar = proposal[0].squeeze(-1), proposal[1].squeeze(-1)
@@ -478,7 +480,7 @@ class InvSlotAttentionGuide(nn.Module):
              proposal_distribution = "normal"
              prior_distribution = "uniform"
           
-          out  = self.infer_step(var, self.slots, proposal_distribution)
+          out = self.infer_step(var, self.slots, proposal_distribution)
 
           new_var = Variable(name=var,
                                 value=out,
