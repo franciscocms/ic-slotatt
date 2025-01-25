@@ -528,8 +528,6 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     imgs_path = os.path.join(dir_path, str(params['jobID']))
     if not os.path.isdir(imgs_path): os.mkdir(imgs_path)
-    
-    #logger.info(f"... using CUDA version {torch.version.cuda}")
 
     # delete all blender scripts
     files = glob.glob(os.path.join(imgs_path, "*.py"))
@@ -549,6 +547,8 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     # Generate the Blender script for the sampled scene
     out = [generate_blender_script(scene, idx, str(params['jobID'])) for idx, scene in enumerate(clevr_scenes)]
+    logger.info(out)
+    
     blender_scripts = [o['script'] for o in out]
     blender_objects = [o['objects'] for o in out]
 
