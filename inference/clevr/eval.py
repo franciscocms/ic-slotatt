@@ -153,7 +153,7 @@ def main():
 
                 for tr in traces:
                     for name, site in tr.nodes.items():
-                        logger.info(f"{name} - {site['value']}")
+                        logger.info(f"{name} - {site}")
                         #if site['type'] == 'sample': 
                             
 
