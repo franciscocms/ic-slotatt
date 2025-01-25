@@ -263,7 +263,6 @@ class TracePosterior(object, metaclass=ABCMeta):
                     # tr, logit = vals
                     tr, guide_tr, logit = vals              
                 
-                
                 else:
                     tr, logit, chain_id = vals
                     assert chain_id < self.num_chains
