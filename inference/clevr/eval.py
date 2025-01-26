@@ -155,6 +155,7 @@ def main():
                 logger.info(f"{len(traces)} posterior traces!")
 
                 for t, tr in enumerate(traces):
+                    logger.info(f'\nproposal trace {t}')
                     for name, site in tr.nodes.items():
                         if site['type'] == 'sample' and name != 'image':
                             logger.info(f"{name} - {site['value']}")
@@ -162,8 +163,12 @@ def main():
                             
 
                         if name == 'image':
-                            plt.imshow(site["fn"].mean.squeeze().permute(1, 2, 0).cpu().numpy())
+                            plt.imshow(site["fn"].mean.squeeze(dim=0).permute(1, 2, 0).cpu().numpy())
                             plt.savefig(os.path.join(plots_dir, f"trace_{t}.png"))
+                            plt.close()
+
+                            plt.imshow(site["value"].squeeze(dim=0).permute(1, 2, 0).cpu().numpy())
+                            plt.savefig(os.path.join(plots_dir, f"image.png"))
                             plt.close()
 
                             logger.info(site['value'].shape)

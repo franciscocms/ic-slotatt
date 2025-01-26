@@ -24,7 +24,7 @@ params = {
     "batch_size" : 1, # 64
     "training_iters": 10000, # 10k
     "step_size": 50,
-    "running_type": "train", # train, debug, eval, inspect
+    "running_type": "eval", # train, debug, eval, inspect
     "slot_dim" : 64,
     "infer_background": False,
     "slotatt_recurrence": True,
