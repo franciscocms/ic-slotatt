@@ -146,6 +146,8 @@ def main():
                 img = img.to(device)
                 target = process_targets(target_dict)
 
+                logger.info(img.shape)
+
                 logger.info(target_dict)
 
                 posterior = csis.run(observations={"image": img})
