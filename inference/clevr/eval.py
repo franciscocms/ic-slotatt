@@ -146,7 +146,9 @@ def main():
                 img = img.to(device)
                 target = process_targets(target_dict)
 
-                logger.info(img.shape)
+                plt.imshow(img.squeeze(dim=0).permute(1, 2, 0).cpu().numpy())
+                plt.savefig(os.path.join(plots_dir, f"image.png"))
+                plt.close()
 
                 logger.info(target_dict)
 
@@ -169,9 +171,7 @@ def main():
                             plt.savefig(os.path.join(plots_dir, f"trace_{t}.png"))
                             plt.close()
 
-                            plt.imshow(site["value"].squeeze(dim=0).permute(1, 2, 0).cpu().numpy())
-                            plt.savefig(os.path.join(plots_dir, f"image.png"))
-                            plt.close()
+                            
 
                             logger.info(site['value'].shape)
                             logger.info(site["fn"].mean.shape)
