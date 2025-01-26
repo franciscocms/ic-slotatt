@@ -159,10 +159,15 @@ def main():
                         if site['type'] == 'sample' and name != 'image':
                             logger.info(f"{name} - {site['value']}")
                         
+                            
+
                         if name == 'image':
                             plt.imshow(site["fn"].mean.squeeze().permute(1, 2, 0).cpu().numpy())
                             plt.savefig(os.path.join(plots_dir, f"trace_{t}.png"))
                             plt.close()
+
+                            logger.info(site['value'].shape)
+                            logger.info(site["fn"].mean.shape)
                             
                             # save generated image and compare with 'img'
                             
@@ -392,3 +397,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+    logger.info('\nInference complete.')
