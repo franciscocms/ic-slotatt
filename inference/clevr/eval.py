@@ -161,7 +161,7 @@ def main():
                         
                         if name == 'image':
                             plt.imshow(site["fn"].mean.squeeze().permute(1, 2, 0).cpu().numpy())
-                            plt.savefig(os.path.join(plots_dir), f"trace_{t}.png")
+                            plt.savefig(os.path.join(plots_dir, f"trace_{t}.png"))
                             plt.close()
                             
                             # save generated image and compare with 'img'
