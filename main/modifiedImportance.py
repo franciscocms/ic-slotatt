@@ -204,7 +204,7 @@ class Importance(TracePosterior):
                 logger.info('\nMODEL TRACE\n')
                 for name, site in model_trace.nodes.items():
                     if site['type'] == 'sample':
-                        logger.info(f"{name} - {site['fn'].log_prob(site['value'])}")
+                        logger.info(f"{name} - value: {site['value']} - log_prob: {site['fn'].log_prob(site['value'])}")
 
 
                         ##### HOW IS THE LOG_PROB_SUM OF THE MODEL TRACE COMPUTED???
