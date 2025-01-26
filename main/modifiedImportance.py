@@ -3,6 +3,7 @@ import warnings
 
 import torch
 import pyro
+import pyro.distributions as dist
 import pyro.poutine as poutine
 from pyro.ops.stats import fit_generalized_pareto
 
@@ -201,19 +202,24 @@ class Importance(TracePosterior):
             if flag:
                 model_trace = poutine.trace(poutine.replay(self.model, trace=guide_trace)).get_trace(*args, **kwargs)         
                 
-                logger.info('\nMODEL TRACE\n')
+                # logger.info('\nMODEL TRACE\n')
+                # for name, site in model_trace.nodes.items():
+                #     if site['type'] == 'sample':
+                #         logger.info(f"\n{name} - value: {site['value']}") 
+                #         if isinstance(site['fn'], dist.Bernoulli) or isinstance(site['fn'], dist.Categorical): logger.info(f"posterior: {site['fn'].probs} - log_prob: {site['fn'].log_prob(site['value'])}")
+
+
+                #         ##### HOW IS THE LOG_PROB_SUM OF THE MODEL TRACE COMPUTED???
+                
+                # logger.info(model_trace.log_prob_sum())
+                # logger.info(guide_trace.log_prob_sum())
+
                 for name, site in model_trace.nodes.items():
-                    if site['type'] == 'sample':
-                        logger.info(f"\n{name} - value: {site['value']}") 
-                        logger.info(f"posterior: {site['fn']} - log_prob: {site['fn'].log_prob(site['value'])}")
+                    if name == 'image':
+                        model_trace_log_prob_sum = site['fn'].log_prob(site['value'])
+                log_weight = model_trace_log_prob_sum - guide_trace.log_prob_sum()
 
-
-                        ##### HOW IS THE LOG_PROB_SUM OF THE MODEL TRACE COMPUTED???
-                
-                logger.info(model_trace.log_prob_sum())
-                logger.info(guide_trace.log_prob_sum())
-                
-                log_weight = model_trace.log_prob_sum() - guide_trace.log_prob_sum()
+                #log_weight = model_trace.log_prob_sum() - guide_trace.log_prob_sum()
                 #yield (model_trace, log_weight)
                 yield (model_trace, guide_trace, log_weight)
 
