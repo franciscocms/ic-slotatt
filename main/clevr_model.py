@@ -136,6 +136,10 @@ def sample_clevr_scene(llh_uncertainty):
     # Choose random color and shape
     with pyro.poutine.mask(mask=objects_mask):
         shape = pyro.sample(f"shape", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([B, M]))
+
+        logger.info(shape)
+        logger.info(shape.shape)
+    
     shape_mapping_list = {b: list(map(get_shape_mapping, shape[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
     obj_name, obj_name_out = {b: [e[0] for e in shape_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in shape_mapping_list[b]]  for b in range(B)}
     #logger.info(f"\n{obj_name}")
