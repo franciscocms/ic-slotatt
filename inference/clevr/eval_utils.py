@@ -1,6 +1,16 @@
 import torch
 import numpy as np
 
+import os
+import sys
+sys.path.append(os.path.abspath(__file__+'/../../../'))
+
+import logging
+logger = logging.getLogger("eval")
+
+def transform_coords(coords):
+    return (coords/2) + 0.5
+
 def process_preds(preds):
     # preds must have shape (max_objects, n_features)
     assert len(preds.shape) == 2
@@ -19,7 +29,7 @@ def process_preds(preds):
     color = torch.argmax(preds[:, 3:11], dim=-1)
     size = torch.argmax(preds[:, 11:13], dim=-1)
     mat = torch.argmax(preds[:, 13:15], dim=-1)
-    x, y = preds[:, 15], preds[:, 16]
+    x, y = transform_coords(preds[:, 15]), transform_coords(preds[:, 16])
     real_obj = preds[:, 17]
     return shape, size, color, x, y, real_obj
 
@@ -37,6 +47,9 @@ def compute_AP(preds, targets, threshold_dist):
 
     shape, size, color, x, y, pred_real_obj = process_preds(preds)
     target_shape, target_size, target_color, target_x, target_y, target_real_obj = process_preds(targets)
+
+    logger.info(f"\n{shape}")
+    logger.info(target_shape)
 
     # shape, size, ...  has shape (17)
 
