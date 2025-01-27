@@ -245,7 +245,7 @@ class Importance(TracePosterior):
                 logger.info(f"\ninspecting the guide log_prob_sum computation...\n")
                 for name, site in guide_trace.nodes.items():
                     if site['type'] == 'sample':
-                        logger.info(f"{name} - {site['value'].item()} - {site['fn'].log_prob(site['value']).item()} - {site['fn'].log_prob(site['value']).sum()}")
+                        logger.info(f"{name} - {site['value']} - {site['fn'].log_prob(site['value'])} - {site['fn'].log_prob(site['value']).sum()}")
 
 
 
