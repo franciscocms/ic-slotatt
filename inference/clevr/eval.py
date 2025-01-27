@@ -159,7 +159,7 @@ def main():
                 logger.info(f"target image index: {target_dict['image_index']}")
 
                 log_weights, model_trace, guide_trace = vectorized_importance_weights(model, guide, observations={"image": img},
-                                                                                      num_samples=1000,
+                                                                                      num_samples=10,
                                                                                       max_plate_nesting=4,
                                                                                       normalized=False)
                 
