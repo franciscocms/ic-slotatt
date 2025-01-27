@@ -410,6 +410,10 @@ def main():
 
 
 if __name__ == '__main__':
+    
+    init_time = time.time()
+    
     main()
 
-    logger.info('\nInference complete.')
+    inference_time = init_time - time.time()
+    logger.info(f'\nInference complete in {inference_time} seconds.')
