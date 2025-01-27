@@ -50,7 +50,7 @@ params = {
 if not os.path.isdir(params['plots_dir']): os.mkdir(params['plots_dir'])
 
 if params['dataset'] == 'clevr': 
-    if params['jobID'] == 88: params['max_objects'] = 6
+    if params['jobID'] == 88: params['max_objects'] = 10
     else: params['max_objects'] = 10
 
 params["no_slots"] = "w_background" if params["infer_background"] else "wo_background"
