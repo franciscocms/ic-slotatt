@@ -56,7 +56,7 @@ def preprocess_clevr(image, resolution=(128, 128)):
     image = torch.clamp(image, -1., 1.)
     return image
 
-def sample_clevr_scene():
+def sample_clevr_scene(llh_uncertainty):
     
     # Assuming the default camera position
     cam_default_pos = [7.358891487121582, -6.925790786743164, 4.958309173583984]
@@ -245,8 +245,8 @@ def sample_clevr_scene():
     
     
     with pyro.poutine.mask(mask=objects_mask):
-        x = pyro.sample(f"x", dist.Normal(x_b_/3., 0.001))*3.
-        y = pyro.sample(f"y", dist.Normal(y_b_/3., 0.001))*3.
+        x = pyro.sample(f"x", dist.Normal(x_b_/3., llh_uncertainty))*3.
+        y = pyro.sample(f"y", dist.Normal(y_b_/3., llh_uncertainty))*3.
         
         size = pyro.sample(f"size", dist.Delta(size_b_))
         size_mapping_list = {b: list(map(get_size_mapping, size[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
@@ -525,6 +525,9 @@ def render_scene_in_blender(blender_script):
 
 def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
+    if params['running_type'] == 'train': llh_uncertainty = 0.001
+    elif params['running_type'] == 'eval': llh_uncertainty = 0.1
+    
     imgs_path = os.path.join(dir_path, str(params['jobID']))
     if not os.path.isdir(imgs_path): os.mkdir(imgs_path)
 
@@ -542,7 +545,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     B = params['batch_size']
 
     # Sample a CLEVR-like scene using Pyro
-    clevr_scenes = sample_clevr_scene()
+    clevr_scenes = sample_clevr_scene(llh_uncertainty)
 
     # Generate the Blender script for the sampled scene
     blender_scripts = [generate_blender_script(scene, idx, str(params['jobID'])) for idx, scene in enumerate(clevr_scenes)]
@@ -566,9 +569,6 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
         
         # stddev = 0.01  in jobID 78
         # stddev = 0.001 in jobID 79
-
-        if params['running_type'] == 'train': llh_uncertainty = 0.001
-        elif params['running_type'] == 'eval': llh_uncertainty = 0.5
         
         likelihood_fn = MyNormal(proc_img, torch.tensor(llh_uncertainty)).get_dist() 
         pyro.sample("image", likelihood_fn.to_event(3), obs=observations["image"])
