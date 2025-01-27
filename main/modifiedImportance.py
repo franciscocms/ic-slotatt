@@ -219,6 +219,9 @@ class Importance(TracePosterior):
                     log_p = 0.
                     if site['type'] == 'sample' and name != 'size':
                         log_p = site['fn'].log_prob(site['value'])
+                        if name == 'image': 
+                            img_dim = site['fn'].mean.shape[-1]
+                            log_p = log_p / (img_dim**2)
                         log_p = scale_and_mask(log_p, site["scale"], site["mask"]).sum()
                     log_p_sum += log_p
 
