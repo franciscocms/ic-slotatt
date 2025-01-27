@@ -216,7 +216,7 @@ class Importance(TracePosterior):
 
                 log_p_sum = 0.
                 for name, site in model_trace.nodes.items():
-                    if name != 'size':
+                    if site['type'] == 'sample' and name != 'size':
                         log_p = site['fn'].log_prob(site['value'])
                         log_p = scale_and_mask(log_p, site["scale"], site["mask"]).sum()
                     log_p_sum += log_p
