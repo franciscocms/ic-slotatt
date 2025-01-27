@@ -155,11 +155,12 @@ def main():
                 posterior = csis.run(observations={"image": img})
                 #traces = posterior.prop_traces
                 traces = posterior.exec_traces
+                log_wts = posterior.log_weights
 
                 logger.info(f"{len(traces)} posterior traces!")
 
                 for t, tr in enumerate(traces):
-                    logger.info(f'\nproposal trace {t}')
+                    logger.info(f'\nproposal trace {t} - log weight: {log_wts[t]}')
                     for name, site in tr.nodes.items():
                         if site['type'] == 'sample' and name != 'image':
                             logger.info(f"{name} - {site['value']}")
@@ -173,8 +174,8 @@ def main():
 
                             
 
-                            logger.info(site['value'].shape)
-                            logger.info(site["fn"].mean.shape)
+                            # logger.info(site['value'].shape)
+                            # logger.info(site["fn"].mean.shape)
                             
                             # save generated image and compare with 'img'
                             
