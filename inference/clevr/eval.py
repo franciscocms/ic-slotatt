@@ -158,7 +158,7 @@ def main():
                 # plt.savefig(os.path.join(plots_dir, f"image.png"))
                 # plt.close()
 
-                #logger.info(f"target image index: {target_dict['image_index']}")
+                logger.info(f"target image index: {target_dict['image_index']}")
 
                 posterior = csis.run(observations={"image": img})
                 prop_traces = posterior.prop_traces
