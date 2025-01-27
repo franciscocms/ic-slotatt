@@ -61,7 +61,7 @@ def process_preds(trace):
     
     """ returns a matrix of predictions from the proposed trace """
     
-    features_dim = 19
+    features_dim = 18
     preds = torch.zeros(params['max_objects'], features_dim)
     for name, site in trace.nodes.items():
         if site['type'] == 'sample':
@@ -75,8 +75,6 @@ def process_preds(trace):
             if name == 'mask': preds[:, 17] = site['value']
         
             # add the real/pad value
-
-    preds[:, 10] = torch.tensor(1.)
     return preds
 
 def process_targets(target_dict):   
