@@ -32,7 +32,7 @@ class CLEVRDataset(Dataset):
     
   
   def __getitem__(self, index):    
-    img = torch.from_numpy(np.asarray((Image.open(self.data_path[index])))).unsqueeze(0)
+    img = torch.from_numpy(np.asarray((Image.open(self.data_path[index])))).permute(2, 0, 1).unsqueeze(0)
     logger.info(img.shape)
     img = preprocess_clevr(img).squeeze(0)
     #target = self.target['scenes'][index]    ------> when using all scenes!
