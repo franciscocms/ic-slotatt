@@ -26,7 +26,7 @@ logger.addHandler(fh)
 
 from main.clevr_model import clevr_gen_model, preprocess_clevr
 from main.modifiedCSIS import CSIS
-#from main import modifiedImportance as mImportance
+from main.modifiedImportance import vectorized_importance_weights
 from guide import InvSlotAttentionGuide, visualize
 from utils.distributions import Empirical
 from eval_utils import compute_AP, transform_coords
@@ -158,6 +158,13 @@ def main():
 
                 logger.info(f"target image index: {target_dict['image_index']}")
 
+                log_weights, model_trace, guide_trace = vectorized_importance_weights(model, guide, observations={"image": img},
+                                                                                      num_samples=1000,
+                                                                                      max_plate_nesting=4,
+                                                                                      normalized=False)
+                
+                
+                
                 posterior = csis.run(observations={"image": img})
                 prop_traces = posterior.prop_traces
                 traces = posterior.exec_traces
