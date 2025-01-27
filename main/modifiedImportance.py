@@ -216,7 +216,7 @@ class Importance(TracePosterior):
 
                 only_img_llh = True
                 
-                log_p_sum = 0.
+                log_p_sum = torch.tensor(0.)
                 for name, site in model_trace.nodes.items():
                     log_p = 0.
                     
