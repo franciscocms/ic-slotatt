@@ -566,8 +566,11 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
         
         # stddev = 0.01  in jobID 78
         # stddev = 0.001 in jobID 79
+
+        if params['stage'] == 'train': llh_uncertainty = 0.001
+        elif params['stage'] == 'eval': llh_uncertainty = 0.1
         
-        likelihood_fn = MyNormal(proc_img, torch.tensor(0.001)).get_dist() 
+        likelihood_fn = MyNormal(proc_img, torch.tensor(llh_uncertainty)).get_dist() 
         pyro.sample("image", likelihood_fn.to_event(3), obs=observations["image"])
     
     batch_time = time.time() - init_time
