@@ -240,12 +240,20 @@ class Importance(TracePosterior):
                     log_p_sum += log_p
 
 
-                log_weight = log_p_sum - guide_trace.log_prob_sum()
+                log_weight = log_p_sum #- guide_trace.log_prob_sum()
 
                 logger.info(f"\ninspecting the guide log_prob_sum computation...\n")
                 for name, site in guide_trace.nodes.items():
                     if site['type'] == 'sample':
-                        logger.info(f"{name} - {site['value']} - {site['fn'].log_prob(site['value'])} - {site['fn'].log_prob(site['value']).sum()}")
+                        logger.info(f"{name} - {site['value'].item()} - {site['fn'].log_prob(site['value']).item()} - {site['fn'].log_prob(site['value']).sum()}")
+
+
+
+                        ### UNDERSTAND POSITIVE LOG-PROBS AND THE IMPACT IN THE TRACE LOG WEIGHT!!!
+
+
+
+
                         
 
                 logger.info(f"model log_prob_sum: {log_p_sum}")
