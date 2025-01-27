@@ -1,6 +1,8 @@
 import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
+import numpy as np
+
 from PIL import Image
 
 from main.clevr_model import preprocess_clevr
@@ -30,7 +32,7 @@ class CLEVRDataset(Dataset):
     
   
   def __getitem__(self, index):    
-    img = self.img_transform(Image.open(self.data_path[index])).unsqueeze(0)
+    img = torch.from_numpy(np.asarray((Image.open(self.data_path[index])))).unsqueeze(0)
     logger.info(img.shape)
     img = preprocess_clevr(img).squeeze(0)
     #target = self.target['scenes'][index]    ------> when using all scenes!

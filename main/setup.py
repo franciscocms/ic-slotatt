@@ -4,6 +4,11 @@ import os
 
 main_dir = os.path.abspath(__file__+'/../../')
 
+# jobID 87 holds results for 4 objects CLEVR scenes
+# jobID 88 holds results for 6< objects CLEVR scenes 
+# jobID 90 is training for 10< objects CLEVR scenes
+# jobID 91 will train for 6< objects CLEVR scenes with new loss
+
 params = {
     "dataset": "clevr", # 'clevr' or '2Dobjects'
     "mixture_components": 10,
