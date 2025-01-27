@@ -40,6 +40,9 @@ class CLEVRDataset(Dataset):
     plt.imshow(img.permute(1, 2, 0).cpu().numpy())
     plt.savefig(os.path.join(plots_dir, f"image_before_processing.png"))
     plt.close()
+
+    logger.info(torch.amax(img, (1, 2)))
+    logger.info(torch.amin(img, (1, 2)))
     
     logger.info(img.shape)
     img = preprocess_clevr(img.unsqueeze(0)).squeeze(0)
