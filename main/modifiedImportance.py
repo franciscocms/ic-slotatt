@@ -6,6 +6,7 @@ import pyro
 import pyro.distributions as dist
 import pyro.poutine as poutine
 from pyro.ops.stats import fit_generalized_pareto
+from pyro.distributions.util import scale_and_mask
 
 from .mod_abstract_infer import TracePosterior
 from pyro.infer.enum import get_importance_trace
@@ -207,19 +208,24 @@ class Importance(TracePosterior):
                 #     if site['type'] == 'sample':
                 #         logger.info(f"\n{name} - value: {site['value']}") 
                 #         if isinstance(site['fn'], dist.Bernoulli) or isinstance(site['fn'], dist.Categorical): logger.info(f"posterior: {site['fn'].probs} - log_prob: {site['fn'].log_prob(site['value'])}")
-
-
-                #         ##### HOW IS THE LOG_PROB_SUM OF THE MODEL TRACE COMPUTED???
+                #         if isinstance(site['fn'], dist.Normal): logger.info(f"posterior mean: {site['fn'].loc} and std: {site['fn'].scale} - log_prob: {site['fn'].log_prob(site['value'])}")
+                #         if isinstance(site['fn'], dist.Delta): logger.info(f"posterior: {site['fn'].loc} - log_prob: {site['fn'].log_prob(site['value'])}")
                 
                 # logger.info(model_trace.log_prob_sum())
                 # logger.info(guide_trace.log_prob_sum())
 
-                # for name, site in model_trace.nodes.items():
-                #     if name == 'image':
-                #         model_trace_log_prob_sum = site['fn'].log_prob(site['value'])
-                # log_weight = model_trace_log_prob_sum - guide_trace.log_prob_sum()
+                log_p_sum = 0.
+                for name, site in model_trace.nodes.items():
+                    if name != 'size':
+                        log_p = site['fn'].log_prob(site['value'])
+                        log_p = scale_and_mask(log_p, site["scale"], site["mask"]).sum()
+                    log_p_sum += log_p
 
-                log_weight = model_trace.log_prob_sum() - guide_trace.log_prob_sum()
+                log_weight = log_p_sum - guide_trace.log_prob_sum()
+
+                logger.info(f"model log_prob_sum: {log_p_sum}")
+                logger.info(f"guide log_prob_sum: {guide_trace.log_prob_sum()}")
+
                 #yield (model_trace, log_weight)
                 yield (model_trace, guide_trace, log_weight)
 
