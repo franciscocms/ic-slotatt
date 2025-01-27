@@ -146,7 +146,7 @@ def main():
                 img = img.to(device)
                 target = process_targets(target_dict)
 
-                plt.imshow(img.squeeze(dim=0).permute(1, 2, 0).cpu().numpy())
+                plt.imshow(img.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy())
                 plt.savefig(os.path.join(plots_dir, f"image.png"))
                 plt.close()
 
@@ -167,7 +167,7 @@ def main():
                             
 
                         if name == 'image':
-                            plt.imshow(site["fn"].mean.squeeze(dim=0).permute(1, 2, 0).cpu().numpy())
+                            plt.imshow(site["fn"].mean.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy())
                             plt.savefig(os.path.join(plots_dir, f"trace_{t}.png"))
                             plt.close()
 
