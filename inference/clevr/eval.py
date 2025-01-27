@@ -29,7 +29,7 @@ from main.modifiedCSIS import CSIS
 #from main import modifiedImportance as mImportance
 from guide import InvSlotAttentionGuide, visualize
 from utils.distributions import Empirical
-from utils.baseline import compute_AP
+from eval_utils import compute_AP
 from utils.guide import load_trained_guide_clevr
 from main.setup import params
 from dataset import CLEVRDataset
