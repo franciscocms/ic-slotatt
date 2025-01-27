@@ -214,12 +214,12 @@ class Importance(TracePosterior):
                 # logger.info(model_trace.log_prob_sum())
                 # logger.info(guide_trace.log_prob_sum())
 
-                for name, site in model_trace.nodes.items():
-                    if name == 'image':
-                        model_trace_log_prob_sum = site['fn'].log_prob(site['value'])
-                log_weight = model_trace_log_prob_sum - guide_trace.log_prob_sum()
+                # for name, site in model_trace.nodes.items():
+                #     if name == 'image':
+                #         model_trace_log_prob_sum = site['fn'].log_prob(site['value'])
+                # log_weight = model_trace_log_prob_sum - guide_trace.log_prob_sum()
 
-                #log_weight = model_trace.log_prob_sum() - guide_trace.log_prob_sum()
+                log_weight = model_trace.log_prob_sum() - guide_trace.log_prob_sum()
                 #yield (model_trace, log_weight)
                 yield (model_trace, guide_trace, log_weight)
 

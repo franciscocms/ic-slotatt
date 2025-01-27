@@ -28,7 +28,7 @@ from main.clevr_model import clevr_gen_model, preprocess_clevr
 from main.modifiedCSIS import CSIS
 #from main import modifiedImportance as mImportance
 from guide import InvSlotAttentionGuide, visualize
-#from utils.distributions import Empirical
+from utils.distributions import Empirical
 from utils.baseline import compute_AP
 from utils.guide import load_trained_guide_clevr
 from main.setup import params
@@ -157,21 +157,23 @@ def main():
                 traces = posterior.exec_traces
                 log_wts = posterior.log_weights
 
+                resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(posterior.log_weights))]), torch.stack(posterior.log_weights))
+                resampling_id = resampling().item()
+
                 logger.info(f"{len(traces)} posterior traces!")
 
                 for t, tr in enumerate(traces):
                     logger.info(f'\nproposal trace {t} - log weight: {log_wts[t]}')
+                    if t == resampling_id: logger.info("resampled trace!!!")
                     for name, site in tr.nodes.items():
                         if site['type'] == 'sample' and name != 'image':
                             logger.info(f"{name} - {site['value']}")
                         
-                            
-
                         if name == 'image':
                             plt.imshow(visualize(site["fn"].mean.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
                             plt.savefig(os.path.join(plots_dir, f"trace_{t}.png"))
                             plt.close()
-
+                        
                             
 
                             # logger.info(site['value'].shape)
