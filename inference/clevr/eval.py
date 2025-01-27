@@ -27,7 +27,7 @@ logger.addHandler(fh)
 from main.clevr_model import clevr_gen_model, preprocess_clevr
 from main.modifiedCSIS import CSIS
 #from main import modifiedImportance as mImportance
-from guide import InvSlotAttentionGuide
+from guide import InvSlotAttentionGuide, visualize
 #from utils.distributions import Empirical
 from utils.baseline import compute_AP
 from utils.guide import load_trained_guide_clevr
@@ -146,7 +146,7 @@ def main():
                 img = img.to(device)
                 target = process_targets(target_dict)
 
-                plt.imshow(img.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy())
+                plt.imshow(visualize(img.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
                 plt.savefig(os.path.join(plots_dir, f"image.png"))
                 plt.close()
 
@@ -167,7 +167,7 @@ def main():
                             
 
                         if name == 'image':
-                            plt.imshow(site["fn"].mean.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy())
+                            plt.imshow(visualize(site["fn"].mean.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
                             plt.savefig(os.path.join(plots_dir, f"trace_{t}.png"))
                             plt.close()
 
