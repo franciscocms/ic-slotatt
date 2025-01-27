@@ -3,7 +3,9 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 import numpy as np
 
+import os
 from PIL import Image
+import matplotlib.pyplot as plt
 
 from main.clevr_model import preprocess_clevr
 
@@ -32,9 +34,15 @@ class CLEVRDataset(Dataset):
     
   
   def __getitem__(self, index):    
-    img = torch.from_numpy(np.asarray((Image.open(self.data_path[index])))).permute(2, 0, 1).unsqueeze(0)
+    img = torch.from_numpy(np.asarray((Image.open(self.data_path[index])))).permute(2, 0, 1) # [C, W, H]
+    
+    plots_dir = os.path.abspath("set_prediction_plots")
+    plt.imshow(img.permute(1, 2, 0).cpu().numpy())
+    plt.savefig(os.path.join(plots_dir, f"image_before_processing.png"))
+    plt.close()
+    
     logger.info(img.shape)
-    img = preprocess_clevr(img).squeeze(0)
+    img = preprocess_clevr(img.unsqueeze(0)).squeeze(0)
     #target = self.target['scenes'][index]    ------> when using all scenes!
     target = self.target[index]
     
