@@ -57,24 +57,30 @@ with open(properties_json_path, 'r') as f:
 
 PRINT_INFERENCE_TIME = False
 
-def process_preds(trace, n):
+def process_preds(trace):
     
     """ returns a matrix of predictions from the proposed trace """
     
-    preds = torch.zeros(n, 11) # 11 - the dimension of all latent variables (countinuous and discrete after OHE)
+    features_dim = 19
+    preds = torch.zeros(params['max_objects'], features_dim)
     for name, site in trace.nodes.items():
         if site['type'] == 'sample':
-            i = int(name.split('_')[1])
-            if name.split('_')[0] == 'shape': preds[i, :2] = F.one_hot(torch.tensor(shape_vals[site['value']]), len(shape_vals))
-            if name.split('_')[0] == 'size':  preds[i, 2:5] = F.one_hot(torch.tensor(size_vals[site['value']]), len(size_vals))
-            if name.split('_')[0] == 'color': preds[i, 5:8] = F.one_hot(torch.tensor(color_vals[site['value']]), len(color_vals))
-            if name.split('_')[0] == 'locX': preds[i, 8] = torch.tensor(site['value'])
-            if name.split('_')[0] == 'locY': preds[i, 9] = torch.tensor(site['value'])
+            if name == 'shape': preds[:, :3] = F.one_hot(site['value'], len(object_mapping))
+            if name == 'color': preds[:, 3:11] = F.one_hot(site['value'], len(color_mapping))
+            if name == 'size': preds[:, 11:13] = F.one_hot(site['value'], len(size_mapping))
+            if name == 'mat': preds[:, 13:15] = F.one_hot(site['value'], len(material_mapping))
+            #if name == 'pose': site['value']
+            if name == 'x': preds[:, 15] = site['value']
+            if name == 'y': preds[:, 16] = site['value']
+            if name == 'mask': preds[:, 17] = site['value']
+        
+            # add the real/pad value
+
     preds[:, 10] = torch.tensor(1.)
     return preds
 
 def process_targets(target_dict):   
-    features_dim = 19
+    features_dim = 18
     target = torch.zeros(params['max_objects'], features_dim)
     
     logger.info(f"# of objects: {len(target_dict['objects'])}")
@@ -84,9 +90,9 @@ def process_targets(target_dict):
         target[o, 3:11] = F.one_hot(torch.tensor([idx for idx, tup in enumerate(color_mapping) if tup[0] == object['color'][0]]), len(color_mapping))
         target[o, 11:13] = F.one_hot(torch.tensor([idx for idx, tup in enumerate(size_mapping) if tup[0] == object['size'][0]]), len(size_mapping))
         target[o, 13:15] = F.one_hot(torch.tensor([idx for idx, tup in enumerate(material_mapping) if tup[1] == object['material'][0]]), len(material_mapping))
-        target[o, 15] = torch.tensor(object['rotation']/360.)
-        target[o, 16:18] = torch.tensor(object['3d_coords'][:2])/3.
-        target[o, 18] = torch.tensor(1.)
+        #target[o, 15] = torch.tensor(object['rotation']/360.)
+        target[o, 15:17] = torch.tensor(object['3d_coords'][:2])/3.
+        target[o, 17] = torch.tensor(1.)
     
     return target
     
@@ -139,6 +145,8 @@ def main():
         properties = json.load(open(os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json')))
         test_dataset = CLEVRDataset(images_path, properties)
         testloader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=True, generator=torch.Generator(device='cuda'))
+        
+        n_test_samples = 0.
 
         guide.eval()
         with torch.no_grad():
@@ -153,7 +161,7 @@ def main():
                 logger.info(f"target image index: {target_dict['image_index']}")
 
                 posterior = csis.run(observations={"image": img})
-                #traces = posterior.prop_traces
+                prop_traces = posterior.prop_traces
                 traces = posterior.exec_traces
                 log_wts = posterior.log_weights
 
@@ -173,19 +181,17 @@ def main():
                             plt.imshow(visualize(site["fn"].mean.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
                             plt.savefig(os.path.join(plots_dir, f"trace_{t}.png"))
                             plt.close()
-                        
                             
 
-                            # logger.info(site['value'].shape)
-                            # logger.info(site["fn"].mean.shape)
-                            
-                            # save generated image and compare with 'img'
-                            
-
-
+                preds = process_preds(prop_traces[resampling_id])
+                for t in threshold: ap[t] += compute_AP(preds, target, t)
+                n_test_samples += 1
 
                 break
-
+                
+        mAP = {k: v/n_test_samples for k, v in ap.items()}
+        logger.info(f"distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")
+        logger.info(f"mAP values: {mAP[threshold[0]]} - {mAP[threshold[1]]} - {mAP[threshold[2]]} - {mAP[threshold[3]]} - {mAP[threshold[4]]} - {mAP[threshold[5]]}\n")
         
         
         
