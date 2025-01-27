@@ -15,6 +15,7 @@ def process_preds(preds):
     # preds must have shape (max_objects, n_features)
     assert len(preds.shape) == 2
 
+    logger.info(preds)
 
     # if name == 'shape': preds[:, :3] = F.one_hot(site['value'], len(object_mapping))
     # if name == 'color': preds[:, 3:11] = F.one_hot(site['value'], len(color_mapping))
@@ -45,11 +46,10 @@ def compute_AP(preds, targets, threshold_dist):
     # preds have shape (max_objects, n_features)
     # targets have shape (max_objects, n_features)
 
+    logger.info(f"\npredictions matrix: ")
     shape, size, color, x, y, pred_real_obj = process_preds(preds)
+    logger.info(f"\ntarget matrix: ")
     target_shape, target_size, target_color, target_x, target_y, target_real_obj = process_preds(targets)
-
-    logger.info(f"\n{shape}")
-    logger.info(target_shape)
 
     # shape, size, ...  has shape (17)
 
