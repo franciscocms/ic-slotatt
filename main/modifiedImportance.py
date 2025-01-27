@@ -227,9 +227,9 @@ class Importance(TracePosterior):
                                 img_dim = site['fn'].mean.shape[-1]
                                 log_p = log_p / (img_dim**2)
                             
-                            logger.info(f"{name} - {log_p}")
+                            #logger.info(f"{name} - {log_p}")
                             log_p = scale_and_mask(log_p, site["scale"], site["mask"]).sum()
-                            logger.info(f"{name} - {log_p}")
+                            #logger.info(f"{name} - {log_p}")
                     
                     else:
                         if site['type'] == 'sample' and name == 'image':
@@ -242,22 +242,13 @@ class Importance(TracePosterior):
 
                 log_weight = log_p_sum #- guide_trace.log_prob_sum()
 
-                logger.info(f"\ninspecting the guide log_prob_sum computation...\n")
-                for name, site in guide_trace.nodes.items():
-                    if site['type'] == 'sample':
-                        logger.info(f"{name} - {site['value']} - {site['fn'].log_prob(site['value'])} - {site['fn'].log_prob(site['value']).sum()}")
+                # logger.info(f"\ninspecting the guide log_prob_sum computation...\n")
+                # for name, site in guide_trace.nodes.items():
+                #     if site['type'] == 'sample':
+                #         logger.info(f"{name} - {site['value']} - {site['fn'].log_prob(site['value'])} - {site['fn'].log_prob(site['value']).sum()}")
 
-
-
-                        ### UNDERSTAND POSITIVE LOG-PROBS AND THE IMPACT IN THE TRACE LOG WEIGHT!!!
-
-
-
-
-                        
-
-                logger.info(f"model log_prob_sum: {log_p_sum}")
-                logger.info(f"guide log_prob_sum: {guide_trace.log_prob_sum()}")
+                # logger.info(f"model log_prob_sum: {log_p_sum}")
+                # logger.info(f"guide log_prob_sum: {guide_trace.log_prob_sum()}")
 
                 #yield (model_trace, log_weight)
                 yield (model_trace, guide_trace, log_weight)

@@ -154,11 +154,11 @@ def main():
                 img = img.to(device)
                 target = process_targets(target_dict)
 
-                plt.imshow(visualize(img.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
-                plt.savefig(os.path.join(plots_dir, f"image.png"))
-                plt.close()
+                # plt.imshow(visualize(img.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
+                # plt.savefig(os.path.join(plots_dir, f"image.png"))
+                # plt.close()
 
-                logger.info(f"target image index: {target_dict['image_index']}")
+                #logger.info(f"target image index: {target_dict['image_index']}")
 
                 posterior = csis.run(observations={"image": img})
                 prop_traces = posterior.prop_traces
@@ -168,26 +168,26 @@ def main():
                 resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(posterior.log_weights))]), torch.stack(posterior.log_weights))
                 resampling_id = resampling().item()
 
-                logger.info(f"{len(traces)} posterior traces!")
+                #logger.info(f"{len(traces)} posterior traces!")
 
-                for t, tr in enumerate(traces):
-                    logger.info(f'\nproposal trace {t} - log weight: {log_wts[t]}')
-                    if t == resampling_id: logger.info("resampled trace!!!")
-                    for name, site in tr.nodes.items():
-                        if site['type'] == 'sample' and name != 'image':
-                            logger.info(f"{name} - {site['value']}")
+                # for t, tr in enumerate(traces):
+                #     logger.info(f'\nproposal trace {t} - log weight: {log_wts[t]}')
+                #     if t == resampling_id: logger.info("resampled trace!!!")
+                #     for name, site in tr.nodes.items():
+                #         if site['type'] == 'sample' and name != 'image':
+                #             logger.info(f"{name} - {site['value']}")
                         
-                        if name == 'image':
-                            plt.imshow(visualize(site["fn"].mean.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
-                            plt.savefig(os.path.join(plots_dir, f"trace_{t}.png"))
-                            plt.close()
+                #         if name == 'image':
+                #             plt.imshow(visualize(site["fn"].mean.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
+                #             plt.savefig(os.path.join(plots_dir, f"trace_{t}.png"))
+                #             plt.close()
                             
 
                 preds = process_preds(prop_traces[resampling_id])
                 for t in threshold: ap[t] += compute_AP(preds, target, t)
                 n_test_samples += 1
 
-                break
+                if n_test_samples == 10: break
                 
         mAP = {k: v/n_test_samples for k, v in ap.items()}
         logger.info(f"distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")
