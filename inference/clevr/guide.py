@@ -372,7 +372,7 @@ class InvSlotAttentionGuide(nn.Module):
          proposal = proposal.expand(params['num_inference_samples'], -1, -1)
          logger.info(f"{variable} - proposal: {proposal.shape}")     
 
-      logger.info(f"{variable} - {dist.Categorical(probs=proposal).to_event(1).batch_shape} - {dist.Categorical(probs=proposal).to_event(1).event_shape}")
+      #logger.info(f"{variable} - {dist.Categorical(probs=proposal).to_event(1).batch_shape} - {dist.Categorical(probs=proposal).to_event(1).event_shape}")
       out = pyro.sample(variable_name, dist.Categorical(probs=proposal).to_event(1))
       logger.info(f"{variable} - {out.shape}")
 
