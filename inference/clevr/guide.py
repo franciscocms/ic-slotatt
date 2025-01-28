@@ -376,8 +376,6 @@ class InvSlotAttentionGuide(nn.Module):
       out = pyro.sample(variable_name, dist.Categorical(probs=proposal).to_event(1))
       logger.info(f"{variable} - {out.shape}")
 
-      logger.info()
-
     
 
     elif variable_proposal_distribution == "bernoulli": 
