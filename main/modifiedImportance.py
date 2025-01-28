@@ -376,7 +376,7 @@ def vectorized_importance_weights(model, guide, *args, **kwargs):
 
         return _fn
     
-    guide_trace = poutine.trace(guide).get_trace(*args, **kwargs)  
+    guide_trace = poutine.trace(guide, graph_type='flat').get_trace(*args, **kwargs)  
     model_trace = poutine.trace(poutine.replay(model, trace=guide_trace)).get_trace(*args, **kwargs) 
     
     logger.info(f"\nguide trace\n")
