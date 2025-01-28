@@ -380,24 +380,6 @@ def vectorized_importance_weights(model, guide, *args, **kwargs):
         "flat", max_plate_nesting, vectorize(model), vectorize(guide), args, kwargs
     )
 
-    for name, site in guide_trace.nodes.items():
-        if site["type"] == "sample":
-            
-            logger.info(f"\n{name} - {site['value']}")
-            
-            # assert site["infer"] is not None
-
-            # logger.info(site['infer'])
-
-            # dim_to_symbol = site["infer"]["_dim_to_symbol"]
-            # packed = site.setdefault("packed", {})
-            # packed["mask"] = pack(site["mask"], dim_to_symbol)
-
-            # if "score_parts" in site:
-            #     log_prob, score_function, entropy_term = site["score_parts"]
-            #     log_prob = pack(log_prob, dim_to_symbol)
-
-
     guide_trace.pack_tensors()
     model_trace.pack_tensors(guide_trace.plate_to_symbol)
 
