@@ -105,7 +105,7 @@ def sample_clevr_scene(llh_uncertainty):
     def get_mat_mapping(mat):
         return material_mapping[int(mat)]
 
-    B = params['batch_size']
+    B = params['batch_size'] if params["running_type"] == "train" else params['num_inference_samples']
     M = max_objects 
 
     logger.info('\nmodel logs!\n')
@@ -601,10 +601,10 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
         if img.split('/')[-1].split('_')[:2] == ["rendered", "scene"]: os.remove(img)
 
     init_time = time.time()
-    B = params['batch_size']
 
     # Sample a CLEVR-like scene using Pyro
     clevr_scenes = sample_clevr_scene(llh_uncertainty)
+    B = params['batch_size'] if params["running_type"] == "train" else params['num_inference_samples']
 
     # Generate the Blender script for the sampled scene
     blender_scripts = [generate_blender_script(scene, idx, str(params['jobID'])) for idx, scene in enumerate(clevr_scenes)]
