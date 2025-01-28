@@ -160,7 +160,7 @@ def main():
 
                 log_weights, model_trace, guide_trace = vectorized_importance_weights(model, guide, observations={"image": img},
                                                                                       num_samples=10,
-                                                                                      max_plate_nesting=3,
+                                                                                      max_plate_nesting=2,
                                                                                       normalized=False)
                 
                 
