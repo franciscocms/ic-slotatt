@@ -57,7 +57,7 @@ with open(properties_json_path, 'r') as f:
 
 PRINT_INFERENCE_TIME = False
 
-def process_preds(trace):
+def process_preds(trace, id):
     
     """ returns a matrix of predictions from the proposed trace """
     
@@ -65,14 +65,14 @@ def process_preds(trace):
     preds = torch.zeros(params['max_objects'], features_dim)
     for name, site in trace.nodes.items():
         if site['type'] == 'sample':
-            if name == 'shape': preds[:, :3] = F.one_hot(site['value'], len(object_mapping))
-            if name == 'color': preds[:, 3:11] = F.one_hot(site['value'], len(color_mapping))
-            if name == 'size': preds[:, 11:13] = F.one_hot(site['value'], len(size_mapping))
-            if name == 'mat': preds[:, 13:15] = F.one_hot(site['value'], len(material_mapping))
+            if name == 'shape': preds[:, :3] = F.one_hot(site['value'][id], len(object_mapping))
+            if name == 'color': preds[:, 3:11] = F.one_hot(site['value'][id], len(color_mapping))
+            if name == 'size': preds[:, 11:13] = F.one_hot(site['value'][id], len(size_mapping))
+            if name == 'mat': preds[:, 13:15] = F.one_hot(site['value'][id], len(material_mapping))
             #if name == 'pose': site['value']
-            if name == 'x': preds[:, 15] = site['value']
-            if name == 'y': preds[:, 16] = site['value']
-            if name == 'mask': preds[:, 17] = site['value']
+            if name == 'x': preds[:, 15] = site['value'][id]
+            if name == 'y': preds[:, 16] = site['value'][id]
+            if name == 'mask': preds[:, 17] = site['value'][id]
         
             # add the real/pad value
     return preds
@@ -166,8 +166,8 @@ def main():
                 #                                                                       normalized=False)                
                 
                 posterior = csis.run(observations={"image": img})
-                prop_traces = posterior.prop_traces
-                traces = posterior.exec_traces
+                prop_traces = posterior.prop_traces[0]
+                traces = posterior.exec_traces[0]
                 log_wts = posterior.log_weights[0]
 
                 resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
@@ -188,7 +188,7 @@ def main():
                 #             plt.close()
                             
 
-                preds = process_preds(prop_traces[resampling_id])
+                preds = process_preds(prop_traces)
                 for t in threshold: ap[t] += compute_AP(preds, target, t)
                 n_test_samples += 1
 
