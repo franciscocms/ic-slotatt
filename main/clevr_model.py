@@ -142,11 +142,10 @@ def sample_clevr_scene(llh_uncertainty):
         logger.info(dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([B, M]).to_event(1).event_shape)
         logger.info(shape.shape)
 
-    # if params['running_type'] == 'eval':
-    #     logger.info(shape.shape) # [num_inference_samples, B, M]
-    #     num_inf_samples, _, _ = shape.shape
-    #     shape = torch.flatten(shape, 0, 1)
-    #     logger.info(shape.shape)
+    if params['running_type'] == 'eval':
+        if shape.dim > 2:
+            shape = torch.flatten(shape, 0, 1)
+            logger.info(shape.shape)
         
     
     shape_mapping_list = {b: list(map(get_shape_mapping, shape[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
@@ -155,7 +154,10 @@ def sample_clevr_scene(llh_uncertainty):
 
     with pyro.poutine.mask(mask=objects_mask):
         color = pyro.sample(f"color", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])).expand([B, M]).to_event(1))
-        # if params['running_type'] == 'eval': color = torch.flatten(color, 0, 1)
+        if params['running_type'] == 'eval': 
+            if color.dim > 2:
+                color = torch.flatten(color, 0, 1)
+                logger.info(color.shape)
 
     color_mapping_list = {b: list(map(get_color_mapping, color[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
     color_name, rgba = {b: [e[0] for e in color_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in color_mapping_list[b]] for b in range(B)}
@@ -170,16 +172,22 @@ def sample_clevr_scene(llh_uncertainty):
     # Choose random orientation for the object.
     with pyro.poutine.mask(mask=objects_mask):
         theta = pyro.sample(f"pose", dist.Uniform(0., 1.).expand([B, M]).to_event(1)) * 360. 
-        # if params['running_type'] == 'eval': theta = torch.flatten(theta, 0, 1)
+        if params['running_type'] == 'eval': 
+            if theta.dim > 2:
+                theta = torch.flatten(theta, 0, 1)
+                logger.info(theta.shape)
     #logger.info(f"{theta}")
 
     # Attach a random material
     with pyro.poutine.mask(mask=objects_mask):
         
-        logger.info(dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([B, M]).to_event(1).event_shape)
+        #logger.info(dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([B, M]).to_event(1).event_shape)
 
         mat = pyro.sample(f"mat", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([B, M]).to_event(1))
-        # if params['running_type'] == 'eval': mat = torch.flatten(mat, 0, 1)
+        if params['running_type'] == 'eval': 
+            if mat.dim > 2:
+                mat = torch.flatten(mat, 0, 1)
+                logger.info(mat.shape)
 
     mat_mapping_list = {b: list(map(get_mat_mapping, mat[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
     mat_name, mat_name_out = {b: [e[0] for e in mat_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in mat_mapping_list[b]] for b in range(B)}
@@ -268,13 +276,20 @@ def sample_clevr_scene(llh_uncertainty):
     with pyro.poutine.mask(mask=objects_mask):
         x = pyro.sample(f"x", dist.Normal(x_b_/3., llh_uncertainty).to_event(1))*3.
         y = pyro.sample(f"y", dist.Normal(y_b_/3., llh_uncertainty).to_event(1))*3.
-        # if params['running_type'] == 'eval': 
-        #     x = torch.flatten(x, 0, 1)
-        #     y = torch.flatten(y, 0, 1)
+        if params['running_type'] == 'eval': 
+            if x.dim > 2:
+                x = torch.flatten(x, 0, 1)
+                y = torch.flatten(y, 0, 1)
+                logger.info(x.shape)
+                logger.info(y.shape)
 
         
         size = pyro.sample(f"size", dist.Delta(size_b_).to_event(1))
-        # if params['running_type'] == 'eval': size = torch.flatten(size, 0, 1)
+        if params['running_type'] == 'eval': 
+            if size.dim > 2:
+                size = torch.flatten(size, 0, 1)
+                logger.info(size.shape)
+
         size_mapping_list = {b: list(map(get_size_mapping, size[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
         size_name, r = {b: [e[0] for e in size_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in size_mapping_list[b]] for b in range(B)} 
 
