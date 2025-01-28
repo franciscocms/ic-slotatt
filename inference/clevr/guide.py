@@ -351,21 +351,29 @@ class InvSlotAttentionGuide(nn.Module):
     
     proposal = self.prop_nets[variable_name](obs)
 
-    logger.info(f"{variable} - {proposal.shape}")
+    
     
     if variable_proposal_distribution == "normal":
         mean, logvar = proposal[0].squeeze(-1), proposal[1].squeeze(-1)
+        
+        logger.info(f"{variable} - {mean.shape}")
+        
         std = torch.exp(0.5*logvar)
        
         #if variable_name in ['x', 'y']: out = pyro.sample(variable_name, TruncatedNormal(mean, std, -1., 1.))
         #elif variable_name in ['pose']: out = pyro.sample(variable_name, TruncatedNormal(mean, std, 0., 1.))
         out = pyro.sample(variable_name, dist.Normal(mean, std).to_event(1))
 
-    elif variable_proposal_distribution == "categorical":        
-       # logger.info(f"\nproposal shape for {variable_name}: {proposal.shape}\n")
+    elif variable_proposal_distribution == "categorical":  
+       
+       logger.info(f"{variable} - {proposal.shape}")      
+
        logger.info(f"{variable} - {dist.Categorical(probs=proposal).to_event(1).batch_shape} - {dist.Categorical(probs=proposal).to_event(1).event_shape}")
        out = pyro.sample(variable_name, dist.Categorical(probs=proposal).to_event(1))
     elif variable_proposal_distribution == "bernoulli": 
+       
+       logger.info(f"{variable} - {proposal.shape}")
+       
        proposal = proposal.squeeze(-1)       
        out = pyro.sample(variable_name, dist.Bernoulli(proposal).to_event(1))
     else: raise ValueError(f"Unknown variable address: {variable_name}")      
