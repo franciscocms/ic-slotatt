@@ -158,7 +158,7 @@ def main():
                 # plt.savefig(os.path.join(plots_dir, f"image.png"))
                 # plt.close()
 
-                logger.info(f"target image index: {target_dict['image_index']}")
+                logger.info(f"\ntarget image index: {target_dict['image_index']}")
 
                 # log_weights, model_trace, guide_trace = vectorized_importance_weights(model, guide, observations={"image": img},
                 #                                                                       num_samples=params['num_inference_samples'],
@@ -172,6 +172,8 @@ def main():
 
                 resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
                 resampling_id = resampling().item()
+
+                logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
 
                 #logger.info(f"{len(traces)} posterior traces!")
 
@@ -422,5 +424,5 @@ if __name__ == '__main__':
     
     main()
 
-    inference_time = init_time - time.time()
+    inference_time = time.time() - init_time 
     logger.info(f'\nInference complete in {inference_time} seconds.')

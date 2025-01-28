@@ -32,7 +32,7 @@ def process_preds(preds):
     mat = torch.argmax(preds[:, 13:15], dim=-1)
     x, y = transform_coords(preds[:, 15]), transform_coords(preds[:, 16])
     real_obj = preds[:, 17]
-    return shape, size, color, x, y, real_obj
+    return shape, size, color, mat, x, y, real_obj
 
 def distance(loc1, loc2):
     return torch.sqrt(torch.square(loc1[0]-loc2[0]) + torch.square(loc1[1]-loc2[1]))
@@ -46,10 +46,14 @@ def compute_AP(preds, targets, threshold_dist):
     # preds have shape (max_objects, n_features)
     # targets have shape (max_objects, n_features)
 
+    logger.info(f"\ncomputing AP...")
+    logger.info(f"preds: {preds}")
+    logger.info(f"targets: {targets}")
+
     #logger.info(f"\npredictions matrix: ")
-    shape, size, color, x, y, pred_real_obj = process_preds(preds)
+    shape, size, color, mat, x, y, pred_real_obj = process_preds(preds)
     #logger.info(f"\ntarget matrix: ")
-    target_shape, target_size, target_color, target_x, target_y, target_real_obj = process_preds(targets)
+    target_shape, target_size, target_color, target_mat, target_x, target_y, target_real_obj = process_preds(targets)
 
     # shape, size, ...  has shape (17)
 
@@ -79,7 +83,7 @@ def compute_AP(preds, targets, threshold_dist):
             
             for j in range(max_objects):
                 if target_real_obj[j]:
-                    if [shape[o], size[o], color[o]] == [target_shape[j], target_size[j], target_color[j]]: 
+                    if [shape[o], size[o], color[o], mat[o]] == [target_shape[j], target_size[j], target_color[j], target_mat[j]]: 
                         dist = distance((x[o], y[o]), (target_x[j], target_y[j]))
                         if dist < best_distance and j not in found_objects:
                             #logger.info(f'found at best distance {dist}')
