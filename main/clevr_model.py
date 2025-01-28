@@ -140,7 +140,7 @@ def sample_clevr_scene(llh_uncertainty):
     if params['running_type'] == 'eval':
         logger.info(shape.shape) # [num_inference_samples, B, M]
         num_inf_samples, _, _ = shape.shape
-        shape = torch.flatten(shape)
+        shape = torch.flatten(shape, 0, 1)
         logger.info(shape.shape)
         
     
