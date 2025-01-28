@@ -107,6 +107,8 @@ def sample_clevr_scene(llh_uncertainty):
 
     B = params['batch_size']
     M = max_objects 
+
+    logger.info('\nmodel logs!\n')
     
     # Sample the mask to predict real objects
     if params['running_type'] == 'train': objects_mask = pyro.sample(f"mask", dist.Bernoulli(0.5).expand([B, M]).to_event(1)).to(torch.bool)
@@ -150,6 +152,7 @@ def sample_clevr_scene(llh_uncertainty):
     #         shape = torch.flatten(shape, 0, 1)
     #         logger.info(shape.shape)
         logger.info(shape.shape)
+        logger.info(dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([M]).to_event(1).batch_shape)
         logger.info(dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([M]).to_event(1).event_shape)
 
     
