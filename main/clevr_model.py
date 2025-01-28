@@ -111,8 +111,9 @@ def sample_clevr_scene(llh_uncertainty):
     logger.info('\nmodel logs!\n')
     
     # Sample the mask to predict real objects
-    if params['running_type'] == 'train': objects_mask = pyro.sample(f"mask", dist.Bernoulli(0.5).expand([B, M]).to_event(1)).to(torch.bool)
-    else: objects_mask = pyro.sample(f"mask", dist.Bernoulli(0.5).expand([M]).to_event(1)).to(torch.bool)
+    objects_mask = pyro.sample(f"mask", dist.Bernoulli(0.5).expand([B, M]).to_event(1)).to(torch.bool)
+    # if params['running_type'] == 'train': objects_mask = pyro.sample(f"mask", dist.Bernoulli(0.5).expand([B, M]).to_event(1)).to(torch.bool)
+    # else: objects_mask = pyro.sample(f"mask", dist.Bernoulli(0.5).expand([M]).to_event(1)).to(torch.bool)
     
     if params['running_type'] == 'eval': 
         if objects_mask.dim() > 2:
@@ -148,8 +149,9 @@ def sample_clevr_scene(llh_uncertainty):
 
     # Choose random color and shape
     with pyro.poutine.mask(mask=objects_mask):
-        if params['running_type'] == 'train': shape = pyro.sample(f"shape", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([B, M]).to_event(1))
-        else: shape = pyro.sample(f"shape", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([M]).to_event(1))
+        shape = pyro.sample(f"shape", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([B, M]).to_event(1))
+        # if params['running_type'] == 'train': shape = pyro.sample(f"shape", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([B, M]).to_event(1))
+        # else: shape = pyro.sample(f"shape", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([M]).to_event(1))
 
         if params['running_type'] == 'eval':
             if shape.dim() > 2:
@@ -166,8 +168,9 @@ def sample_clevr_scene(llh_uncertainty):
     #logger.info(f"\n{obj_name}")
 
     with pyro.poutine.mask(mask=objects_mask):
-        if params['running_type'] == 'train': color = pyro.sample(f"color", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])).expand([B, M]).to_event(1))
-        else: color = pyro.sample(f"color", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])).expand([M]).to_event(1))
+        color = pyro.sample(f"color", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])).expand([B, M]).to_event(1))
+        # if params['running_type'] == 'train': color = pyro.sample(f"color", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])).expand([B, M]).to_event(1))
+        # else: color = pyro.sample(f"color", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])).expand([M]).to_event(1))
         if params['running_type'] == 'eval': 
             if color.dim() > 2:
                 color = torch.flatten(color, 0, 1)
@@ -185,8 +188,9 @@ def sample_clevr_scene(llh_uncertainty):
     
     # Choose random orientation for the object.
     with pyro.poutine.mask(mask=objects_mask):
-        if params['running_type'] == 'train': theta = pyro.sample(f"pose", dist.Uniform(0., 1.).expand([B, M]).to_event(1)) * 360. 
-        else: theta = pyro.sample(f"pose", dist.Uniform(0., 1.).expand([M]).to_event(1)) * 360. 
+        theta = pyro.sample(f"pose", dist.Uniform(0., 1.).expand([B, M]).to_event(1)) * 360. 
+        # if params['running_type'] == 'train': theta = pyro.sample(f"pose", dist.Uniform(0., 1.).expand([B, M]).to_event(1)) * 360. 
+        # else: theta = pyro.sample(f"pose", dist.Uniform(0., 1.).expand([M]).to_event(1)) * 360. 
         if params['running_type'] == 'eval': 
             if theta.dim() > 2:
                 theta = torch.flatten(theta, 0, 1)
@@ -197,9 +201,9 @@ def sample_clevr_scene(llh_uncertainty):
     with pyro.poutine.mask(mask=objects_mask):
         
         #logger.info(dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([B, M]).to_event(1).event_shape)
-
-        if params['running_type'] == 'train': mat = pyro.sample(f"mat", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([B, M]).to_event(1))
-        else: mat = pyro.sample(f"mat", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([M]).to_event(1))
+        mat = pyro.sample(f"mat", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([B, M]).to_event(1))
+        # if params['running_type'] == 'train': mat = pyro.sample(f"mat", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([B, M]).to_event(1))
+        # else: mat = pyro.sample(f"mat", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([M]).to_event(1))
         
         if params['running_type'] == 'eval': 
             if mat.dim() > 2:
