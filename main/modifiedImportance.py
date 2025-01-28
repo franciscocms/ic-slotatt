@@ -9,12 +9,8 @@ from pyro.ops.stats import fit_generalized_pareto
 from pyro.distributions.util import scale_and_mask
 from pyro.ops.packed import pack
 
-from pyro.infer.util import is_validation_enabled
-from pyro.util import check_model_guide_match
-from pyro.poutine.util import prune_subsample_sites
-
 from .mod_abstract_infer import TracePosterior
-from pyro.infer.enum import get_importance_trace
+from .myenum import get_importance_trace
 from pyro.poutine.runtime import apply_stack
 from .models import occlusion
 
@@ -380,38 +376,20 @@ def vectorized_importance_weights(model, guide, *args, **kwargs):
 
         return _fn
     
-    # guide_trace = poutine.trace(guide).get_trace(*args, **kwargs)  
-    # model_trace = poutine.trace(poutine.replay(model, trace=guide_trace)).get_trace(*args, **kwargs) 
-
-    # for name, site in model_trace.nodes.items():
-    #     if site["type"] == "sample":
-    #         logger.info(f"{name} - {site['fn']} - {site['value'].shape}")
-    #         logger.info(f"log_prob: {site['fn'].log_prob(site['value'])} - scale: {site['scale']} - mask: {site['mask']}\n")
+    guide_trace = poutine.trace(guide).get_trace(*args, **kwargs)  
+    model_trace = poutine.trace(poutine.replay(model, trace=guide_trace)).get_trace(*args, **kwargs) 
     
-    ####
-    # unwrapped_guide = poutine.unwrap(guide)
-    # if isinstance(unwrapped_guide, poutine.messenger.Messenger):
-    #     guide(*args, **kwargs)
-    #     model_trace, guide_trace = unwrapped_guide.get_traces()
-    # else:
-    #     guide_trace = poutine.trace(guide, graph_type="flat").get_trace(
-    #         *args, **kwargs
-    #     )
-    #     model_trace = poutine.trace(
-    #         poutine.replay(model, trace=guide_trace), graph_type="flat"
-    #     ).get_trace(*args, **kwargs)
-
-    # if is_validation_enabled():
-    #     check_model_guide_match(model_trace, guide_trace, max_plate_nesting)
-
-    # guide_trace = prune_subsample_sites(guide_trace)
-    # model_trace = prune_subsample_sites(model_trace)
-
-    # for name, site in model_trace.nodes.items():
-    #     if site["type"] == "sample":
-    #         logger.info(f"{name} - {site['value'].shape} - {site['fn'].log_prob(site['value']).shape}")
-
-    ####
+    logger.info(f"\nguide trace\n")
+    for name, site in guide_trace.nodes.items():
+        if site["type"] == "sample":
+            logger.info(f"{name} - {site['value']}")
+    
+    logger.info(f"\nmodel trace\n")
+    for name, site in model_trace.nodes.items():
+        if site["type"] == "sample":
+            logger.info(f"{name} - {site['fn']} - {site['value'].shape}")
+            logger.info(f"log_prob: {site['fn'].log_prob(site['value'])} - scale: {site['scale']} - mask: {site['mask']}\n")
+    
 
     model_trace, guide_trace = get_importance_trace(
         "flat", max_plate_nesting, vectorize(model), vectorize(guide), args, kwargs
