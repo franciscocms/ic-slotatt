@@ -96,6 +96,8 @@ def process_targets(target_dict):
     
 def main():   
 
+    assert params['batch_size'] == 1
+
     logger.info(object_mapping)
     logger.info(size_mapping)
     logger.info(color_mapping)

@@ -349,14 +349,13 @@ class InvSlotAttentionGuide(nn.Module):
       variable_prior_distribution = variable.prior_distribution
       variable_proposal_distribution = variable.proposal_distribution
     
-    proposal = self.prop_nets[variable_name](obs)
-
-    
+    proposal = self.prop_nets[variable_name](obs)    
     
     if variable_proposal_distribution == "normal":
         mean, logvar = proposal[0].squeeze(-1), proposal[1].squeeze(-1)
         
-        logger.info(f"{variable} - {mean.shape}")
+        if self.stage == 'eval':
+          mean, logvar = mean.squeeze(0), logvar.squeeze(0)
         
         std = torch.exp(0.5*logvar)
        
@@ -366,14 +365,14 @@ class InvSlotAttentionGuide(nn.Module):
 
     elif variable_proposal_distribution == "categorical":  
        
-       logger.info(f"{variable} - {proposal.shape}")      
+       if self.stage == 'eval': proposal = proposal.squeeze(0)     
 
        logger.info(f"{variable} - {dist.Categorical(probs=proposal).to_event(1).batch_shape} - {dist.Categorical(probs=proposal).to_event(1).event_shape}")
        out = pyro.sample(variable_name, dist.Categorical(probs=proposal).to_event(1))
     elif variable_proposal_distribution == "bernoulli": 
        
-       logger.info(f"{variable} - {proposal.shape}")
-       
+       if self.stage == 'eval': proposal = proposal.squeeze(0)
+
        proposal = proposal.squeeze(-1)       
        out = pyro.sample(variable_name, dist.Bernoulli(proposal).to_event(1))
     else: raise ValueError(f"Unknown variable address: {variable_name}")      
