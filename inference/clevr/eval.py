@@ -168,10 +168,7 @@ def main():
                 posterior = csis.run(observations={"image": img})
                 prop_traces = posterior.prop_traces
                 traces = posterior.exec_traces
-                log_wts = posterior.log_weights
-
-                logger.info(log_wts)
-                logger.info(len(log_wts))
+                log_wts = posterior.log_weights[0]
 
                 resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
                 resampling_id = resampling().item()

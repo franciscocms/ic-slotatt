@@ -288,7 +288,6 @@ class Importance(TracePosterior):
             
             log_p_sum += log_p
 
-
         log_weight = list(log_p_sum) #- guide_trace.log_prob_sum()
 
         yield (model_trace, guide_trace, log_weight)
