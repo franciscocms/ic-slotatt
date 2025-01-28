@@ -380,13 +380,13 @@ def vectorized_importance_weights(model, guide, *args, **kwargs):
 
         return _fn
     
-    guide_trace = poutine.trace(guide).get_trace(*args, **kwargs)  
-    model_trace = poutine.trace(poutine.replay(model, trace=guide_trace)).get_trace(*args, **kwargs) 
+    # guide_trace = poutine.trace(guide).get_trace(*args, **kwargs)  
+    # model_trace = poutine.trace(poutine.replay(model, trace=guide_trace)).get_trace(*args, **kwargs) 
 
-    for name, site in model_trace.nodes.items():
-        if site["type"] == "sample":
-            logger.info(f"{name} - {site['fn']} - {site['value'].shape}")
-            logger.info(f"log_prob: {site['fn'].log_prob(site['value'])} - scale: {site['scale']} - mask: {site['mask']}\n")
+    # for name, site in model_trace.nodes.items():
+    #     if site["type"] == "sample":
+    #         logger.info(f"{name} - {site['fn']} - {site['value'].shape}")
+    #         logger.info(f"log_prob: {site['fn'].log_prob(site['value'])} - scale: {site['scale']} - mask: {site['mask']}\n")
     
     ####
     # unwrapped_guide = poutine.unwrap(guide)
