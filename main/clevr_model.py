@@ -108,7 +108,7 @@ def sample_clevr_scene(llh_uncertainty):
     B = params['batch_size'] if params["running_type"] == "train" else params['num_inference_samples']
     M = max_objects 
 
-    logger.info('\nmodel logs!\n')
+    #logger.info('\nmodel logs!\n')
     
     # Sample the mask to predict real objects
     objects_mask = pyro.sample(f"mask", dist.Bernoulli(0.5).expand([B, M])).to(torch.bool)
@@ -118,7 +118,7 @@ def sample_clevr_scene(llh_uncertainty):
     if params['running_type'] == 'eval': 
         if objects_mask.dim() > 2:
             objects_mask = torch.flatten(objects_mask, 0, 1)
-        logger.info(objects_mask.shape)
+        #logger.info(objects_mask.shape)
     
     # logger.info(objects_mask)
     # logger.info(dist.Bernoulli(0.5).expand([M]).to_event(1).batch_shape)
@@ -156,7 +156,7 @@ def sample_clevr_scene(llh_uncertainty):
         if params['running_type'] == 'eval':
             if shape.dim() > 2:
                 shape = torch.flatten(shape, 0, 1)
-            logger.info(shape.shape)
+            #logger.info(shape.shape)
 
         # logger.info(shape.shape)
         # logger.info(dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([M]).to_event(1).batch_shape)
@@ -174,7 +174,7 @@ def sample_clevr_scene(llh_uncertainty):
         if params['running_type'] == 'eval': 
             if color.dim() > 2:
                 color = torch.flatten(color, 0, 1)
-            logger.info(color.shape)
+            #logger.info(color.shape)
 
     color_mapping_list = {b: list(map(get_color_mapping, color[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
     color_name, rgba = {b: [e[0] for e in color_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in color_mapping_list[b]] for b in range(B)}
@@ -194,7 +194,7 @@ def sample_clevr_scene(llh_uncertainty):
         if params['running_type'] == 'eval': 
             if theta.dim() > 2:
                 theta = torch.flatten(theta, 0, 1)
-            logger.info(theta.shape)
+            #logger.info(theta.shape)
     #logger.info(f"{theta}")
 
     # Attach a random material
@@ -208,7 +208,7 @@ def sample_clevr_scene(llh_uncertainty):
         if params['running_type'] == 'eval': 
             if mat.dim() > 2:
                 mat = torch.flatten(mat, 0, 1)
-            logger.info(mat.shape)
+            #logger.info(mat.shape)
 
     mat_mapping_list = {b: list(map(get_mat_mapping, mat[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
     mat_name, mat_name_out = {b: [e[0] for e in mat_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in mat_mapping_list[b]] for b in range(B)}
@@ -303,8 +303,8 @@ def sample_clevr_scene(llh_uncertainty):
             if x.dim() > 2:
                 x = torch.flatten(x, 0, 1)
                 y = torch.flatten(y, 0, 1)
-            logger.info(x.shape)
-            logger.info(y.shape)
+            # logger.info(x.shape)
+            # logger.info(y.shape)
 
         
         size = pyro.sample(f"size", dist.Delta(size_b_))
@@ -312,7 +312,7 @@ def sample_clevr_scene(llh_uncertainty):
         if params['running_type'] == 'eval': 
             if size.dim() > 2:
                 size = torch.flatten(size, 0, 1)
-            logger.info(size.shape)
+            #logger.info(size.shape)
         
 
 
@@ -345,7 +345,7 @@ def sample_clevr_scene(llh_uncertainty):
         scenes.append(objects)
     return scenes
 
-def generate_blender_script(objects, id, jobID, blender_objects=[]):
+def generate_blender_script(objects, id, jobID):
     """
     Generate a Blender Python script to render the CLEVR-like scene.
     """
@@ -621,8 +621,11 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     # Call Blender to render the scene
     #with mp.Pool(processes=mp.cpu_count()) as pool:
-    with mp.Pool(processes=10) as pool:
-      pool.map(render_scene_in_blender, blender_scripts)
+    # with mp.Pool(processes=10) as pool:
+    #   pool.map(render_scene_in_blender, blender_scripts)
+
+    for blender_script in blender_scripts:
+        render_scene_in_blender(blender_script)
 
     #logger.info("Scene rendered and saved...")
     img_batch = torch.stack(

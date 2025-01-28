@@ -357,24 +357,24 @@ class InvSlotAttentionGuide(nn.Module):
         if self.stage == 'eval':
           mean, logvar = mean.expand(params['num_inference_samples'], -1), logvar.expand(params['num_inference_samples'], -1)
           
-          logger.info(f"{variable} - mean: {mean.shape} - logvar: {logvar.shape}")
+          # logger.info(f"{variable} - mean: {mean.shape} - logvar: {logvar.shape}")
         
         std = torch.exp(0.5*logvar)
        
         #if variable_name in ['x', 'y']: out = pyro.sample(variable_name, TruncatedNormal(mean, std, -1., 1.))
         #elif variable_name in ['pose']: out = pyro.sample(variable_name, TruncatedNormal(mean, std, 0., 1.))
         out = pyro.sample(variable_name, dist.Normal(mean, std))#.to_event(1))
-        logger.info(f"{variable} - {out}")
+        # logger.info(f"{variable} - {out}")
 
     elif variable_proposal_distribution == "categorical":  
        
       if self.stage == 'eval': 
-         proposal = proposal.expand(params['num_inference_samples'], -1, -1)
-         logger.info(f"{variable} - proposal: {proposal.shape}")     
+        proposal = proposal.expand(params['num_inference_samples'], -1, -1)
+        # logger.info(f"{variable} - proposal: {proposal.shape}")     
 
       #logger.info(f"{variable} - {dist.Categorical(probs=proposal).to_event(1).batch_shape} - {dist.Categorical(probs=proposal).to_event(1).event_shape}")
       out = pyro.sample(variable_name, dist.Categorical(probs=proposal))#.to_event(1))
-      logger.info(f"{variable} - {out}")
+      # logger.info(f"{variable} - {out}")
 
     
 
@@ -382,11 +382,11 @@ class InvSlotAttentionGuide(nn.Module):
        
       if self.stage == 'eval': 
         proposal = proposal.expand(params['num_inference_samples'], -1, -1)
-        logger.info(f"{variable} - proposal: {proposal.shape}") 
+        # logger.info(f"{variable} - proposal: {proposal.shape}") 
 
       proposal = proposal.squeeze(-1)       
       out = pyro.sample(variable_name, dist.Bernoulli(proposal))#.to_event(1))
-      logger.info(f"{variable} - {out}") 
+      # logger.info(f"{variable} - {out}") 
 
     else: raise ValueError(f"Unknown variable address: {variable_name}")      
     
