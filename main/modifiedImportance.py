@@ -259,41 +259,39 @@ class Importance(TracePosterior):
         """
         Generator of weighted samples from the proposal distribution.
         """
-        #for i in range(self.num_samples):
-        with pyro.plate("inference", self.num_samples):
             
-            guide_trace = poutine.trace(self.guide).get_trace(*args, **kwargs)  
-            model_trace = poutine.trace(poutine.replay(self.model, trace=guide_trace)).get_trace(*args, **kwargs)         
+        guide_trace = poutine.trace(self.guide).get_trace(*args, **kwargs)  
+        model_trace = poutine.trace(poutine.replay(self.model, trace=guide_trace)).get_trace(*args, **kwargs)         
 
-            only_img_llh = True
+        only_img_llh = True
 
-            log_p_sum = torch.tensor(0.)
-            for name, site in model_trace.nodes.items():
-                log_p = 0.
-                
-                if not only_img_llh:
-                    if site['type'] == 'sample' and name != 'size':
-                        log_p = site['fn'].log_prob(site['value'])
-                        if name == 'image': 
-                            img_dim = site['fn'].mean.shape[-1]
-                            log_p = log_p / (img_dim**2)
-                        
-                        #logger.info(f"{name} - {log_p}")
-                        log_p = scale_and_mask(log_p, site["scale"], site["mask"]).sum()
-                        #logger.info(f"{name} - {log_p}")
-                
-                else:
-                    if site['type'] == 'sample' and name == 'image':
-                        log_p = site['fn'].log_prob(site['value']).item()
+        log_p_sum = torch.tensor(0.)
+        for name, site in model_trace.nodes.items():
+            log_p = 0.
+            
+            if not only_img_llh:
+                if site['type'] == 'sample' and name != 'size':
+                    log_p = site['fn'].log_prob(site['value'])
+                    if name == 'image': 
                         img_dim = site['fn'].mean.shape[-1]
                         log_p = log_p / (img_dim**2)
-                
-                log_p_sum += log_p
+                    
+                    #logger.info(f"{name} - {log_p}")
+                    log_p = scale_and_mask(log_p, site["scale"], site["mask"]).sum()
+                    #logger.info(f"{name} - {log_p}")
+            
+            else:
+                if site['type'] == 'sample' and name == 'image':
+                    log_p = site['fn'].log_prob(site['value']).item()
+                    img_dim = site['fn'].mean.shape[-1]
+                    log_p = log_p / (img_dim**2)
+            
+            log_p_sum += log_p
 
 
-            log_weight = log_p_sum #- guide_trace.log_prob_sum()
+        log_weight = log_p_sum #- guide_trace.log_prob_sum()
 
-            yield (model_trace, guide_trace, log_weight)
+        yield (model_trace, guide_trace, log_weight)
 
     def get_log_normalizer(self):
         """
@@ -376,19 +374,19 @@ def vectorized_importance_weights(model, guide, *args, **kwargs):
 
         return _fn
     
-    guide_trace = poutine.trace(guide, graph_type='flat').get_trace(*args, **kwargs)  
-    model_trace = poutine.trace(poutine.replay(model, trace=guide_trace)).get_trace(*args, **kwargs) 
+    # guide_trace = poutine.trace(guide, graph_type='flat').get_trace(*args, **kwargs)  
+    # model_trace = poutine.trace(poutine.replay(model, trace=guide_trace)).get_trace(*args, **kwargs) 
     
-    logger.info(f"\nguide trace\n")
-    for name, site in guide_trace.nodes.items():
-        #if site["type"] == "sample":
-        logger.info(f"{name} - {site}")
+    # logger.info(f"\nguide trace\n")
+    # for name, site in guide_trace.nodes.items():
+    #     #if site["type"] == "sample":
+    #     logger.info(f"{name} - {site}")
     
-    logger.info(f"\nmodel trace\n")
-    for name, site in model_trace.nodes.items():
-        if site["type"] == "sample":
-            logger.info(f"{name} - {site['fn']} - {site['value'].shape}")
-            logger.info(f"log_prob: {site['fn'].log_prob(site['value'])} - scale: {site['scale']} - mask: {site['mask']}\n")
+    # logger.info(f"\nmodel trace\n")
+    # for name, site in model_trace.nodes.items():
+    #     if site["type"] == "sample":
+    #         logger.info(f"{name} - {site['fn']} - {site['value'].shape}")
+    #         logger.info(f"log_prob: {site['fn'].log_prob(site['value'])} - scale: {site['scale']} - mask: {site['mask']}\n")
     
 
     model_trace, guide_trace = get_importance_trace(
