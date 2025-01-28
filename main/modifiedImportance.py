@@ -384,6 +384,8 @@ def vectorized_importance_weights(model, guide, *args, **kwargs):
         if site["type"] == "sample":
             assert site["infer"] is not None
 
+            logger.info(site['infer'])
+
             dim_to_symbol = site["infer"]["_dim_to_symbol"]
             packed = site.setdefault("packed", {})
             packed["mask"] = pack(site["mask"], dim_to_symbol)
