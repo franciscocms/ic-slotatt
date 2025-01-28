@@ -584,6 +584,8 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     proc_img = preprocess_clevr(img_batch) # proc_img shape is (1, 4, 128, 128)
 
+    logger.info(f"gen image shape: {proc_img.shape}")
+
     with pyro.plate(observations["image"].shape[0]):
         #pyro.sample("image", MyBernoulli(proc_img, validate_args=False).to_event(3), obs=observations["image"])
         
