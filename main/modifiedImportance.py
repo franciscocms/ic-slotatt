@@ -381,8 +381,8 @@ def vectorized_importance_weights(model, guide, *args, **kwargs):
     
     logger.info(f"\nguide trace\n")
     for name, site in guide_trace.nodes.items():
-        if site["type"] == "sample":
-            logger.info(f"{name} - {site['value']}")
+        #if site["type"] == "sample":
+        logger.info(f"{name} - {site}")
     
     logger.info(f"\nmodel trace\n")
     for name, site in model_trace.nodes.items():
