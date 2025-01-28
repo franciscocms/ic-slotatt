@@ -262,8 +262,13 @@ def sample_clevr_scene(llh_uncertainty):
     with pyro.poutine.mask(mask=objects_mask):
         x = pyro.sample(f"x", dist.Normal(x_b_/3., llh_uncertainty))*3.
         y = pyro.sample(f"y", dist.Normal(y_b_/3., llh_uncertainty))*3.
+        if params['running_type'] == 'eval': 
+            x = torch.flatten(x, 0, 1)
+            y = torch.flatten(y, 0, 1)
+
         
         size = pyro.sample(f"size", dist.Delta(size_b_))
+        if params['running_type'] == 'eval': size = torch.flatten(size, 0, 1)
         size_mapping_list = {b: list(map(get_size_mapping, size[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
         size_name, r = {b: [e[0] for e in size_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in size_mapping_list[b]] for b in range(B)} 
 
