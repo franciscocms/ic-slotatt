@@ -119,9 +119,9 @@ def sample_clevr_scene(llh_uncertainty):
             objects_mask = torch.flatten(objects_mask, 0, 1)
         logger.info(objects_mask.shape)
     
-    logger.info(objects_mask)
-    logger.info(dist.Bernoulli(0.5).expand([M]).to_event(1).batch_shape)
-    logger.info(dist.Bernoulli(0.5).expand([M]).to_event(1).event_shape)
+    # logger.info(objects_mask)
+    # logger.info(dist.Bernoulli(0.5).expand([M]).to_event(1).batch_shape)
+    # logger.info(dist.Bernoulli(0.5).expand([M]).to_event(1).event_shape)
     
     #logger.info(f"\nmask: {objects_mask}")
     num_objects = torch.sum(objects_mask, dim=-1)
