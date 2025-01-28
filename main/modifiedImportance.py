@@ -7,6 +7,7 @@ import pyro.distributions as dist
 import pyro.poutine as poutine
 from pyro.ops.stats import fit_generalized_pareto
 from pyro.distributions.util import scale_and_mask
+from pyro.ops.packed import pack
 
 from .mod_abstract_infer import TracePosterior
 from pyro.infer.enum import get_importance_trace
@@ -378,6 +379,19 @@ def vectorized_importance_weights(model, guide, *args, **kwargs):
     model_trace, guide_trace = get_importance_trace(
         "flat", max_plate_nesting, vectorize(model), vectorize(guide), args, kwargs
     )
+
+    for name, site in guide_trace.nodes.items():
+        if site["type"] == "sample":
+            assert site["infer"] is not None
+
+            dim_to_symbol = site["infer"]["_dim_to_symbol"]
+            packed = site.setdefault("packed", {})
+            packed["mask"] = pack(site["mask"], dim_to_symbol)
+
+            if "score_parts" in site:
+                log_prob, score_function, entropy_term = site["score_parts"]
+                log_prob = pack(log_prob, dim_to_symbol)
+
 
     guide_trace.pack_tensors()
     model_trace.pack_tensors(guide_trace.plate_to_symbol)
