@@ -118,7 +118,7 @@ def sample_clevr_scene(llh_uncertainty):
         if objects_mask.dim() > 2:
             objects_mask = torch.flatten(objects_mask, 0, 1)
         logger.info(objects_mask.shape)
-
+    
     #logger.info(f"\nmask: {objects_mask}")
     num_objects = torch.sum(objects_mask, dim=-1)
     #logger.info(f"\nnum_objects: {num_objects}")
