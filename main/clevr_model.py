@@ -172,6 +172,9 @@ def sample_clevr_scene(llh_uncertainty):
 
     # Attach a random material
     with pyro.poutine.mask(mask=objects_mask):
+        
+        logger.info(dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([B, M]).to_event(1).event_shape)
+
         mat = pyro.sample(f"mat", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([B, M]).to_event(1))
         # if params['running_type'] == 'eval': mat = torch.flatten(mat, 0, 1)
 
