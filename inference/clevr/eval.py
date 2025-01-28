@@ -188,7 +188,7 @@ def main():
                 #             plt.close()
                             
 
-                preds = process_preds(prop_traces)
+                preds = process_preds(prop_traces, resampling_id)
                 for t in threshold: ap[t] += compute_AP(preds, target, t)
                 n_test_samples += 1
 
