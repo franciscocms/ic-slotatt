@@ -382,9 +382,7 @@ def vectorized_importance_weights(model, guide, *args, **kwargs):
 
     for name, site in model_trace.nodes.items():
         if site["type"] == "sample":
-            logger.info(f"{name} - {site['infer']}")
-
-    logger.info(guide_trace.plate_to_symbol)
+            logger.info(f"{name} - {site['value'].shape}")
 
     guide_trace.pack_tensors()
     model_trace.pack_tensors(guide_trace.plate_to_symbol)
