@@ -351,7 +351,7 @@ class InvSlotAttentionGuide(nn.Module):
     
     proposal = self.prop_nets[variable_name](obs)
 
-    #logger.info(f"{variable} - {proposal}")
+    logger.info(f"{variable} - {proposal.shape}")
     
     if variable_proposal_distribution == "normal":
         mean, logvar = proposal[0].squeeze(-1), proposal[1].squeeze(-1)
