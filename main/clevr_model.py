@@ -140,6 +140,7 @@ def sample_clevr_scene(llh_uncertainty):
         shape = pyro.sample(f"shape", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([B, M]).to_event(1))
 
         logger.info(dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([B, M]).to_event(1).event_shape)
+        logger.info(shape.shape)
 
     # if params['running_type'] == 'eval':
     #     logger.info(shape.shape) # [num_inference_samples, B, M]
