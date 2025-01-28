@@ -46,9 +46,10 @@ def compute_AP(preds, targets, threshold_dist):
     # preds have shape (max_objects, n_features)
     # targets have shape (max_objects, n_features)
 
-    logger.info(f"\ncomputing AP...")
-    logger.info(f"preds: {preds}")
-    logger.info(f"targets: {targets}")
+    if threshold_dist == -1:
+        logger.info(f"\ncomputing AP...")
+        logger.info(f"preds: {preds}")
+        logger.info(f"targets: {targets}")
 
     #logger.info(f"\npredictions matrix: ")
     shape, size, color, mat, x, y, pred_real_obj = process_preds(preds)
@@ -90,11 +91,14 @@ def compute_AP(preds, targets, threshold_dist):
                             found = True
                             best_distance = dist
                             found_idx = j # stores the best match between an object and all possible targets
+
+                            if threshold_dist == -1:
+                                logger.info(f"object {j} found to have the best distance {best_distance} matching with object {o}")
             
             if found:
                 if distance((x[o], y[o]), (target_x[found_idx], target_y[found_idx])) <= threshold_dist or threshold_dist == -1:
                     found_objects.append(found_idx)
-                    #logger.info('found match below distance threshold!')
+                    if threshold_dist == -1: logger.info("found match below distance threshold!")
                     tp += 1
             else: fp += 1
 
