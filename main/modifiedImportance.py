@@ -265,9 +265,9 @@ class Importance(TracePosterior):
 
         only_img_llh = True
 
-        log_p_sum = torch.tensor(0.)
+        log_p_sum = torch.zeros(self.num_samples)
         for name, site in model_trace.nodes.items():
-            log_p = 0.
+            log_p = torch.zeros(self.num_samples)
             
             if not only_img_llh:
                 if site['type'] == 'sample' and name != 'size':
