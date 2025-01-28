@@ -381,27 +381,27 @@ def vectorized_importance_weights(model, guide, *args, **kwargs):
         return _fn
     
     ####
-    unwrapped_guide = poutine.unwrap(guide)
-    if isinstance(unwrapped_guide, poutine.messenger.Messenger):
-        guide(*args, **kwargs)
-        model_trace, guide_trace = unwrapped_guide.get_traces()
-    else:
-        guide_trace = poutine.trace(guide, graph_type="flat").get_trace(
-            *args, **kwargs
-        )
-        model_trace = poutine.trace(
-            poutine.replay(model, trace=guide_trace), graph_type="flat"
-        ).get_trace(*args, **kwargs)
+    # unwrapped_guide = poutine.unwrap(guide)
+    # if isinstance(unwrapped_guide, poutine.messenger.Messenger):
+    #     guide(*args, **kwargs)
+    #     model_trace, guide_trace = unwrapped_guide.get_traces()
+    # else:
+    #     guide_trace = poutine.trace(guide, graph_type="flat").get_trace(
+    #         *args, **kwargs
+    #     )
+    #     model_trace = poutine.trace(
+    #         poutine.replay(model, trace=guide_trace), graph_type="flat"
+    #     ).get_trace(*args, **kwargs)
 
-    if is_validation_enabled():
-        check_model_guide_match(model_trace, guide_trace, max_plate_nesting)
+    # if is_validation_enabled():
+    #     check_model_guide_match(model_trace, guide_trace, max_plate_nesting)
 
-    guide_trace = prune_subsample_sites(guide_trace)
-    model_trace = prune_subsample_sites(model_trace)
+    # guide_trace = prune_subsample_sites(guide_trace)
+    # model_trace = prune_subsample_sites(model_trace)
 
-    for name, site in model_trace.nodes.items():
-        if site["type"] == "sample":
-            logger.info(f"{name} - {site['value'].shape} - {site['fn'].log_prob(site['value']).shape}")
+    # for name, site in model_trace.nodes.items():
+    #     if site["type"] == "sample":
+    #         logger.info(f"{name} - {site['value'].shape} - {site['fn'].log_prob(site['value']).shape}")
 
     ####
 
