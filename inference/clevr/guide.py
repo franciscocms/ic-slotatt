@@ -355,7 +355,8 @@ class InvSlotAttentionGuide(nn.Module):
         mean, logvar = proposal[0].squeeze(-1), proposal[1].squeeze(-1)
         
         if self.stage == 'eval':
-          mean, logvar = mean.squeeze(0), logvar.squeeze(0)
+          mean, logvar = mean.expand(params['num_inference_samples'], -1), logvar.expand(params['num_inference_samples'], -1)
+          
           logger.info(f"{variable} - mean: {mean.shape} - logvar: {logvar.shape}")
         
         std = torch.exp(0.5*logvar)
@@ -368,17 +369,21 @@ class InvSlotAttentionGuide(nn.Module):
     elif variable_proposal_distribution == "categorical":  
        
       if self.stage == 'eval': 
-         proposal = proposal.squeeze(0)
+         proposal = proposal.expand(params['num_inference_samples'], -1, -1)
          logger.info(f"{variable} - proposal: {proposal.shape}")     
 
       logger.info(f"{variable} - {dist.Categorical(probs=proposal).to_event(1).batch_shape} - {dist.Categorical(probs=proposal).to_event(1).event_shape}")
       out = pyro.sample(variable_name, dist.Categorical(probs=proposal).to_event(1))
       logger.info(f"{variable} - {out.shape}")
 
+      logger.info()
+
+    
+
     elif variable_proposal_distribution == "bernoulli": 
        
       if self.stage == 'eval': 
-        proposal = proposal.squeeze(0)
+        proposal = proposal.expand(params['num_inference_samples'], -1, -1)
         logger.info(f"{variable} - proposal: {proposal.shape}") 
 
       proposal = proposal.squeeze(-1)       
