@@ -25,7 +25,7 @@ warnings.filterwarnings("ignore")
 
 import logging
 
-logger = logging.getLogger("train")
+logger = logging.getLogger("eval")
 device = params["device"]
 
 img_transform = transforms.Compose([transforms.ToTensor()])

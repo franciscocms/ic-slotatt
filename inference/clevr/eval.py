@@ -18,11 +18,6 @@ import sys
 sys.path.append(os.path.abspath(__file__+'/../../../'))
 
 import logging
-logfile_name = f'eval.log'
-logger = logging.getLogger("eval")
-logger.setLevel(logging.INFO)
-fh = logging.FileHandler(logfile_name, mode='w')
-logger.addHandler(fh)
 
 from main.clevr_model import clevr_gen_model, preprocess_clevr
 from main.modifiedCSIS import CSIS
@@ -90,14 +85,27 @@ def process_targets(target_dict):
     
     return target
     
-def main():   
+def main(): 
+
+    init_time = time.time()  
 
     assert params['batch_size'] == 1
 
-    logger.info(object_mapping)
-    logger.info(size_mapping)
-    logger.info(color_mapping)
-    logger.info(material_mapping) 
+    JOB_SPLIT = {
+        'id': 1,
+        'total': 4
+        }
+    
+    logfile_name = f'eval_split_{JOB_SPLIT['id']}.log'
+    logger = logging.getLogger("eval")
+    logger.setLevel(logging.INFO)
+    fh = logging.FileHandler(logfile_name, mode='w')
+    logger.addHandler(fh)
+
+    # logger.info(object_mapping)
+    # logger.info(size_mapping)
+    # logger.info(color_mapping)
+    # logger.info(material_mapping) 
 
     logger.info(device)
 
@@ -107,11 +115,12 @@ def main():
         pyro.set_rng_seed(seed)
         
         model = clevr_gen_model
-        guide = InvSlotAttentionGuide(resolution = (128, 128),
-                                    num_iterations = 3,
-                                    hid_dim = 64,
-                                    stage = "eval"
-                                    ).to(device)
+        guide = InvSlotAttentionGuide(resolution = params['resolution'],
+                              num_slots = params['num_slots'],
+                              num_iterations = 3,
+                              hid_dim = params["slot_dim"],
+                              stage="train"
+                              ).to(device)
         
         GUIDE_PATH = os.path.join(main_dir, "inference", f"checkpoint-{params['jobID']}", f"guide_{params['guide_step']}.pth")
         if os.path.isfile(GUIDE_PATH): guide = load_trained_guide_clevr(guide, GUIDE_PATH, 
@@ -139,7 +148,7 @@ def main():
         # define dataset
         images_path = os.path.join(dataset_path, 'images/val')
         properties = json.load(open(os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json')))
-        test_dataset = CLEVRDataset(images_path, properties)
+        test_dataset = CLEVRDataset(images_path, properties, JOB_SPLIT)
         testloader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False, generator=torch.Generator(device='cuda'))
         
         n_test_samples = 0.
@@ -150,9 +159,9 @@ def main():
                 img = img.to(device)
                 target = process_targets(target_dict)
 
-                plt.imshow(visualize(img.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
-                plt.savefig(os.path.join(plots_dir, f"image_{idx}.png"))
-                plt.close()
+                # plt.imshow(visualize(img.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
+                # plt.savefig(os.path.join(plots_dir, f"image_{idx}.png"))
+                # plt.close()
 
                 logger.info(f"\ntarget image index: {target_dict['image_index']}")
                 logger.info(f"# of objects: {len(target_dict['objects'])}")
@@ -172,19 +181,19 @@ def main():
 
                 logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
 
-                for name, site in traces.nodes.items():                    
-                    if name == 'image':
-                        output_image = site["fn"].mean[resampling_id]
-                        plt.imshow(visualize(output_image[:3].permute(1, 2, 0).cpu().numpy()))
-                        plt.savefig(os.path.join(plots_dir, f"trace_{idx}.png"))
-                        plt.close()
+                # for name, site in traces.nodes.items():                    
+                #     if name == 'image':
+                #         output_image = site["fn"].mean[resampling_id]
+                #         plt.imshow(visualize(output_image[:3].permute(1, 2, 0).cpu().numpy()))
+                #         plt.savefig(os.path.join(plots_dir, f"trace_{idx}.png"))
+                #         plt.close()
                             
 
                 preds = process_preds(prop_traces, resampling_id)
                 for t in threshold: ap[t] += compute_AP(preds, target, t)
                 n_test_samples += 1
 
-                if n_test_samples == 10: break
+                #if n_test_samples == 10: break
                 
         mAP = {k: v/n_test_samples for k, v in ap.items()}
         logger.info(f"distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")
@@ -407,12 +416,9 @@ def main():
         #     logger.info(f"COUNT {COUNT}: distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")
         #     logger.info(f"COUNT {COUNT}: mAP values: {mAP[threshold[0]]} - {mAP[threshold[1]]} - {mAP[threshold[2]]} - {mAP[threshold[3]]} - {mAP[threshold[4]]} - {mAP[threshold[5]]}\n")
 
-
-if __name__ == '__main__':
-    
-    init_time = time.time()
-    
-    main()
-
     inference_time = time.time() - init_time 
     logger.info(f'\nInference complete in {inference_time} seconds.')
+    
+if __name__ == '__main__':
+    main()
+    

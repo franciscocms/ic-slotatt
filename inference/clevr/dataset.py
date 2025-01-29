@@ -14,7 +14,7 @@ import logging
 logger = logging.getLogger("eval")
 
 class CLEVRDataset(Dataset):
-  def __init__(self, data_path, properties):
+  def __init__(self, data_path, properties, JOB_SPLIT):
     
     if params['max_objects'] == 6:
         self.data_path = data_path
@@ -31,6 +31,19 @@ class CLEVRDataset(Dataset):
        self.data_path = data_path
        self.target = properties['scenes']
     
+    """
+    split the validation dataset according to JOB_SPLIT
+    """
+
+    total_len = len(self.target)
+    split_len = int(total_len/JOB_SPLIT['total'])
+    if total_len % JOB_SPLIT['total'] != 0 and JOB_SPLIT['id'] == JOB_SPLIT['total']:
+        final_idx = split_len*(JOB_SPLIT['id']) + total_len % JOB_SPLIT['total']
+    else:
+        final_idx = split_len*(JOB_SPLIT['id'])
+    self.target = self.target[split_len*(JOB_SPLIT['id']-1) : final_idx]
+
+    logger.info(f"SPLIT {JOB_SPLIT['id']}: evaluating samples from {split_len*(JOB_SPLIT['id']-1)} to {final_idx}...\n")
   
   def __getitem__(self, index):    
     #target = self.target['scenes'][index]    ------> when using all scenes!
