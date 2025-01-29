@@ -96,7 +96,7 @@ def main():
         'total': 4
         }
     
-    logfile_name = f'eval_split_{JOB_SPLIT['id']}.log'
+    logfile_name = f"eval_split_{JOB_SPLIT['id']}.log"
     logger = logging.getLogger("eval")
     logger.setLevel(logging.INFO)
     fh = logging.FileHandler(logfile_name, mode='w')
@@ -418,7 +418,7 @@ def main():
 
     inference_time = time.time() - init_time 
     logger.info(f'\nInference complete in {inference_time} seconds.')
-    
+
 if __name__ == '__main__':
     main()
     
