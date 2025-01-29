@@ -264,7 +264,7 @@ class CSIS(Importance):
     #   logger.info(f"{k} - {v}")
 
     B = self.batch_size
-    M = self.max_objects
+    M = p['num_slots']
 
     # B_pdist = torch.tensor([], requires_grad=self.guide.is_train)
     # for b in range(B):
@@ -309,59 +309,6 @@ class CSIS(Importance):
 
     # pdist shape is (b_s, N, N, n_latents)
     loss, _ = self.hungarian_loss(N_pdist)
-    return loss
-  
-  def _old_differentiable_loss_particle(self, guide_trace):
-    
-    true_latents = {}
-    for name, vals in guide_trace.nodes.items():
-      if vals["type"] == "sample": # only consider object-wise properties
-        true_latents[name] = vals['value']
-    
-    #logger.info(f"\ntrue latents: {true_latents}\n")
-
-    self.n_latents = len(set([k for k in true_latents.keys()]))
-
-    B_pdist = torch.tensor([], device=device)
-
-    B = self.batch_size
-    M = self.max_objects
-
-    for i in range(B):
-      # modify guide_trace considering the values in 'true_latents' and compute the loss
-
-      pdist = torch.tensor([], device=device)
-
-      #logger.info(f"\nsample {i}")
-      
-      for o in range(self.max_objects):
-        # computing log_prob as if object 'o' was the target one
-        for name, vals in guide_trace.nodes.items():
-          if vals["type"] == "sample":
-            
-            #logger.info(f"{name} - {vals['value'].shape}")
-            #logger.info(true_latents[name][i, o].shape)
-            vals['value'] = vals['value'].clone()
-            vals['value'] = true_latents[name][i, o].unsqueeze(0).expand(M)
-
-            #logger.info(vals['value'])
-
-        partial_loss = self.my_log_prob(guide_trace)[i] # 'partial_loss' shape (n_s, n_latents)
-        partial_loss = partial_loss.unsqueeze(0).unsqueeze(0) # (1, 1, n_s, n_latents)
-
-        pdist = torch.cat((pdist, partial_loss), dim=-3)
-
-        #logger.info(f"pdist shape: {pdist.shape}") # [1, n_s, n_s, n_latents]
-      
-      B_pdist = torch.cat((B_pdist, pdist), dim=0)
-
-      #logger.info(f"B_pdist shape: {B_pdist.shape}")
-
-    # 'B_pdist' shape is [B, n_s, n_s, n_latents]
-    
-    loss, _ = self.hungarian_loss(B_pdist)
-    #logger.info(f"\nfinal loss: {loss}\n")
-
     return loss
 
   def my_log_prob(self, guide_trace):

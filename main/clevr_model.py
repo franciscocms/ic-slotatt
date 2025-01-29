@@ -50,7 +50,7 @@ def sample_loc(i):
 def to_int(value: Tensor):
     return int(torch.round(value))
 
-def preprocess_clevr(image, resolution=(128, 128)):
+def preprocess_clevr(image, resolution=params['resolution']):
     image = ((image / 255.0) - 0.5) * 2.0  # Rescale to [-1, 1].
     image = F.interpolate(input=image, size=resolution, mode='bilinear', antialias=True)
     image = torch.clamp(image, -1., 1.)
@@ -383,8 +383,8 @@ bpy.ops.wm.open_mainfile(filepath=os.path.join(dir_path, "clevr_data", "base_sce
 # cannot be used.
 render_args = bpy.context.scene.render
 render_args.engine = "CYCLES"
-render_args.resolution_x = 320
-render_args.resolution_y = 240
+render_args.resolution_x = 160
+render_args.resolution_y = 120
 render_args.resolution_percentage = 100
 
 # Some CYCLES-specific stuff

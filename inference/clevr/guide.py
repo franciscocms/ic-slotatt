@@ -259,7 +259,7 @@ class Encoder(nn.Module):
 
 """Slot Attention-based auto-encoder for object discovery."""
 class InvSlotAttentionGuide(nn.Module):
-  def __init__(self, resolution, num_iterations, hid_dim, stage):
+  def __init__(self, resolution, num_slots, num_iterations, hid_dim, stage):
     """Builds the Slot Attention-based auto-encoder.
     Args:
     resolution: Tuple of integers specifying width and height of input image.
@@ -269,7 +269,7 @@ class InvSlotAttentionGuide(nn.Module):
     super().__init__()
     self.hid_dim = hid_dim
     self.resolution = resolution
-    self.num_slots = 0
+    self.num_slots = num_slots
     self.num_iterations = num_iterations
     self.shape_vals = ["ball", "square"]
     self.color_vals = ["red", "green", "blue"]
@@ -423,11 +423,10 @@ class InvSlotAttentionGuide(nn.Module):
     x = self.encoder_cnn(self.img[:, :3]) # [B, input_dim, C]
     x = nn.LayerNorm(x.shape[1:]).to(device)(x)
     self.features_to_slots = self.mlp(x)
-
-    n_s = params['max_objects']
+    n_s = self.num_slots
 
     if self.stage == "train":        
-        self.slots, attn = self.slot_attention(self.features_to_slots, num_slots=n_s)
+        self.slots, attn = self.slot_attention(self.features_to_slots, num_slots=self.num_slots)
 
         # for b in range(B):
         #     plot_img = np.transpose(self.img[b].detach().cpu().numpy(), (1, 2, 0))
