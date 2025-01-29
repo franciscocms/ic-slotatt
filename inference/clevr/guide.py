@@ -129,8 +129,8 @@ class SlotAttention(nn.Module):
         plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/keys.png")
         plt.close()
 
-    if params["strided_convs"]: l = (32, 32)
-    else: l = (128, 128)
+    if params["strided_convs"]: l = (int(params['resolution'][0]/4), int(params['resolution'][1]/4))
+    else: l = params['resolution']
 
     a = self.mlp_weight_input(inputs).squeeze(-1).softmax(-1) * n_s # 'a' shape (b_s, W*H)
 
@@ -228,8 +228,9 @@ class Encoder(nn.Module):
     self.relu = nn.ReLU()
     
     #self.encoder_pos = SoftPositionEmbed(hid_dim, resolution)
-    if params["strided_convs"]: resolution = (32, 32)
-    else: resolution = (128, 128)
+    if params["strided_convs"]: 
+      resolution = (int(params['resolution'][0]/4), int(params['resolution'][1]/4))
+    else: resolution = params['resolution']
     self.encoder_pos = SoftPositionEmbed(64, resolution)
 
     self.step = 0
@@ -405,7 +406,7 @@ class InvSlotAttentionGuide(nn.Module):
     else: return mean, logvar
 
   def forward(self, 
-              observations={"image": torch.zeros((1, 3, 128, 128))}
+              observations={"image": torch.zeros((1, 3, params['resolution'][0], params['resolution'][1]))}
               ):
 
     # register networks to be optimized
@@ -445,7 +446,7 @@ class InvSlotAttentionGuide(nn.Module):
         #     logger.info(f"saved input image {b}...")
 
         if self.is_train and self.step % params['step_size'] == 0:
-            aux_attn = attn.reshape((B, n_s, 128, 128)) if not params["strided_convs"] else attn.reshape((B, n_s, 32, 32))
+            aux_attn = attn.reshape((B, n_s, params['resolution'][0], params['resolution'][1])) if not params["strided_convs"] else attn.reshape((B, n_s, int(params['resolution'][0]/4), int(params['resolution'][1]/4)))
             fig, ax = plt.subplots(ncols=n_s)
             for j in range(n_s):                                       
                 im = ax[j].imshow(aux_attn[0, j, :, :].detach().cpu().numpy())
