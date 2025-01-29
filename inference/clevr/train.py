@@ -53,7 +53,11 @@ for p in [GUIDE_PATH]:
   if not os.path.isdir(p): os.mkdir(p)
 logger.info(f"\n... saving model checkpoints in {GUIDE_PATH}")
 
-guide = InvSlotAttentionGuide(resolution = (128, 128), num_iterations = 3, hid_dim = params["slot_dim"], stage="train")
+guide = InvSlotAttentionGuide(resolution = params['resolution'],
+                              num_slots = params['num_slots'],
+                              num_iterations = 3,
+                              hid_dim = params["slot_dim"],
+                              stage="train")
 guide.to(DEVICE)
 
 run.watch(guide)
