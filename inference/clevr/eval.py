@@ -150,13 +150,13 @@ def main():
 
         guide.eval()
         with torch.no_grad():
-            for img, target_dict in testloader:
+            for idx, (img, target_dict) in enumerate(testloader):
                 img = img.to(device)
                 target = process_targets(target_dict)
 
-                # plt.imshow(visualize(img.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
-                # plt.savefig(os.path.join(plots_dir, f"image.png"))
-                # plt.close()
+                plt.imshow(visualize(img.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
+                plt.savefig(os.path.join(plots_dir, f"image_{idx}.png"))
+                plt.close()
 
                 logger.info(f"\ntarget image index: {target_dict['image_index']}")
 
@@ -175,19 +175,12 @@ def main():
 
                 logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
 
-                #logger.info(f"{len(traces)} posterior traces!")
-
-                # for t, tr in enumerate(traces):
-                #     logger.info(f'\nproposal trace {t} - log weight: {log_wts[t]}')
-                #     if t == resampling_id: logger.info("resampled trace!!!")
-                #     for name, site in tr.nodes.items():
-                #         if site['type'] == 'sample' and name != 'image':
-                #             logger.info(f"{name} - {site['value']}")
-                        
-                #         if name == 'image':
-                #             plt.imshow(visualize(site["fn"].mean.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
-                #             plt.savefig(os.path.join(plots_dir, f"trace_{t}.png"))
-                #             plt.close()
+                for name, site in traces.nodes.items():                    
+                    if name == 'image':
+                        output_image = site["fn"].mean[resampling_id]
+                        plt.imshow(visualize(output_image[:3].permute(1, 2, 0).cpu().numpy()))
+                        plt.savefig(os.path.join(plots_dir, f"trace_{idx}.png"))
+                        plt.close()
                             
 
                 preds = process_preds(prop_traces, resampling_id)
