@@ -111,7 +111,7 @@ def sample_clevr_scene(llh_uncertainty):
     #logger.info('\nmodel logs!\n')
     
     # Sample the mask to predict real objects
-    objects_mask = pyro.sample(f"mask", dist.Bernoulli(0.5).expand([B, M])).to(torch.bool)
+    objects_mask = pyro.sample(f"mask", dist.Bernoulli(0.25).expand([B, M])).to(torch.bool)
     # if params['running_type'] == 'train': objects_mask = pyro.sample(f"mask", dist.Bernoulli(0.5).expand([B, M]).to_event(1)).to(torch.bool)
     # else: objects_mask = pyro.sample(f"mask", dist.Bernoulli(0.5).expand([M]).to_event(1)).to(torch.bool)
     
