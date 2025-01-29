@@ -383,8 +383,8 @@ bpy.ops.wm.open_mainfile(filepath=os.path.join(dir_path, "clevr_data", "base_sce
 # cannot be used.
 render_args = bpy.context.scene.render
 render_args.engine = "CYCLES"
-render_args.resolution_x = 160
-render_args.resolution_y = 120
+render_args.resolution_x = 320
+render_args.resolution_y = 240
 render_args.resolution_percentage = 100
 
 # Some CYCLES-specific stuff

@@ -11,7 +11,7 @@ main_dir = os.path.abspath(__file__+'/../../')
 
 params = {
     "dataset": "clevr", # 'clevr' or '2Dobjects'
-    "resolution": (64, 64),
+    "resolution": (128, 128),
     "num_slots": 10,
     "guide_step" : 9999,
     "print_distributions": False,
