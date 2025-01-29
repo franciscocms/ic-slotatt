@@ -73,15 +73,11 @@ def process_preds(trace, id):
             if name == 'x': preds[:, 15] = site['value'][id]
             if name == 'y': preds[:, 16] = site['value'][id]
             if name == 'mask': preds[:, 17] = site['value'][id]
-        
-            # add the real/pad value
     return preds
 
 def process_targets(target_dict):   
     features_dim = 18
     target = torch.zeros(params['max_objects'], features_dim)
-    
-    logger.info(f"# of objects: {len(target_dict['objects'])}")
 
     for o, object in enumerate(target_dict['objects']):               
         target[o, :3] = F.one_hot(torch.tensor([idx for idx, tup in enumerate(object_mapping) if tup[1] == object['shape'][0]]), len(object_mapping))
@@ -159,6 +155,7 @@ def main():
                 plt.close()
 
                 logger.info(f"\ntarget image index: {target_dict['image_index']}")
+                logger.info(f"# of objects: {len(target_dict['objects'])}")
 
                 # log_weights, model_trace, guide_trace = vectorized_importance_weights(model, guide, observations={"image": img},
                 #                                                                       num_samples=params['num_inference_samples'],
