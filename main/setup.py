@@ -16,7 +16,7 @@ params = {
     "print_distributions": False,
     "print_importance_sampling": False,
     "bernoulli_inf_reduction": 'none',
-    "num_inference_samples": 50,
+    "num_inference_samples": 100,
     "N_proposal" : "normal", # mixture
     "loc_proposal" : "wo_net",
     "loc_proposal_std": 0.05, 
