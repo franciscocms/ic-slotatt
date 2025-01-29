@@ -92,7 +92,7 @@ def main():
     assert params['batch_size'] == 1
 
     JOB_SPLIT = {
-        'id': 2,
+        'id': 3,
         'total': 4
         }
     
