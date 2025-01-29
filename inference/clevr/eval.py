@@ -137,10 +137,10 @@ def main():
         ap = {k: 0 for k in threshold}
 
         # define dataset
-        images_path = glob.glob(os.path.join(dataset_path, 'images/val/*.png'))
+        images_path = os.path.join(dataset_path, 'images/val')
         properties = json.load(open(os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json')))
         test_dataset = CLEVRDataset(images_path, properties)
-        testloader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=True, generator=torch.Generator(device='cuda'))
+        testloader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False, generator=torch.Generator(device='cuda'))
         
         n_test_samples = 0.
 
