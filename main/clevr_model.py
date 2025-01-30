@@ -371,7 +371,7 @@ logger.addHandler(handler)
 dir_path = os.path.dirname(os.path.dirname(__file__))
 
 # Set images and blender files path
-imgs_path = {save_dir}
+imgs_path = r"{save_dir}"
 
 # Open main file
 bpy.ops.wm.open_mainfile(filepath=os.path.join(dir_path, "clevr_data", "base_scene.blend"))
@@ -557,13 +557,13 @@ _add_object(objects[{i}])
 
 """
     
-    script += f"""
+    script += """
 
 # Set render settings
 bpy.context.scene.render.image_settings.file_format = 'PNG'
-bpy.context.scene.render.filepath = os.path.join({save_dir}, "rendered_scene_{id}.png")
+bpy.context.scene.render.filepath = os.path.join(imgs_path, f"rendered_scene_{idx}.png")
 
-#logger.info(os.path.join({save_dir}, "rendered_scene_{id}.png"))
+#logger.info(os.path.join(imgs_path, "rendered_scene_{idx}.png"))
 
 # Render the scene
 bpy.ops.render.render(write_still=True)
