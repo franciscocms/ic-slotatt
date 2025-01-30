@@ -368,15 +368,15 @@ logger.addHandler(handler)
 logger.info('logging from the generated blender script!')
 
 # Set directory path
-dir_path = os.path.dirname(os.path.dirname(__file__))
+main_path = os.path.join("nas-ctm01", "homes", "fcsilva", "ic-slotatt", "main")
 
-logger.info(dir_path)
+logger.info(main_path)
 
 # Set images and blender files path
 imgs_path = r"{save_dir}"
 
 # Open main file
-bpy.ops.wm.open_mainfile(filepath=os.path.join(dir_path, "clevr_data", "base_scene.blend"))
+bpy.ops.wm.open_mainfile(filepath=os.path.join(main_path, "clevr_data", "base_scene.blend"))
 
 # Set render arguments so we can get pixel coordinates later.
 # We use functionality specific to the CYCLES renderer so BLENDER_RENDER
@@ -420,7 +420,7 @@ def load_materials(material_dir):
                 data_to.materials.append(name)
         appended_material = bpy.data.materials.get(name)
 
-load_materials(os.path.join(dir_path, "clevr_data", "materials"))
+load_materials(os.path.join(main_path, "clevr_data", "materials"))
 
 # Put a plane on the ground so we can compute cardinal directions
 bpy.ops.mesh.primitive_plane_add(size=5)
@@ -526,7 +526,7 @@ def add_object(object_dir, name, scale, loc, theta=0):
 # Add objects to the scene
 def _add_object(object_dir):
     
-    shape_dir = os.path.join(dir_path, "clevr_data", "shapes")
+    shape_dir = os.path.join(main_path, "clevr_data", "shapes")
     add_object(shape_dir, object_dir["shape"], object_dir["size"], object_dir["position"], object_dir["pose"])
     
     # Get reference to the object
@@ -594,7 +594,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     if params['running_type'] == 'train': llh_uncertainty = 0.001
     elif params['running_type'] == 'eval': llh_uncertainty = 0.1
-    
+
     if params['running_type'] == "train":
         if not os.path.isdir(os.path.join(dir_path, str(params['jobID']))): os.mkdir(os.path.join(dir_path, str(params['jobID'])))
         if not os.path.isdir(os.path.join(dir_path, str(params['jobID']), "train")): os.mkdir(os.path.join(dir_path, str(params['jobID']), "train"))
