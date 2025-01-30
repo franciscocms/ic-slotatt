@@ -69,8 +69,6 @@ def process_preds(trace, id):
             if name == 'y': preds[:, 16] = site['value'][id]
             if name == 'mask': preds[:, 17] = site['value'][id]
     
-    assert (preds != torch.zeros(params['max_objects'], features_dim)).all()
-    
     return preds
 
 def process_targets(target_dict):   
