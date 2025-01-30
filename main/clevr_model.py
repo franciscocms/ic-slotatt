@@ -38,8 +38,8 @@ max_retries = 50
 min_dist = 0.25
 min_margin = 0.4
 
-imgs_path = os.path.join(dir_path, str(params['jobID']))
-if not os.path.isdir: os.mkdir(imgs_path)
+# imgs_path = os.path.join(dir_path, str(params['jobID']))
+# if not os.path.isdir: os.mkdir(imgs_path)
 
 def sample_loc(i):
     with pyro.poutine.block():     
@@ -372,7 +372,6 @@ dir_path = os.path.dirname(os.path.dirname(__file__))
 
 # Set images and blender files path
 imgs_path = {save_dir}
-if not os.path.isdir: os.mkdir(imgs_path)
 
 # Open main file
 bpy.ops.wm.open_mainfile(filepath=os.path.join(dir_path, "clevr_data", "base_scene.blend"))
@@ -564,14 +563,14 @@ _add_object(objects[{i}])
 bpy.context.scene.render.image_settings.file_format = 'PNG'
 bpy.context.scene.render.filepath = os.path.join(imgs_path, f"rendered_scene_{idx}.png")
 
-# logger.info(os.path.join(imgs_path, f"rendered_scene_{idx}.png"))
+logger.info(os.path.join(imgs_path, f"rendered_scene_{idx}.png"))
 
 # Render the scene
 bpy.ops.render.render(write_still=True)
     """
     
     # Write the Blender script to a file
-    script_file = os.path.join(imgs_path, f"generate_clevr_scene_{id}.py")
+    script_file = os.path.join(save_dir, f"generate_clevr_scene_{id}.py")
     with open(script_file, "w") as f:
         f.write(script)
     
