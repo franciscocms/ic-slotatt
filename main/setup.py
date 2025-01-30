@@ -51,7 +51,7 @@ params = {
 
 # set job split settings for inference
 JOB_SPLIT = {
-            'id': 3,
+            'id': 4,
             'total': 4
             }
 
