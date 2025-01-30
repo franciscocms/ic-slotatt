@@ -178,6 +178,11 @@ def main():
 
                 logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
 
+                for name, site in prop_traces.nodes.items():                    
+                    if site["type"] == "sample":
+                        logger.info(f"{name} - {site['value'].shape}")
+                
+                logger.info("\n")
                 for name, site in traces.nodes.items():                    
                     if site["type"] == "sample":
                         logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
