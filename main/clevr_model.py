@@ -559,6 +559,9 @@ _add_object(objects[{i}])
     
     script += f"""
 
+    
+logger.info({save_dir})
+
 # Set render settings
 bpy.context.scene.render.image_settings.file_format = 'PNG'
 bpy.context.scene.render.filepath = os.path.join({save_dir}, f"rendered_scene_{id}.png")
