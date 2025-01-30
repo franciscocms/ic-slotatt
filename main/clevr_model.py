@@ -365,10 +365,12 @@ formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-# logger.info('logging from the generated blender script!')
+logger.info('logging from the generated blender script!')
 
 # Set directory path
 dir_path = os.path.dirname(os.path.dirname(__file__))
+
+logger.info(dir_path)
 
 # Set images and blender files path
 imgs_path = r"{save_dir}"
