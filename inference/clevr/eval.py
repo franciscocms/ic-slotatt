@@ -145,6 +145,8 @@ def main():
         properties = json.load(open(os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json')))
         test_dataset = CLEVRDataset(images_path, properties, JOB_SPLIT)
         testloader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False, generator=torch.Generator(device='cuda'))
+
+        logger.info(f"subset length: {len(test_dataset)}")
         
         n_test_samples = 0.
 
@@ -158,7 +160,7 @@ def main():
                 # plt.savefig(os.path.join(plots_dir, f"image_{idx}.png"))
                 # plt.close()
 
-                logger.info(f"\ntarget image index: {target_dict['image_index']}")
+                logger.info(f"\ntarget image index: {target_dict['image_index']} - {n_test_samples}/{len(test_dataset)}")
                 logger.info(f"# of objects: {len(target_dict['objects'])}")
 
                 # log_weights, model_trace, guide_trace = vectorized_importance_weights(model, guide, observations={"image": img},

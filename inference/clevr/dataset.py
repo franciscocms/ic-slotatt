@@ -67,4 +67,4 @@ class CLEVRDataset(Dataset):
     return img, target
   
   def __len__(self):
-    return len(self.data_path)
+    return len(self.target)
