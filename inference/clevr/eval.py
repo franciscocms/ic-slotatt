@@ -173,18 +173,14 @@ def main():
                 traces = posterior.exec_traces[0]
                 log_wts = posterior.log_weights[0]
 
-                logger.info(posterior.prop_traces)
-                logger.info(len(posterior.prop_traces))
-                logger.info(prop_traces)
-
                 resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
                 resampling_id = resampling().item()
 
                 logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
 
                 for name, site in prop_traces.nodes.items():                    
-                    if site["type"] == "sample":
-                        logger.info(f"{name} - {site['value'].shape}")
+                    #if site["type"] == "sample":
+                    logger.info(f"{name}")
                 
                 logger.info("\n")
                 for name, site in traces.nodes.items():                    
