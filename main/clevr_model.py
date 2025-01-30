@@ -368,7 +368,7 @@ logger.addHandler(handler)
 logger.info('logging from the generated blender script!')
 
 # Set directory path
-main_path = os.path.join("nas-ctm01", "homes", "fcsilva", "ic-slotatt", "main")
+main_path = os.path.join("/nas-ctm01", "homes", "fcsilva", "ic-slotatt", "main")
 
 logger.info(main_path)
 
@@ -540,7 +540,7 @@ def _add_object(object_dir):
 
 # Sampled objects from Pyro
 
-# logger.info("adding objects to blender scene...")
+logger.info("adding objects to blender scene...")
 """
     script += """
 
