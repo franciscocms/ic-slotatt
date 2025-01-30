@@ -606,6 +606,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
             os.mkdir(os.path.join(dir_path, str(params['jobID']), "eval", f"split_{JOB_SPLIT['id']}"))
             imgs_path = os.path.join(dir_path, str(params['jobID']), "eval", f"split_{JOB_SPLIT['id']}")
 
+    logger.info(imgs_path)
 
     # delete all blender scripts
     files = glob.glob(os.path.join(imgs_path, "*.py"))
