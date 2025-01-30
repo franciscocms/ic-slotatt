@@ -173,6 +173,10 @@ def main():
                 traces = posterior.exec_traces[0]
                 log_wts = posterior.log_weights[0]
 
+                logger.info(posterior.prop_traces)
+                logger.info(len(posterior.prop_traces))
+                logger.info(prop_traces)
+
                 resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
                 resampling_id = resampling().item()
 
