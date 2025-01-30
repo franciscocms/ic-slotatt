@@ -148,7 +148,7 @@ def main():
 
         logger.info(f"subset length: {len(test_dataset)}")
         
-        n_test_samples = 0.
+        n_test_samples = 0
 
         guide.eval()
         with torch.no_grad():
