@@ -181,7 +181,7 @@ def main():
 
                 for name, site in traces.nodes.items():                    
                     if site["type"] == "sample":
-                        logger.info(f"{name}")# - {site['value'].shape} - {site['value'][resampling_id]}")
+                        logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
                     
                     if name == 'image':
                         output_image = site["fn"].mean[resampling_id]
