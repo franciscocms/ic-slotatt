@@ -365,17 +365,17 @@ formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-logger.info('logging from the generated blender script!')
+#logger.info('logging from the generated blender script!')
 
 # Set directory path
 main_path = os.path.join("/nas-ctm01", "homes", "fcsilva", "ic-slotatt", "main")
 
-logger.info(main_path)
+#logger.info(main_path)
 
 # Set images and blender files path
 imgs_path = r"{save_dir}"
 
-logger.info(imgs_path)
+#logger.info(imgs_path)
 
 # Open main file
 bpy.ops.wm.open_mainfile(filepath=os.path.join(main_path, "clevr_data", "base_scene.blend"))
@@ -540,7 +540,7 @@ def _add_object(object_dir):
 
 # Sampled objects from Pyro
 
-logger.info("adding objects to blender scene...")
+#logger.info("adding objects to blender scene...")
 """
     script += """
 
@@ -567,7 +567,7 @@ _add_object(objects[{i}])
 bpy.context.scene.render.image_settings.file_format = 'PNG'
 bpy.context.scene.render.filepath = os.path.join(imgs_path, f"rendered_scene_{idx}.png")
 
-logger.info(os.path.join(imgs_path, f"rendered_scene_{idx}.png"))
+#logger.info(os.path.join(imgs_path, f"rendered_scene_{idx}.png"))
 
 # Render the scene
 bpy.ops.render.render(write_still=True)
@@ -609,7 +609,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
             os.mkdir(os.path.join(dir_path, str(params['jobID']), "eval", f"split_{JOB_SPLIT['id']}"))
         imgs_path = os.path.join(dir_path, str(params['jobID']), "eval", f"split_{JOB_SPLIT['id']}")
 
-    logger.info(imgs_path)
+    #logger.info(imgs_path)
 
     # delete all blender scripts
     files = glob.glob(os.path.join(imgs_path, "*.py"))
@@ -630,7 +630,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     # Generate the Blender script for the sampled scene
     blender_scripts = [generate_blender_script(scene, idx, imgs_path) for idx, scene in enumerate(clevr_scenes)]
     
-    logger.info(os.listdir(imgs_path))
+    #logger.info(os.listdir(imgs_path))
 
     # Call Blender to render the scene
     #with mp.Pool(processes=mp.cpu_count()) as pool:
@@ -640,7 +640,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     for blender_script in blender_scripts:
         render_scene_in_blender(blender_script)
     
-    logger.info(os.listdir(imgs_path))
+    #logger.info(os.listdir(imgs_path))
 
     #logger.info("Scene rendered and saved...")
     img_batch = torch.stack(
