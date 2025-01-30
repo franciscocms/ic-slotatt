@@ -604,7 +604,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
         if not os.path.isdir(os.path.join(dir_path, str(params['jobID']), "eval")): os.mkdir(os.path.join(dir_path, str(params['jobID']), "eval"))
         if not os.path.isdir(os.path.join(dir_path, str(params['jobID']), "eval", f"split_{JOB_SPLIT['id']}")): 
             os.mkdir(os.path.join(dir_path, str(params['jobID']), "eval", f"split_{JOB_SPLIT['id']}"))
-            imgs_path = os.path.join(dir_path, str(params['jobID']), "eval", f"split_{JOB_SPLIT['id']}")
+        imgs_path = os.path.join(dir_path, str(params['jobID']), "eval", f"split_{JOB_SPLIT['id']}")
 
     logger.info(imgs_path)
 
