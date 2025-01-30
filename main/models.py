@@ -23,7 +23,7 @@ warnings.filterwarnings("ignore")
 import logging
 
 logger = logging.getLogger(__name__)
-device = params["device"]
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 img_transform = transforms.Compose([transforms.ToTensor()])
 
