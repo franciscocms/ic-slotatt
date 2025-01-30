@@ -116,7 +116,7 @@ def main():
         guide = InvSlotAttentionGuide(resolution = params['resolution'],
                               num_iterations = 3,
                               hid_dim = params["slot_dim"],
-                              stage="train"
+                              stage="eval"
                               ).to(device)
         
         GUIDE_PATH = os.path.join(main_dir, "inference", f"checkpoint-{params['jobID']}", f"guide_{params['guide_step']}.pth")
@@ -177,28 +177,23 @@ def main():
                 resampling_id = resampling().item()
 
                 logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
-
-                for name, site in prop_traces.nodes.items():                    
-                    #if site["type"] == "sample":
-                    logger.info(f"{name}")
                 
-                logger.info("\n")
-                for name, site in traces.nodes.items():                    
-                    if site["type"] == "sample":
-                        logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
+                # logger.info("\n")
+                # for name, site in traces.nodes.items():                    
+                #     if site["type"] == "sample":
+                #         logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
                     
-                    if name == 'image':
-                        output_image = site["fn"].mean[resampling_id]
-                        plt.imshow(visualize(output_image[:3].permute(1, 2, 0).cpu().numpy()))
-                        plt.savefig(os.path.join(plots_dir, f"trace_{idx}.png"))
-                        plt.close()
+                #     if name == 'image':
+                #         output_image = site["fn"].mean[resampling_id]
+                #         plt.imshow(visualize(output_image[:3].permute(1, 2, 0).cpu().numpy()))
+                #         plt.savefig(os.path.join(plots_dir, f"trace_{idx}.png"))
+                #         plt.close()
                             
 
                 preds = process_preds(prop_traces, resampling_id)
                 for t in threshold: ap[t] += compute_AP(preds, target, t)
                 n_test_samples += 1
 
-                break
                 #if n_test_samples == 10: break
                 
         mAP = {k: v/n_test_samples for k, v in ap.items()}

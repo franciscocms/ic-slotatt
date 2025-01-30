@@ -54,7 +54,6 @@ for p in [GUIDE_PATH]:
 logger.info(f"\n... saving model checkpoints in {GUIDE_PATH}")
 
 guide = InvSlotAttentionGuide(resolution = params['resolution'],
-                              num_slots = params['num_slots'],
                               num_iterations = 3,
                               hid_dim = params["slot_dim"],
                               stage="train")
