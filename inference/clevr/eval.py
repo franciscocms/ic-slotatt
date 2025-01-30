@@ -26,7 +26,7 @@ from guide import InvSlotAttentionGuide, visualize
 from utils.distributions import Empirical
 from eval_utils import compute_AP, transform_coords
 from utils.guide import load_trained_guide_clevr
-from main.setup import params
+from main.setup import params, JOB_SPLIT
 from dataset import CLEVRDataset
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -68,6 +68,9 @@ def process_preds(trace, id):
             if name == 'x': preds[:, 15] = site['value'][id]
             if name == 'y': preds[:, 16] = site['value'][id]
             if name == 'mask': preds[:, 17] = site['value'][id]
+    
+    assert (preds != torch.zeros(params['max_objects'], features_dim)).all()
+    
     return preds
 
 def process_targets(target_dict):   
@@ -90,11 +93,6 @@ def main():
     init_time = time.time()  
 
     assert params['batch_size'] == 1
-
-    JOB_SPLIT = {
-        'id': 3,
-        'total': 4
-        }
     
     logfile_name = f"eval_split_{JOB_SPLIT['id']}.log"
     logger = logging.getLogger("eval")

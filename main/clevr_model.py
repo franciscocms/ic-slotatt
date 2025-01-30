@@ -18,7 +18,7 @@ import time
 import glob
 
 from utils.distributions import MyBernoulli, MyNormal
-from .setup import params
+from .setup import params, JOB_SPLIT
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -345,7 +345,7 @@ def sample_clevr_scene(llh_uncertainty):
         scenes.append(objects)
     return scenes
 
-def generate_blender_script(objects, id, jobID):
+def generate_blender_script(objects, id, save_dir):
     """
     Generate a Blender Python script to render the CLEVR-like scene.
     """
@@ -371,8 +371,7 @@ logger.addHandler(handler)
 dir_path = os.path.dirname(os.path.dirname(__file__))
 
 # Set images and blender files path
-jobID = {str(jobID)}
-imgs_path = os.path.join(dir_path, str(jobID))
+imgs_path = {save_dir}
 if not os.path.isdir: os.mkdir(imgs_path)
 
 # Open main file
@@ -565,7 +564,7 @@ _add_object(objects[{i}])
 bpy.context.scene.render.image_settings.file_format = 'PNG'
 bpy.context.scene.render.filepath = os.path.join(imgs_path, f"rendered_scene_{idx}.png")
 
-logger.info(os.path.join(imgs_path, f"rendered_scene_{idx}.png"))
+# logger.info(os.path.join(imgs_path, f"rendered_scene_{idx}.png"))
 
 # Render the scene
 bpy.ops.render.render(write_still=True)
@@ -595,8 +594,18 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     if params['running_type'] == 'train': llh_uncertainty = 0.001
     elif params['running_type'] == 'eval': llh_uncertainty = 0.1
     
-    imgs_path = os.path.join(dir_path, str(params['jobID']))
-    if not os.path.isdir(imgs_path): os.mkdir(imgs_path)
+    if params['running_type'] == "train":
+        if not os.path.isdir(os.path.join(dir_path, str(params['jobID']))): os.mkdir(os.path.join(dir_path, str(params['jobID'])))
+        if not os.path.isdir(os.path.join(dir_path, str(params['jobID']), "train")): os.mkdir(os.path.join(dir_path, str(params['jobID']), "train"))
+        imgs_path = os.path.join(dir_path, str(params['jobID']), "train")
+    elif params['running_type'] == "eval":
+        assert os.path.isdir(os.path.join(dir_path, str(params['jobID'])))
+                
+        if not os.path.isdir(os.path.join(dir_path, str(params['jobID']), "eval")): os.mkdir(os.path.join(dir_path, str(params['jobID']), "eval"))
+        if not os.path.isdir(os.path.join(dir_path, str(params['jobID']), "eval", f"split_{JOB_SPLIT['id']}")): 
+            os.mkdir(os.path.join(dir_path, str(params['jobID']), "eval", f"split_{JOB_SPLIT['id']}"))
+            imgs_path = os.path.join(dir_path, str(params['jobID']), "eval", f"split_{JOB_SPLIT['id']}")
+
 
     # delete all blender scripts
     files = glob.glob(os.path.join(imgs_path, "*.py"))
@@ -615,7 +624,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     B = params['batch_size'] if params["running_type"] == "train" else params['num_inference_samples']
 
     # Generate the Blender script for the sampled scene
-    blender_scripts = [generate_blender_script(scene, idx, str(params['jobID'])) for idx, scene in enumerate(clevr_scenes)]
+    blender_scripts = [generate_blender_script(scene, idx, imgs_path) for idx, scene in enumerate(clevr_scenes)]
     
     #logger.info("started rendering...")
 

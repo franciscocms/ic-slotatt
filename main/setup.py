@@ -48,6 +48,12 @@ params = {
     "plots_dir": f'{main_dir}/plots'
 }
 
+# set job split settings for inference
+JOB_SPLIT = {
+            'id': 1,
+            'total': 4
+            }
+
 if not os.path.isdir(params['plots_dir']): os.mkdir(params['plots_dir'])
 
 if params['dataset'] == 'clevr': 
@@ -55,15 +61,4 @@ if params['dataset'] == 'clevr':
 
 params["no_slots"] = "w_background" if params["infer_background"] else "wo_background"
 
-if params['running_type'] == 'train': params["device"] = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-else: params['device'] = torch.device('cpu')
-
 if params["check_attn"]: params["check_attn_folder"] = f"{main_dir}/check_imgs_{params['jobID']}"
-#if params["running_type"] == "debug": params["logfile_name"] = "debug.log"
-#elif params["running_type"] == "inspect": 
-#    params["logfile_name"] = "inspect.log"
-#    params["inspect_img_path"] = f"inspect/inspect-imgs-{params['jobID']}-{params['guide_step']}"
-#elif params["running_type"] == "train": params["logfile_name"] = f"log-{params['jobID']}.log"
-#elif params["running_type"] == "eval": params["logfile_name"] = "eval.log"
-
-#else: raise ValueError(f"Unknown running type {params['running_type']}")
