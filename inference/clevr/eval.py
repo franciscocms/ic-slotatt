@@ -114,7 +114,6 @@ def main():
         
         model = clevr_gen_model
         guide = InvSlotAttentionGuide(resolution = params['resolution'],
-                              num_slots = params['num_slots'],
                               num_iterations = 3,
                               hid_dim = params["slot_dim"],
                               stage="train"
