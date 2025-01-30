@@ -10,6 +10,7 @@ main_dir = os.path.abspath(__file__+'/../../')
 # jobID 91 will train for 6< objects CLEVR scenes with new loss
 
 params = {
+    "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
     "dataset": "clevr", # 'clevr' or '2Dobjects'
     "resolution": (128, 128),
     "num_slots": 6,
