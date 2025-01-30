@@ -627,7 +627,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     # Generate the Blender script for the sampled scene
     blender_scripts = [generate_blender_script(scene, idx, imgs_path) for idx, scene in enumerate(clevr_scenes)]
     
-    #logger.info("started rendering...")
+    logger.info(os.listdir(imgs_path))
 
     # Call Blender to render the scene
     #with mp.Pool(processes=mp.cpu_count()) as pool:
