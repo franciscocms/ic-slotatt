@@ -345,7 +345,7 @@ def sample_clevr_scene(llh_uncertainty):
         scenes.append(objects)
     return scenes
 
-def generate_blender_script(scenes, save_dir):
+def generate_blender_script(objects, id, save_dir):
     """
     Generate a Blender Python script to render the CLEVR-like scene.
     """
@@ -365,6 +365,45 @@ formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+#logger.info('logging from the generated blender script!')
+
+# Set directory path
+main_path = os.path.join("/nas-ctm01", "homes", "fcsilva", "ic-slotatt", "main")
+
+#logger.info(main_path)
+
+# Set images and blender files path
+imgs_path = r"{save_dir}"
+
+#logger.info(imgs_path)
+
+# Open main file
+bpy.ops.wm.open_mainfile(filepath=os.path.join(main_path, "clevr_data", "base_scene.blend"))
+
+# Set render arguments so we can get pixel coordinates later.
+# We use functionality specific to the CYCLES renderer so BLENDER_RENDER
+# cannot be used.
+render_args = bpy.context.scene.render
+render_args.engine = "CYCLES"
+render_args.resolution_x = 320
+render_args.resolution_y = 240
+render_args.resolution_percentage = 100
+
+# Some CYCLES-specific stuff
+bpy.data.worlds['World'].cycles.sample_as_light = True
+bpy.context.scene.cycles.blur_glossy = 2.0
+bpy.context.scene.cycles.samples = 64
+bpy.context.scene.cycles.transparent_min_bounces = 4
+bpy.context.scene.cycles.transparent_max_bounces = 4
+bpy.context.scene.cycles.device = 'GPU'
+bpy.context.preferences.addons['cycles'].preferences.compute_device_type = 'CUDA'
+
+bpy.context.preferences.addons['cycles'].preferences.get_devices()
+devices = bpy.context.preferences.addons['cycles'].preferences.devices
+for device in devices:
+    device.use = True
+
+# Load materials
 def load_materials(material_dir):
     # Load materials from a directory. We assume that the directory contains .blend
     # files with one material each. The file X.blend has a single NodeTree item named
@@ -382,6 +421,39 @@ def load_materials(material_dir):
                 name = available_materials[0]
                 data_to.materials.append(name)
         appended_material = bpy.data.materials.get(name)
+
+load_materials(os.path.join(main_path, "clevr_data", "materials"))
+
+# Put a plane on the ground so we can compute cardinal directions
+bpy.ops.mesh.primitive_plane_add(size=5)
+plane = bpy.context.object
+
+def rand(L):
+    return 2.0 * L * (random.random() - 0.5)
+
+for i in range(3):
+    bpy.data.objects['Camera'].location[i] += rand(0.5)
+
+# Figure out the left, up, and behind directions along the plane and record
+# them in the scene structure
+camera = bpy.data.objects['Camera']
+plane_normal = plane.data.vertices[0].normal
+cam_behind = camera.matrix_world.to_quaternion() @ Vector((0, 0, -1))
+cam_left = camera.matrix_world.to_quaternion() @ Vector((-1, 0, 0))
+cam_up = camera.matrix_world.to_quaternion() @ Vector((0, 1, 0))
+plane_behind = (cam_behind - cam_behind.project(plane_normal)).normalized()
+plane_left = (cam_left - cam_left.project(plane_normal)).normalized()
+plane_up = cam_up.project(plane_normal).normalized()
+
+# Delete the plane; we only used it for normals anyway. The base scene file
+# contains the actual ground plane.
+# utils.delete_object(plane)
+
+# Add random jitter to lamp positions
+for i in range(3):
+    bpy.data.objects['Lamp_Key'].location[i] += rand(1.0)
+    bpy.data.objects['Lamp_Back'].location[i] += rand(1.0)
+    bpy.data.objects['Lamp_Fill'].location[i] += rand(1.0)
 
 def add_material(name, **properties):
   
@@ -465,115 +537,44 @@ def _add_object(object_dir):
     # Add material for the object
     add_material(object_dir['material'], Color=object_dir['rgba'])
 
-def rand(L):
-    return 2.0 * L * (random.random() - 0.5)
-
-# Set directory path
-main_path = os.path.join("/nas-ctm01", "homes", "fcsilva", "ic-slotatt", "main")
-
-# Set images and blender files path
-imgs_path = r"{save_dir}"
-
-logger.info(imgs_path)
-
-def scene_setup():
-
-    # Open main file
-    bpy.ops.wm.open_mainfile(filepath=os.path.join(main_path, "clevr_data", "base_scene.blend"))
-
-    # Set render arguments so we can get pixel coordinates later.
-    # We use functionality specific to the CYCLES renderer so BLENDER_RENDER
-    # cannot be used.
-    render_args = bpy.context.scene.render
-    render_args.engine = "CYCLES"
-    render_args.resolution_x = 320
-    render_args.resolution_y = 240
-    render_args.resolution_percentage = 100
-
-    # Some CYCLES-specific stuff
-    bpy.data.worlds['World'].cycles.sample_as_light = True
-    bpy.context.scene.cycles.blur_glossy = 2.0
-    bpy.context.scene.cycles.samples = 64
-    bpy.context.scene.cycles.transparent_min_bounces = 4
-    bpy.context.scene.cycles.transparent_max_bounces = 4
-    bpy.context.scene.cycles.device = 'GPU'
-    bpy.context.preferences.addons['cycles'].preferences.compute_device_type = 'CUDA'
-
-    bpy.context.preferences.addons['cycles'].preferences.get_devices()
-    devices = bpy.context.preferences.addons['cycles'].preferences.devices
-    for device in devices:
-        device.use = True
-
-    # Put a plane on the ground so we can compute cardinal directions
-    bpy.ops.mesh.primitive_plane_add(size=5)
-    plane = bpy.context.object
-
-    logger.info('basic scene setup was done...')
-
-    for i in range(3):
-        bpy.data.objects['Camera'].location[i] += rand(0.5)
-
-    # Add random jitter to lamp positions
-    for i in range(3):
-        bpy.data.objects['Lamp_Key'].location[i] += rand(1.0)
-        bpy.data.objects['Lamp_Back'].location[i] += rand(1.0)
-        bpy.data.objects['Lamp_Fill'].location[i] += rand(1.0)
-    
-    # Figure out the left, up, and behind directions along the plane and record
-    # them in the scene structure
-    camera = bpy.data.objects['Camera']
-    plane_normal = plane.data.vertices[0].normal
-    cam_behind = camera.matrix_world.to_quaternion() @ Vector((0, 0, -1))
-    cam_left = camera.matrix_world.to_quaternion() @ Vector((-1, 0, 0))
-    cam_up = camera.matrix_world.to_quaternion() @ Vector((0, 1, 0))
-    plane_behind = (cam_behind - cam_behind.project(plane_normal)).normalized()
-    plane_left = (cam_left - cam_left.project(plane_normal)).normalized()
-    plane_up = cam_up.project(plane_normal).normalized()
-
-
-# Load materials
-load_materials(os.path.join(main_path, "clevr_data", "materials"))
-
 
 # Sampled objects from Pyro
 
-# Set render settings
-bpy.context.scene.render.image_settings.file_format = 'PNG'
+#logger.info("adding objects to blender scene...")
+"""
+    script += """
 
-
-scenes = {scenes}
-for idx, scene in enumerate(scenes):
+objects = {}
+"""
     
-    logger.info("scene {{idx}}")
+    script += f"""
+
+# Pass the index of the batched sample
+idx = {id}
+"""
     
-    scene_setup()
-
-    logger.info("scene setup")
-
-    bpy.context.scene.render.filepath = os.path.join(imgs_path, f"rendered_scene_{{idx}}.png")
-    for i, obj in enumerate(scene):
-        _add_object(obj)
-
-# Render the scene   
-bpy.ops.render.render(write_still=True)
-
-
-
-
-logger.info("scene {{idx}} rendered!")
-
-for obj in bpy.data.objects:
-    for names in ['Sphere', 'SmoothCube_v2', 'SmoothCylinder']:
-        if obj.name.startswith(names)
-            bpy.data.objects.remove(obj, do_unlink=True)
-
+    # Insert the sampled objects
+    for i, obj in enumerate(objects):
+        script += f"""
+objects[{i}] = {obj}
+_add_object(objects[{i}])
 
 """
-
     
+    script += """
+
+# Set render settings
+bpy.context.scene.render.image_settings.file_format = 'PNG'
+bpy.context.scene.render.filepath = os.path.join(imgs_path, f"rendered_scene_{idx}.png")
+
+#logger.info(os.path.join(imgs_path, f"rendered_scene_{idx}.png"))
+
+# Render the scene
+bpy.ops.render.render(write_still=True)
+    """
     
     # Write the Blender script to a file
-    script_file = os.path.join(save_dir, f"generate_clevr_scenes.py")
+    script_file = os.path.join(save_dir, f"generate_clevr_scene_{id}.py")
     with open(script_file, "w") as f:
         f.write(script)
     
@@ -588,7 +589,8 @@ def render_scene_in_blender(blender_script):
     blender_path = "/usr/bin/blender"  # Update this with your Blender path
     cmd = [blender_path, "--background", "--python", blender_script, "-d"]
 
-    subprocess.call(cmd)
+    with open(debug_log, "w") as log_file:
+        subprocess.call(cmd, stdout=log_file, stderr=log_file)
 
 def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
@@ -626,7 +628,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     B = params['batch_size'] if params["running_type"] == "train" else params['num_inference_samples']
 
     # Generate the Blender script for the sampled scene
-    blender_script = generate_blender_script(clevr_scenes, imgs_path)
+    blender_scripts = [generate_blender_script(scene, idx, imgs_path) for idx, scene in enumerate(clevr_scenes)]
     
     #logger.info(os.listdir(imgs_path))
 
@@ -635,8 +637,8 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     # with mp.Pool(processes=10) as pool:
     #   pool.map(render_scene_in_blender, blender_scripts)
 
-    #for blender_script in blender_scripts:
-    render_scene_in_blender(blender_script)
+    for blender_script in blender_scripts:
+        render_scene_in_blender(blender_script)
     
     #logger.info(os.listdir(imgs_path))
 
