@@ -383,7 +383,6 @@ def load_materials(material_dir):
                 data_to.materials.append(name)
         appended_material = bpy.data.materials.get(name)
 
-        
 def add_material(name, **properties):
   
     # Figure out how many materials are already in the scene
@@ -477,40 +476,42 @@ imgs_path = r"{save_dir}"
 
 logger.info(imgs_path)
 
-# Open main file
-bpy.ops.wm.open_mainfile(filepath=os.path.join(main_path, "clevr_data", "base_scene.blend"))
 
-# Set render arguments so we can get pixel coordinates later.
-# We use functionality specific to the CYCLES renderer so BLENDER_RENDER
-# cannot be used.
-render_args = bpy.context.scene.render
-render_args.engine = "CYCLES"
-render_args.resolution_x = 320
-render_args.resolution_y = 240
-render_args.resolution_percentage = 100
-
-# Some CYCLES-specific stuff
-bpy.data.worlds['World'].cycles.sample_as_light = True
-bpy.context.scene.cycles.blur_glossy = 2.0
-bpy.context.scene.cycles.samples = 64
-bpy.context.scene.cycles.transparent_min_bounces = 4
-bpy.context.scene.cycles.transparent_max_bounces = 4
-bpy.context.scene.cycles.device = 'GPU'
-bpy.context.preferences.addons['cycles'].preferences.compute_device_type = 'CUDA'
-
-bpy.context.preferences.addons['cycles'].preferences.get_devices()
-devices = bpy.context.preferences.addons['cycles'].preferences.devices
-for device in devices:
-    device.use = True
-
-# Put a plane on the ground so we can compute cardinal directions
-bpy.ops.mesh.primitive_plane_add(size=5)
-plane = bpy.context.object
-
-logger.info('basic scene setup was done...')
 
 
 def scene_setup():
+
+    # Open main file
+    bpy.ops.wm.open_mainfile(filepath=os.path.join(main_path, "clevr_data", "base_scene.blend"))
+
+    # Set render arguments so we can get pixel coordinates later.
+    # We use functionality specific to the CYCLES renderer so BLENDER_RENDER
+    # cannot be used.
+    render_args = bpy.context.scene.render
+    render_args.engine = "CYCLES"
+    render_args.resolution_x = 320
+    render_args.resolution_y = 240
+    render_args.resolution_percentage = 100
+
+    # Some CYCLES-specific stuff
+    bpy.data.worlds['World'].cycles.sample_as_light = True
+    bpy.context.scene.cycles.blur_glossy = 2.0
+    bpy.context.scene.cycles.samples = 64
+    bpy.context.scene.cycles.transparent_min_bounces = 4
+    bpy.context.scene.cycles.transparent_max_bounces = 4
+    bpy.context.scene.cycles.device = 'GPU'
+    bpy.context.preferences.addons['cycles'].preferences.compute_device_type = 'CUDA'
+
+    bpy.context.preferences.addons['cycles'].preferences.get_devices()
+    devices = bpy.context.preferences.addons['cycles'].preferences.devices
+    for device in devices:
+        device.use = True
+
+    # Put a plane on the ground so we can compute cardinal directions
+    bpy.ops.mesh.primitive_plane_add(size=5)
+    plane = bpy.context.object
+
+    logger.info('basic scene setup was done...')
 
     for i in range(3):
         bpy.data.objects['Camera'].location[i] += rand(0.5)
@@ -520,22 +521,21 @@ def scene_setup():
         bpy.data.objects['Lamp_Key'].location[i] += rand(1.0)
         bpy.data.objects['Lamp_Back'].location[i] += rand(1.0)
         bpy.data.objects['Lamp_Fill'].location[i] += rand(1.0)
+    
+    # Figure out the left, up, and behind directions along the plane and record
+    # them in the scene structure
+    camera = bpy.data.objects['Camera']
+    plane_normal = plane.data.vertices[0].normal
+    cam_behind = camera.matrix_world.to_quaternion() @ Vector((0, 0, -1))
+    cam_left = camera.matrix_world.to_quaternion() @ Vector((-1, 0, 0))
+    cam_up = camera.matrix_world.to_quaternion() @ Vector((0, 1, 0))
+    plane_behind = (cam_behind - cam_behind.project(plane_normal)).normalized()
+    plane_left = (cam_left - cam_left.project(plane_normal)).normalized()
+    plane_up = cam_up.project(plane_normal).normalized()
 
 
 # Load materials
 load_materials(os.path.join(main_path, "clevr_data", "materials"))
-
-# Figure out the left, up, and behind directions along the plane and record
-# them in the scene structure
-# camera = bpy.data.objects['Camera']
-# plane_normal = plane.data.vertices[0].normal
-# cam_behind = camera.matrix_world.to_quaternion() @ Vector((0, 0, -1))
-# cam_left = camera.matrix_world.to_quaternion() @ Vector((-1, 0, 0))
-# cam_up = camera.matrix_world.to_quaternion() @ Vector((0, 1, 0))
-# plane_behind = (cam_behind - cam_behind.project(plane_normal)).normalized()
-# plane_left = (cam_left - cam_left.project(plane_normal)).normalized()
-# plane_up = cam_up.project(plane_normal).normalized()
-
 
 
 # Sampled objects from Pyro
@@ -551,7 +551,9 @@ bpy.context.scene.render.image_settings.file_format = 'PNG'
 
 logger.info("scene {idx}")
 
-scene_setup()
+
+
+
 bpy.context.scene.render.filepath = os.path.join(imgs_path, f"rendered_scene_{idx}.png")
 """
         script += """
@@ -566,8 +568,7 @@ _add_object(objects[{i}])
 bpy.ops.render.render(write_still=True)
 
 for obj in bpy.data.objects:
-    logger.info(obj)
-    logger.info(obj.name)
+    if obj.name.split('_')[0] in ['Sphere', 'SmoothCube_v2', 'SmoothCylinder']
     bpy.data.objects.remove(obj, do_unlink=True)
 
 
