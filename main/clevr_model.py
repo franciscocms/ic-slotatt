@@ -475,6 +475,8 @@ main_path = os.path.join("/nas-ctm01", "homes", "fcsilva", "ic-slotatt", "main")
 # Set images and blender files path
 imgs_path = r"{save_dir}"
 
+logger.info(imgs_path)
+
 # Open main file
 bpy.ops.wm.open_mainfile(filepath=os.path.join(main_path, "clevr_data", "base_scene.blend"))
 
@@ -505,11 +507,13 @@ for device in devices:
 bpy.ops.mesh.primitive_plane_add(size=5)
 plane = bpy.context.object
 
+logger.info('basic scene setup was done...')
+
 
 def scene_setup():
 
     for i in range(3):
-    bpy.data.objects['Camera'].location[i] += rand(0.5)
+        bpy.data.objects['Camera'].location[i] += rand(0.5)
 
     # Add random jitter to lamp positions
     for i in range(3):
