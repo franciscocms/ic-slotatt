@@ -564,12 +564,17 @@ objects = {}
 objects[{i}] = {obj}
 _add_object(objects[{i}])
 
+logger.info("object {i} added!")
+
 # Render the scene
 bpy.ops.render.render(write_still=True)
 
+logger.info("scene {idx} rendered!")
+
 for obj in bpy.data.objects:
-    if obj.name.split('_')[0] in ['Sphere', 'SmoothCube_v2', 'SmoothCylinder']:
-        bpy.data.objects.remove(obj, do_unlink=True)
+    for names in ['Sphere', 'SmoothCube_v2', 'SmoothCylinder']:
+        if obj.name.startswith(names)
+            bpy.data.objects.remove(obj, do_unlink=True)
 
 
 """
