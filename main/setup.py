@@ -28,17 +28,17 @@ params = {
     "pos_from_attn" : "attn-masks", # "attn-masks" if computing locations from slot attention masks (alternative: "dme" from the estimated density maps)
     "training_from_scratch" : True,
     "lr" : 4e-4, 
-    "batch_size" : 1, # 64
+    "batch_size" : 64, # 64
     "training_iters": 10000, # 10k
     "step_size": 50,
-    "running_type": "eval", # train, debug, eval, inspect
+    "running_type": "train", # train, debug, eval, inspect
     "slot_dim" : 64,
     "infer_background": False,
     "slotatt_recurrence": True,
     "softmax_temperature": 1.0,
     "strided_convs": True,
     "check_attn": True,
-    "jobID": 88, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects
+    "jobID": 90, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects
     "mesh_iters": 4,
     "mesh_lr": 5, # 76: 3, 77: 5
     "logprob_coeff": 1.,
