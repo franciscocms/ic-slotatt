@@ -345,7 +345,7 @@ def sample_clevr_scene(llh_uncertainty):
         scenes.append(objects)
     return scenes
 
-def generate_blender_script(objects, id, save_dir):
+def generate_blender_script(scenes, id, save_dir):
     """
     Generate a Blender Python script to render the CLEVR-like scene.
     """
@@ -392,9 +392,9 @@ render_args.resolution_percentage = 100
 # Some CYCLES-specific stuff
 bpy.data.worlds['World'].cycles.sample_as_light = True
 bpy.context.scene.cycles.blur_glossy = 2.0
-bpy.context.scene.cycles.samples = 128
-bpy.context.scene.cycles.transparent_min_bounces = 8
-bpy.context.scene.cycles.transparent_max_bounces = 8
+bpy.context.scene.cycles.samples = 64
+bpy.context.scene.cycles.transparent_min_bounces = 4
+bpy.context.scene.cycles.transparent_max_bounces = 4
 bpy.context.scene.cycles.device = 'GPU'
 bpy.context.preferences.addons['cycles'].preferences.compute_device_type = 'CUDA'
 
@@ -540,41 +540,38 @@ def _add_object(object_dir):
 
 # Sampled objects from Pyro
 
-#logger.info("adding objects to blender scene...")
-"""
-    script += """
+# Set render settings
+bpy.context.scene.render.image_settings.file_format = 'PNG'
 
+"""
+
+    for idx, scene in enumerate(scenes):
+
+        script += f""" 
+bpy.context.scene.render.filepath = os.path.join(imgs_path, f"rendered_scene_{idx}.png")
+"""
+        script += """
 objects = {}
 """
-    
-    script += f"""
-
-# Pass the index of the batched sample
-idx = {id}
-"""
-    
-    # Insert the sampled objects
-    for i, obj in enumerate(objects):
-        script += f"""
+        for i, obj in enumerate(scene):
+            script += f"""
 objects[{i}] = {obj}
 _add_object(objects[{i}])
 
-"""
-    
-    script += """
-
-# Set render settings
-bpy.context.scene.render.image_settings.file_format = 'PNG'
-bpy.context.scene.render.filepath = os.path.join(imgs_path, f"rendered_scene_{idx}.png")
-
-#logger.info(os.path.join(imgs_path, f"rendered_scene_{idx}.png"))
-
 # Render the scene
 bpy.ops.render.render(write_still=True)
-    """
+
+for obj in bpy.data.objects:
+    if obj.type not in {'CAMERA', 'LIGHT'}:
+        bpy.data.objects.remove(obj, do_unlink=True)
+
+
+"""
+
+    
     
     # Write the Blender script to a file
-    script_file = os.path.join(save_dir, f"generate_clevr_scene_{id}.py")
+    script_file = os.path.join(save_dir, f"generate_clevr_scenes.py")
     with open(script_file, "w") as f:
         f.write(script)
     
@@ -639,6 +636,14 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     for blender_script in blender_scripts:
         render_scene_in_blender(blender_script)
+    
+    
+    
+    
+    
+    
+    
+    
     
     #logger.info(os.listdir(imgs_path))
 
