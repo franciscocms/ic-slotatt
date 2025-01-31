@@ -568,8 +568,8 @@ _add_object(objects[{i}])
 bpy.ops.render.render(write_still=True)
 
 for obj in bpy.data.objects:
-    if obj.name.split('_')[0] in ['Sphere', 'SmoothCube_v2', 'SmoothCylinder']
-    bpy.data.objects.remove(obj, do_unlink=True)
+    if obj.name.split('_')[0] in ['Sphere', 'SmoothCube_v2', 'SmoothCylinder']:
+        bpy.data.objects.remove(obj, do_unlink=True)
 
 
 """
