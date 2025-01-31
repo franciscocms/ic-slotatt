@@ -23,7 +23,7 @@ import warnings
 
 torch.autograd.set_detect_anomaly(True)
 
-logger = logging.getLogger("eval")
+logger = logging.getLogger(params["running_type"])
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def visualize(x):
