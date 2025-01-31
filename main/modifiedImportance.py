@@ -289,13 +289,17 @@ class Importance(TracePosterior):
             log_p_sum += log_p
 
         guide_lps = torch.zeros(self.num_samples)
+        mask = None
         for name, site in guide_trace.nodes.items():
             if site["type"] == "sample":
                 logger.info(f"{name} - {site}")
 
                 if name == "mask":
                     guide_lps += torch.sum(site['fn'].log_prob(site['value']), dim=-1)
+                    mask = site['value']
                 else:
+                    assert mask != None
+                    site['mask'] = mask
                     guide_lps += torch.sum(site['mask'] * site['fn'].log_prob(site['value']), dim=-1)
         
         logger.info(f'model log weight: {log_p_sum}')
