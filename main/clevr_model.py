@@ -562,7 +562,7 @@ _add_object(objects[{i}])
 bpy.ops.render.render(write_still=True)
 
 for obj in bpy.data.objects:
-    if obj.type not in {'CAMERA', 'LIGHT'}:
+    if obj.type not in ['Camera', 'Lamp_Key', 'Lamp_Back', 'Lamp_Fill']:
         bpy.data.objects.remove(obj, do_unlink=True)
 
 
