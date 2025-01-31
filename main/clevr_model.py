@@ -475,38 +475,38 @@ main_path = os.path.join("/nas-ctm01", "homes", "fcsilva", "ic-slotatt", "main")
 # Set images and blender files path
 imgs_path = r"{save_dir}"
 
+# Open main file
+bpy.ops.wm.open_mainfile(filepath=os.path.join(main_path, "clevr_data", "base_scene.blend"))
+
+# Set render arguments so we can get pixel coordinates later.
+# We use functionality specific to the CYCLES renderer so BLENDER_RENDER
+# cannot be used.
+render_args = bpy.context.scene.render
+render_args.engine = "CYCLES"
+render_args.resolution_x = 320
+render_args.resolution_y = 240
+render_args.resolution_percentage = 100
+
+# Some CYCLES-specific stuff
+bpy.data.worlds['World'].cycles.sample_as_light = True
+bpy.context.scene.cycles.blur_glossy = 2.0
+bpy.context.scene.cycles.samples = 64
+bpy.context.scene.cycles.transparent_min_bounces = 4
+bpy.context.scene.cycles.transparent_max_bounces = 4
+bpy.context.scene.cycles.device = 'GPU'
+bpy.context.preferences.addons['cycles'].preferences.compute_device_type = 'CUDA'
+
+bpy.context.preferences.addons['cycles'].preferences.get_devices()
+devices = bpy.context.preferences.addons['cycles'].preferences.devices
+for device in devices:
+    device.use = True
+
+# Put a plane on the ground so we can compute cardinal directions
+bpy.ops.mesh.primitive_plane_add(size=5)
+plane = bpy.context.object
+
 
 def scene_setup():
-
-    # Open main file
-    bpy.ops.wm.open_mainfile(filepath=os.path.join(main_path, "clevr_data", "base_scene.blend"))
-
-    # Set render arguments so we can get pixel coordinates later.
-    # We use functionality specific to the CYCLES renderer so BLENDER_RENDER
-    # cannot be used.
-    render_args = bpy.context.scene.render
-    render_args.engine = "CYCLES"
-    render_args.resolution_x = 320
-    render_args.resolution_y = 240
-    render_args.resolution_percentage = 100
-
-    # Some CYCLES-specific stuff
-    bpy.data.worlds['World'].cycles.sample_as_light = True
-    bpy.context.scene.cycles.blur_glossy = 2.0
-    bpy.context.scene.cycles.samples = 64
-    bpy.context.scene.cycles.transparent_min_bounces = 4
-    bpy.context.scene.cycles.transparent_max_bounces = 4
-    bpy.context.scene.cycles.device = 'GPU'
-    bpy.context.preferences.addons['cycles'].preferences.compute_device_type = 'CUDA'
-
-    bpy.context.preferences.addons['cycles'].preferences.get_devices()
-    devices = bpy.context.preferences.addons['cycles'].preferences.devices
-    for device in devices:
-        device.use = True
-    
-    # Put a plane on the ground so we can compute cardinal directions
-    bpy.ops.mesh.primitive_plane_add(size=5)
-    plane = bpy.context.object
 
     for i in range(3):
     bpy.data.objects['Camera'].location[i] += rand(0.5)
@@ -517,7 +517,6 @@ def scene_setup():
         bpy.data.objects['Lamp_Back'].location[i] += rand(1.0)
         bpy.data.objects['Lamp_Fill'].location[i] += rand(1.0)
 
-        
 
 # Load materials
 load_materials(os.path.join(main_path, "clevr_data", "materials"))
@@ -561,6 +560,7 @@ _add_object(objects[{i}])
 bpy.ops.render.render(write_still=True)
 
 for obj in bpy.data.objects:
+    logger.info(obj)
     bpy.data.objects.remove(obj, do_unlink=True)
 
 
