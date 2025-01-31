@@ -567,6 +567,7 @@ bpy.ops.render.render(write_still=True)
 
 for obj in bpy.data.objects:
     logger.info(obj)
+    logger.info(obj.type)
     bpy.data.objects.remove(obj, do_unlink=True)
 
 
