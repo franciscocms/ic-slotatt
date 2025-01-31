@@ -345,7 +345,7 @@ def sample_clevr_scene(llh_uncertainty):
         scenes.append(objects)
     return scenes
 
-def generate_blender_script(scenes, id, save_dir):
+def generate_blender_script(scenes, save_dir):
     """
     Generate a Blender Python script to render the CLEVR-like scene.
     """
@@ -625,7 +625,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     B = params['batch_size'] if params["running_type"] == "train" else params['num_inference_samples']
 
     # Generate the Blender script for the sampled scene
-    blender_scripts = [generate_blender_script(scene, idx, imgs_path) for idx, scene in enumerate(clevr_scenes)]
+    blender_script = generate_blender_script(clevr_scenes, imgs_path)
     
     #logger.info(os.listdir(imgs_path))
 
@@ -634,8 +634,8 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     # with mp.Pool(processes=10) as pool:
     #   pool.map(render_scene_in_blender, blender_scripts)
 
-    for blender_script in blender_scripts:
-        render_scene_in_blender(blender_script)
+    #for blender_script in blender_scripts:
+    render_scene_in_blender(blender_script)
     
     
     
