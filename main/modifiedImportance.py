@@ -287,17 +287,8 @@ class Importance(TracePosterior):
                     log_p = log_p / (img_dim**2)
             
             log_p_sum += log_p
-        
-        guide_lps = torch.zeros(self.num_samples)
-        for name, site in guide_trace.nodes.items():
-            if site['type'] == 'sample':
-                guide_lps += site['fn'].log_prob(site['value'])
-
-
-
-
-
-        log_weight = list(log_p_sum - guide_lps)
+    
+        log_weight = list(log_p_sum)
 
         yield (model_trace, guide_trace, log_weight)
 
