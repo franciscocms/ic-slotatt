@@ -156,12 +156,14 @@ def main():
                 img = img.to(device)
                 target = process_targets(target_dict)
 
-                # plt.imshow(visualize(img.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
-                # plt.savefig(os.path.join(plots_dir, f"image_{idx}.png"))
-                # plt.close()
-
                 logger.info(f"\ntarget image index: {target_dict['image_index']} - {n_test_samples}/{len(test_dataset)}")
                 logger.info(f"# of objects: {len(target_dict['objects'])}")
+
+                plt.imshow(visualize(img.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
+                plt.savefig(os.path.join(plots_dir, f"image_{target_dict['image_index']}.png"))
+                plt.close()
+
+                
 
                 # log_weights, model_trace, guide_trace = vectorized_importance_weights(model, guide, observations={"image": img},
                 #                                                                       num_samples=params['num_inference_samples'],
@@ -179,15 +181,16 @@ def main():
                 logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
                 
                 # logger.info("\n")
-                # for name, site in traces.nodes.items():                    
-                #     if site["type"] == "sample":
-                #         logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
+                for name, site in traces.nodes.items():                    
+                    # if site["type"] == "sample":
+                    #     logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
                     
-                #     if name == 'image':
-                #         output_image = site["fn"].mean[resampling_id]
-                #         plt.imshow(visualize(output_image[:3].permute(1, 2, 0).cpu().numpy()))
-                #         plt.savefig(os.path.join(plots_dir, f"trace_{idx}.png"))
-                #         plt.close()
+                    if name == 'image':
+                        for i in range(site["fn"].mean.shape[0]):
+                            output_image = site["fn"].mean[i]
+                            plt.imshow(visualize(output_image[:3].permute(1, 2, 0).cpu().numpy()))
+                            plt.savefig(os.path.join(plots_dir, f"trace_{target_dict['image_index']}_{i}.png"))
+                            plt.close()
                             
 
                 preds = process_preds(prop_traces, resampling_id)
