@@ -155,12 +155,13 @@ def main():
             for idx, (img, target_dict) in enumerate(testloader):
                 img = img.to(device)
                 target = process_targets(target_dict)
+                img_index = target_dict['image_index'].item()
 
-                logger.info(f"\ntarget image index: {target_dict['image_index']} - {n_test_samples}/{len(test_dataset)}")
+                logger.info(f"\ntarget image index: {img_index} - {n_test_samples}/{len(test_dataset)}")
                 logger.info(f"# of objects: {len(target_dict['objects'])}")
 
                 plt.imshow(visualize(img.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
-                plt.savefig(os.path.join(plots_dir, f"image_{target_dict['image_index']}.png"))
+                plt.savefig(os.path.join(plots_dir, f"image_{img_index}.png"))
                 plt.close()
 
                 
@@ -189,7 +190,7 @@ def main():
                         for i in range(site["fn"].mean.shape[0]):
                             output_image = site["fn"].mean[i]
                             plt.imshow(visualize(output_image[:3].permute(1, 2, 0).cpu().numpy()))
-                            plt.savefig(os.path.join(plots_dir, f"trace_{target_dict['image_index']}_{i}.png"))
+                            plt.savefig(os.path.join(plots_dir, f"trace_{img_index}_{i}.png"))
                             plt.close()
                             
 

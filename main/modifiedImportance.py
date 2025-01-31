@@ -288,6 +288,11 @@ class Importance(TracePosterior):
             
             log_p_sum += log_p
     
+        for name, site in guide_trace.nodes.items():
+            if site["type"] == "sample":
+                logger.info(f"{name} - {site['fn'].log_prob(site['value']).shape} - {site['fn'].log_prob(site['value'])}")
+
+
         log_weight = list(log_p_sum)
 
         yield (model_trace, guide_trace, log_weight)
