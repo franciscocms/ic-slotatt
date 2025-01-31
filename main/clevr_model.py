@@ -588,8 +588,7 @@ def render_scene_in_blender(blender_script):
     blender_path = "/usr/bin/blender"  # Update this with your Blender path
     cmd = [blender_path, "--background", "--python", blender_script, "-d"]
 
-    with open(debug_log, "w") as log_file:
-        subprocess.call(cmd, stdout=log_file, stderr=log_file)
+    subprocess.call(cmd)
 
 def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
