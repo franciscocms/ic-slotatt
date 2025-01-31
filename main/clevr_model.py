@@ -543,33 +543,20 @@ load_materials(os.path.join(main_path, "clevr_data", "materials"))
 # Set render settings
 bpy.context.scene.render.image_settings.file_format = 'PNG'
 
-"""
 
-    for idx, scene in enumerate(scenes):
+for idx, scene in enumerate({scenes}):
+    logger.info("scene {{idx}}")
+    bpy.context.scene.render.filepath = os.path.join(imgs_path, f"rendered_scene_{{idx}}.png")
+    for i, obj in enumerate(scene):
+        _add_object(obj)
 
-        script += f""" 
-
-logger.info("scene {idx}")
-
-
-
-
-bpy.context.scene.render.filepath = os.path.join(imgs_path, f"rendered_scene_{idx}.png")
-"""
-        script += """
-objects = {}
-"""
-        for i, obj in enumerate(scene):
-            script += f"""
-objects[{i}] = {obj}
-_add_object(objects[{i}])
-
-logger.info("object {i} added!")
-
-# Render the scene
+# Render the scene   
 bpy.ops.render.render(write_still=True)
 
-logger.info("scene {idx} rendered!")
+
+
+
+logger.info("scene {{idx}} rendered!")
 
 for obj in bpy.data.objects:
     for names in ['Sphere', 'SmoothCube_v2', 'SmoothCylinder']:
