@@ -545,6 +545,8 @@ bpy.context.scene.render.image_settings.file_format = 'PNG'
 
         script += f""" 
 
+logger.info("scene {idx}")
+
 scene_setup()
 bpy.context.scene.render.filepath = os.path.join(imgs_path, f"rendered_scene_{idx}.png")
 """
