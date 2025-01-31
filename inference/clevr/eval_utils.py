@@ -126,5 +126,5 @@ def compute_AP(preds, targets, threshold_dist):
     for i in indices_recall:
         average_precision += precision[i + 1] * (recall[i + 1] - recall[i])
 
-    #logger.info(f'ap: {average_precision}')
+    logger.info(f'ap: {average_precision}')
     return average_precision
