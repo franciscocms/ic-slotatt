@@ -476,9 +476,6 @@ imgs_path = r"{save_dir}"
 
 logger.info(imgs_path)
 
-
-
-
 def scene_setup():
 
     # Open main file
@@ -544,8 +541,15 @@ load_materials(os.path.join(main_path, "clevr_data", "materials"))
 bpy.context.scene.render.image_settings.file_format = 'PNG'
 
 
-for idx, scene in enumerate({scenes}):
+scenes = {scenes}
+for idx, scene in enumerate(scenes):
+    
     logger.info("scene {{idx}}")
+    
+    scene_setup()
+
+    logger.info("scene setup")
+
     bpy.context.scene.render.filepath = os.path.join(imgs_path, f"rendered_scene_{{idx}}.png")
     for i, obj in enumerate(scene):
         _add_object(obj)
