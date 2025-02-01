@@ -640,14 +640,17 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     # Call Blender to render the scene
     #with mp.Pool(processes=mp.cpu_count()) as pool:
-    # with mp.Pool(processes=10) as pool:
-    #   pool.map(render_scene_in_blender, blender_scripts)
-
     init_time = time.time()
-    for blender_script in blender_scripts:
-        render_scene_in_blender(blender_script)
+    with mp.Pool(processes=10) as pool:
+      pool.map(render_scene_in_blender, blender_scripts)
     batch_time = time.time() - init_time
     logger.info(f"Batch generation duration: {batch_time} - {batch_time/B} per sample")
+
+    # init_time = time.time()
+    # for blender_script in blender_scripts:
+    #     render_scene_in_blender(blender_script)
+    # batch_time = time.time() - init_time
+    # logger.info(f"Batch generation duration: {batch_time} - {batch_time/B} per sample")
     
     #logger.info(os.listdir(imgs_path))
 
