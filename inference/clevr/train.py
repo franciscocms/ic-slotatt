@@ -68,7 +68,8 @@ build CSIS class with model & guide
 
 if not TRAINING_FROM_SCRATCH:
   # Load the property file
-  properties_json_path = os.path.join(main_dir, "main", "clevr_data", "properties.json")
+  m_dir = os.path.abspath(__file__+'/../../../')
+  properties_json_path = os.path.join(m_dir, "main", "clevr_data", "properties.json")
   with open(properties_json_path, 'r') as f:
       properties = json.load(f)
       color_name_to_rgba = {}
