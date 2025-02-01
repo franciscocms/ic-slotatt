@@ -235,8 +235,7 @@ class Encoder(nn.Module):
 
     self.step = 0
 
-  def forward(self, x):
-    x = x.to(device)    
+  def forward(self, x):    
     x = self.relu(self.conv1(x))
     if self.step % params['step_size'] == 0: save_intermediate_output(x, self.step, "conv1")
     x = self.relu(self.conv2(x))

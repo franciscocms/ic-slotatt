@@ -621,14 +621,20 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     for img in imgs:
         if img.split('/')[-1].split('_')[:2] == ["rendered", "scene"]: os.remove(img)
 
+    
     init_time = time.time()
-
     # Sample a CLEVR-like scene using Pyro
     clevr_scenes = sample_clevr_scene(llh_uncertainty)
+    sample_time = time.time() - init_time
+    logger.info(f"Scene sampling time: {sample_time}")
+
     B = params['batch_size'] if params["running_type"] == "train" else params['num_inference_samples']
 
+    init_time = time.time()
     # Generate the Blender script for the sampled scene
     blender_scripts = [generate_blender_script(scene, idx, imgs_path) for idx, scene in enumerate(clevr_scenes)]
+    script_time = time.time() - init_time
+    logger.info(f"Scene scripting time: {script_time}")
     
     #logger.info(os.listdir(imgs_path))
 
@@ -637,8 +643,11 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     # with mp.Pool(processes=10) as pool:
     #   pool.map(render_scene_in_blender, blender_scripts)
 
+    init_time = time.time()
     for blender_script in blender_scripts:
         render_scene_in_blender(blender_script)
+    batch_time = time.time() - init_time
+    logger.info(f"Batch generation duration: {batch_time} - {batch_time/B} per sample")
     
     #logger.info(os.listdir(imgs_path))
 
@@ -656,10 +665,10 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
         
         # stddev = 0.01  in jobID 78
         # stddev = 0.001 in jobID 79
-        
-    likelihood_fn = MyNormal(proc_img, torch.tensor(llh_uncertainty*0.01)).get_dist() 
+    
+    likelihood_fn = MyNormal(proc_img, torch.tensor(llh_uncertainty)).get_dist() 
     pyro.sample("image", likelihood_fn.to_event(3), obs=observations["image"])
     
-    batch_time = time.time() - init_time
     
-    logger.info(f"Batch generation duration: {batch_time} - {batch_time/B} per sample")
+    
+    
