@@ -5,6 +5,7 @@ import pyro
 import pyro.infer
 import pyro.optim
 import pickle as pkl
+import json
 
 # add project path to sys to import relative modules
 import sys
@@ -15,7 +16,7 @@ from main.models import model
 from main.modifiedCSIS import CSIS
 from utils.var import Variable
 from main.setup import params
-from utils.guide import get_pretrained_wts, load_trained_guide
+from utils.guide import get_pretrained_wts, load_trained_guide_clevr
 from main.clevr_model import clevr_gen_model, min_objects, max_objects
 
 import wandb # type: ignore
@@ -66,10 +67,27 @@ build CSIS class with model & guide
 """
 
 if not TRAINING_FROM_SCRATCH:
+  # Load the property file
+  properties_json_path = os.path.join(main_dir, "main", "clevr_data", "properties.json")
+  with open(properties_json_path, 'r') as f:
+      properties = json.load(f)
+      color_name_to_rgba = {}
+      for name, rgb in properties['colors'].items():
+          rgba = [float(c) / 255.0 for c in rgb] + [1.0]
+          color_name_to_rgba[name] = rgba
+          material_mapping = [(v, k) for k, v in properties['materials'].items()]
+      object_mapping = [(v, k) for k, v in properties['shapes'].items()]
+      size_mapping = list(properties['sizes'].items())
+      color_mapping = list(color_name_to_rgba.items())
+  
   pretrained_guide_path = GUIDE_PATH + "/guide_" + str(params["guide_step"]) + ".pth"
+  guide = load_trained_guide_clevr(guide, 
+                                   pretrained_guide_path,
+                                   dict(mat_map=material_mapping,
+                                        shape_map=object_mapping,
+                                        size_map=size_mapping,
+                                        color_map=color_mapping))
   logger.info(f"pretrained guide path: {pretrained_guide_path}")
-  resume_training = False
-  guide = load_trained_guide(guide, pretrained_guide_path)
   logger.info(f"Guide from step {params['guide_step']} successfully loaded...\n")
   resume_training = True
 
