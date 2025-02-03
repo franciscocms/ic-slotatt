@@ -16,6 +16,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 import logging
+import time
 
 logger = logging.getLogger(params["running_type"])
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -40,7 +41,9 @@ def occlusion(new_object, object):
   else: return False
 
 def model(observations={"image": torch.zeros((1, 3, 128, 128))}):
-                        
+
+  init_time = time.time()
+
   B = params['batch_size'] if params["running_type"] == "train" else params['num_inference_samples']
   M = params['max_objects']
   
@@ -81,6 +84,11 @@ def model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
   rendered_scenes = render(scenes)
   img = torch.stack([img_transform(s) for s in rendered_scenes])
+  
+  render_time = time.time() - init_time
+  logger.info(f"Batch generation duration: {render_time} - {render_time/B} per sample")
+
+  
 
   llh_uncertainty = 0.001 if params['running_type'] == "train" else 0.1
   likelihood_fn = MyNormal(img, torch.tensor(llh_uncertainty)).get_dist()
