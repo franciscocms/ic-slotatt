@@ -140,7 +140,7 @@ def main():
                 # plt.savefig(f'{count_img_dir}/image_{sample_id}.png')
                 # plt.close()
                 
-                logger.info(sample_id)
+                #logger.info(sample_id)
                 
                 target_dict = json.load(open(os.path.abspath(f'metadata/{COUNT}/{sample_id}.json')))
 

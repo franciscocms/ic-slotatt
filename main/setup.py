@@ -23,7 +23,7 @@ params = {
     "print_distributions": False,
     "print_importance_sampling": False,
     "bernoulli_inf_reduction": 'none',
-    "num_inference_samples": 100,
+    "num_inference_samples": 10,
     "N_proposal" : "normal", # mixture
     "loc_proposal" : "wo_net",
     "loc_proposal_std": 0.05, 
@@ -35,7 +35,7 @@ params = {
     "batch_size" : 64, # 64
     "training_iters": 10000, # 10k
     "step_size": 50,
-    "running_type": "eval", # train, debug, eval, inspect
+    "running_type": "train", # train, debug, eval, inspect
     "slot_dim" : 64,
     "infer_background": False,
     "slotatt_recurrence": True,
@@ -59,8 +59,12 @@ JOB_SPLIT = {
             'total': 4
             }
 
-if params["dataset"] == "clevr": params["lr"] = 4-4
-elif params["dataset"] == "2Dobjects": params["lr"] = 1e-3
+if params["dataset"] == "clevr": 
+    params["batch_size"] = 64 if params["running_type"] == "train" else 1
+    params["lr"] = 4e-4
+elif params["dataset"] == "2Dobjects": 
+    params["batch_size"] = 256
+    params["lr"] = 1e-3
 else: raise ValueError(f"Dataset error: dataset named {params['dataset']} not found!")
 
 if not os.path.isdir(params['plots_dir']): os.mkdir(params['plots_dir'])
