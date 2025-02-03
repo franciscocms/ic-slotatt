@@ -303,8 +303,6 @@ class InvSlotAttentionGuide(nn.Module):
     pyro.module("sa", self.slot_attention, True)
     pyro.module("mlp", self.mlp, True)
 
-    
-    
     self.img = observations["image"]
     self.img = self.img.to(device)
     x = self.encoder_cnn(self.img)
@@ -335,7 +333,7 @@ class InvSlotAttentionGuide(nn.Module):
         plt.close()
 
         plot_img = np.transpose(self.img[0].detach().cpu().numpy(), (1, 2, 0))
-        plt.imshow(plot_img)
+        plt.imshow(torch.clamp(plot_img, 0., 1.))
         plt.axis('off')
         plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/img.png")
         plt.close()

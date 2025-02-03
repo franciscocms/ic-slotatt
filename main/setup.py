@@ -56,6 +56,10 @@ JOB_SPLIT = {
             'total': 4
             }
 
+if params["dataset"] == "clevr": params["lr"] = 4-4
+elif params["dataset"] == "2Dobjects": params["lr"] = 1e-3
+else: raise ValueError(f"Dataset error: dataset named {params['dataset']} not found!")
+
 if not os.path.isdir(params['plots_dir']): os.mkdir(params['plots_dir'])
 
 params["no_slots"] = "w_background" if params["infer_background"] else "wo_background"

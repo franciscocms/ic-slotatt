@@ -110,6 +110,7 @@ for s in range(resume_step, resume_step + nsteps):
   if CHECK_ATTN and s % step_size == 0: 
     if not os.path.isdir(f"{root_folder}/attn-step-{s}"): os.mkdir(f"{root_folder}/attn-step-{s}")  
   
+  csis.nstep = s
   loss = csis.step()
   val_loss = csis.validation_loss()
 
