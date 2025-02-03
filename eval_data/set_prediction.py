@@ -47,7 +47,7 @@ shape_vals = {'ball': 0, 'square': 1}
 size_vals = {'small': 0 , 'medium': 1, 'large': 2}
 color_vals = {'red': 0, 'green': 1, 'blue': 2}
 
-PRINT_INFERENCE_TIME = True
+PRINT_INFERENCE_TIME = False
 
 def process_preds(trace, id):
     
@@ -332,7 +332,7 @@ def main():
                 if PRINT_INFERENCE_TIME: 
                     time_elapsed = time.time() - since
                     logger.info(f'Inference complete in {time_elapsed*1000}ms')      
-                    break          
+                    #break          
                 
                 preds = process_preds(prop_traces, resampling_id)
                 targets = process_targets(target_dict)
