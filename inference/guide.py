@@ -292,6 +292,12 @@ class InvSlotAttentionGuide(nn.Module):
     
     else: raise ValueError(f"Unknown variable proposal distribution: {variable_proposal_distribution}")
     
+    if self.stage == 'train':
+      if self.is_train and self.step % params['step_size'] == 0:
+        logger.info(f"\n{variable_name} target values {variable.value[0]}")
+        logger.info(f"\n{variable_name} proposed values {proposal[0]}")
+    
+    
     return out
   
   def forward(self, observations={"image": torch.zeros((1, 3, 128, 128))}, N=None):
