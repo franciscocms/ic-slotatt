@@ -67,14 +67,14 @@ def process_preds(trace, id):
 def process_targets(target_dict):   
     
     n = int(target_dict['scene_attr']['N'])
-    target = torch.zeros(n, 11) # 11 - the dimension of all latent variables (countinuous and discrete after OHE)
-    for n in range(int(target_dict['scene_attr']['N'])):
-        target[n, :2] = F.one_hot(torch.tensor(shape_vals[target_dict['scene_attr'][f'object_{n}']['shape']]), len(shape_vals))
-        target[n, 2:5] = F.one_hot(torch.tensor(size_vals[target_dict['scene_attr'][f'object_{n}']['size']]), len(size_vals))
-        target[n, 5:8] = F.one_hot(torch.tensor(color_vals[target_dict['scene_attr'][f'object_{n}']['color']]), len(color_vals))
-        target[n, 8] = target_dict['scene_attr'][f'object_{n}']['initLocX']
-        target[n, 9] = target_dict['scene_attr'][f'object_{n}']['initLocY']
-        target[n, 10] = torch.tensor(1.)
+    target = torch.zeros(params['max_objects'], 11) # 11 - the dimension of all latent variables (countinuous and discrete after OHE)
+    for i in range(n):
+        target[i, :2] = F.one_hot(torch.tensor(shape_vals[target_dict['scene_attr'][f'object_{i}']['shape']]), len(shape_vals))
+        target[i, 2:5] = F.one_hot(torch.tensor(size_vals[target_dict['scene_attr'][f'object_{i}']['size']]), len(size_vals))
+        target[i, 5:8] = F.one_hot(torch.tensor(color_vals[target_dict['scene_attr'][f'object_{i}']['color']]), len(color_vals))
+        target[i, 8] = target_dict['scene_attr'][f'object_{i}']['initLocX']
+        target[i, 9] = target_dict['scene_attr'][f'object_{i}']['initLocY']
+        target[i, 10] = torch.tensor(1.)
     return target
     
 def main():    
