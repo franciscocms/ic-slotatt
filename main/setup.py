@@ -4,6 +4,10 @@ import os
 
 main_dir = os.path.abspath(__file__+'/../../')
 
+# jobID 70 holds results for ICSA scenes with upgraded code
+# jobID 71 holds results for ICSA scenes with dependencies shape -> color in the generative program
+
+
 # jobID 87 holds results for 4 objects CLEVR scenes
 # jobID 88 holds results for 6< objects CLEVR scenes 
 # jobID 90 is training for 10< objects CLEVR scenes
@@ -39,7 +43,7 @@ params = {
     "softmax_temperature": 1.0,
     "strided_convs": True,
     "check_attn": True,
-    "jobID": 70, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects
+    "jobID": 71, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects
     "mesh_iters": 4,
     "mesh_lr": 5, # 76: 3, 77: 5
     "logprob_coeff": 1.,
