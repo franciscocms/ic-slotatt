@@ -333,7 +333,7 @@ class InvSlotAttentionGuide(nn.Module):
         plt.close()
 
         plot_img = np.transpose(self.img[0].detach().cpu().numpy(), (1, 2, 0))
-        plt.imshow(torch.clamp(plot_img, 0., 1.))
+        plt.imshow(np.clip(plot_img, 0., 1.))
         plt.axis('off')
         plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/img.png")
         plt.close()
