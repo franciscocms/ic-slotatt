@@ -93,13 +93,24 @@ def model(scene_id, N):
     "N": n_objects,
   }
 
+  OOD_FLAG = True
+
   all_locs = []
   for n in range(int(n_objects)):
     shape = shape_vals[dist.Categorical(probs=torch.tensor([1/len(shape_vals) for _ in range(len(shape_vals))])).sample()]
     shape_obj.append(shape)
     size = size_vals[torch.randint(high=len(size_vals), size=(1,))]
     size_obj.append(size)
-    color = color_vals[torch.randint(high=len(color_vals), size=(1,))]
+    
+    if not OOD_FLAG:
+      color = color_vals[torch.randint(high=len(color_vals), size=(1,))]
+    else:
+      shape_to_color_probs = {
+        "ball": torch.tensor([0.0, 0.5, 0.5]), 
+        "square": torch.tensor([1.0, 0., 0.]),
+        }
+      color_probs = shape_to_color_probs[shape]
+      color = color_vals[dist.Categorical(probs=color_probs).sample()]
     color_obj.append(color)
     
     # ensure there are no occlusions or object overflow
@@ -138,8 +149,8 @@ def model(scene_id, N):
 
 def main():
     # path for slurm generation
-    metadata_dir = 'metadata'
-    img_dir = 'images'
+    metadata_dir = 'metadata_ood'
+    img_dir = 'images_ood'
 
     NSCENES = 50
 
@@ -147,7 +158,7 @@ def main():
     for d in dirs:
       if not os.path.isdir(d): os.mkdir(d)
 
-    gen_count = range(1,11)
+    gen_count = range(1,7)
 
     for c in gen_count:
 
