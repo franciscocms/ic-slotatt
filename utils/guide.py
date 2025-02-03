@@ -132,32 +132,14 @@ def load_trained_guide(guide, GUIDE_PATH):
             prior_distribution = None
             proposal_distribution = None
             name = k.split(".")[1]
-            if name  == "N":
-                prior_distribution = "poisson"
-                if params["N_proposal"] == "mixture":
-                    proposal_distribution = "mixture"
-                    MIXTURE_COMPONENTS = params["mixture_components"]
-                    out_dim = 3*MIXTURE_COMPONENTS
-                elif params["N_proposal"] == "normal":
-                    proposal_distribution = "normal"
-                    out_dim = 2
-            elif name.split("_")[0] in ["shape", "color", "size"]: 
+            if name == 'mask':
+                proposal_distribution = "bernoulli"
+                out_dim = 1
+            elif name in ["shape", "color", "size"]: 
                 prior_distribution = "categorical"
                 proposal_distribution = "categorical"
-                out_dim = 2 if name.split("_")[0] == "shape" else 3
-            elif name.split("_")[0] in ["locX", "locY"]: 
-                prior_distribution = "uniform"
-                if params["loc_proposal"] == "normal":
-                    proposal_distribution = "normal"
-                    out_dim = 2
-                elif params["loc_proposal"] == "mixture":
-                    proposal_distribution = "mixture"
-                    out_dim = 3*params["loc_proposal_k"]
-                else:
-                    proposal_distribution = "normal"
-                    out_dim = 2
-            
-            elif name[:2] == "bg":# and params["infer_background"]:
+                out_dim = 2 if name == "shape" else 3
+            elif name in ["locX", "locY"]: 
                 prior_distribution = "uniform"
                 proposal_distribution = "normal"
                 out_dim = 2
