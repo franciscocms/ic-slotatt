@@ -101,7 +101,7 @@ VAL_BATCH_SIZE = params["batch_size"]
 LR = params["lr"]
 
 optimiser = pyro.optim.Adam({'lr': LR})
-csis = CSIS(model = model if params['dataset'] == '2Dobjects' else clevr_gen_model,
+csis = CSIS(model = clevr_gen_model,
             guide = guide,
             optim = optimiser,
             num_inference_samples=params["num_inference_samples"],
