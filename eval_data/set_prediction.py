@@ -287,7 +287,7 @@ def main():
                     resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
                     resampling_id = resampling().item()
 
-                    logger.info(f"log weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
+                    #logger.info(f"log weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
 
                     traces = posterior.prop_traces
                     # tracking_dict = {}
