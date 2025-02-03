@@ -171,8 +171,6 @@ class Encoder(nn.Module):
     self.encoder_pos = SoftPositionEmbed(64, resolution)
 
   def forward(self, x):
-    x = x.to(device)    
-
     x = self.encoder_sa(x)
     x = x.permute(0,2,3,1) # B, W, H, C -> put C in last dimension
     x = self.encoder_pos(x)                 
@@ -272,6 +270,7 @@ class InvSlotAttentionGuide(nn.Module):
       # logger.info(f"{variable} - {out}")
 
     elif variable_proposal_distribution == "categorical":  
+      proposal = self.prop_nets[variable_name](obs)
        
       if self.stage == 'eval': 
         proposal = proposal.expand(params['num_inference_samples'], -1, -1)
@@ -281,6 +280,7 @@ class InvSlotAttentionGuide(nn.Module):
       # logger.info(f"{variable} - {out}")
 
     elif variable_proposal_distribution == "bernoulli": 
+      proposal = self.prop_nets[variable_name](obs)
        
       if self.stage == 'eval': 
         proposal = proposal.expand(params['num_inference_samples'], -1, -1)
