@@ -44,11 +44,9 @@ run = wandb.init(project="ICSA",
 DEVICE = params["device"]
 TRAINING_FROM_SCRATCH = params["training_from_scratch"]
 GUIDE_PATH = f"{main_dir}/checkpoint-{params['jobID']}"
-LOSS_PATH = f"{main_dir}/loss-{params['jobID']}"
-for p in [GUIDE_PATH, LOSS_PATH]: 
+for p in [GUIDE_PATH]: 
   if not os.path.isdir(p): os.mkdir(p)
 logger.info(f"\n... saving model checkpoints in {GUIDE_PATH}")
-logger.info(f"... saving loss values in {LOSS_PATH}\n")
 
 guide = InvSlotAttentionGuide(resolution = params['resolution'],
                               num_iterations = 3,
@@ -68,7 +66,6 @@ if not TRAINING_FROM_SCRATCH:
   guide = load_trained_guide(guide, pretrained_guide_path)
   logger.info(f"Guide from step {params['guide_step']} successfully loaded...\n")
   resume_training = True
-
 else: 
   logger.info(f"Training from scratch using {DEVICE}...\n")
   resume_training = False
@@ -108,20 +105,7 @@ if CHECK_ATTN and TRAINING_FROM_SCRATCH:
   if len(os.listdir(root_folder)) == 0:
     logger.info("Folders for all steps deleted...")
 
-if TRAINING_FROM_SCRATCH: train_hist, valid_hist = [], []
-else:
-  if os.path.isfile(LOSS_PATH + "/loss_dict.pkl"):
-    with open(LOSS_PATH + "/loss_dict.pkl", 'rb') as f:
-        data = pkl.load(f)
-        valid_hist = data["valid_loss"]
-        if len(valid_hist) != 0: logger.info("Training and validation losses were successfully loaded!")
-        else: logger.info("Error while loading losses from previous epochs!")
-  else: 
-      logger.info("Couldn't find training losses from previous epochs...")
-      train_hist, valid_hist = [], []
-
-step_size = 1 if params["running_type"] == "debug" else 10
-
+step_size = params['step_size']
 for s in range(resume_step, resume_step + nsteps):    
   
   if CHECK_ATTN and s % step_size == 0: 
@@ -129,14 +113,6 @@ for s in range(resume_step, resume_step + nsteps):
   
   loss = csis.step(s)
   val_loss = csis.validation_loss(s)
-  #train_hist.append(loss)
-  valid_hist.append(val_loss) 
-
-  loss_dic = {#"train_loss": train_hist, 
-                "valid_loss": valid_hist} 
-  if params["running_type"] == "train" and params["training_iters"] > 1: 
-    #save_loss(LOSS_PATH, loss_dic)
-    save_loss_plot(loss_dic, LOSS_PATH, resume_step, nsteps)
 
   if s % step_size == 0 or s == nsteps-1: 
     logger.info(f"step {s}/{resume_step + nsteps-1} - train_loss: {loss} - val_loss: {val_loss}")

@@ -143,14 +143,15 @@ class CSIS(Importance):
 
     loss = 0
     
-    hidden_addr = ["N", "obj"]
-    if p["loc_proposal"] == "wo_net": 
-      hidden_addr.append("locX")
-      hidden_addr.append("locY")
+    if p["dataset"] == "2Dobjects":
+      hidden_addr = ["N", "obj"]
+      if p["loc_proposal"] == "wo_net": 
+        hidden_addr.append("locX")
+        hidden_addr.append("locY")
 
     for name, vals in model_trace.nodes.items(): 
 
-      if name not in ["image", "n_plate"] and vals["type"] == "sample" and name.split('_')[0] not in hidden_addr: 
+      if name not in ["image", "n_plate"] and vals["type"] == "sample" and name not in hidden_addr: 
         # logger.info(f"{name} - {vals['value']}")
         
         # prior categorical distributed variables
@@ -187,7 +188,7 @@ class CSIS(Importance):
                       value=vals["value"],
                       prior_distribution=prior_distribution,
                       proposal_distribution=proposal_distribution,
-                      address=name.split("_")[0],
+                      address=name,
                       )                  
         
         #if var.name not in self.guide.prop_nets:
@@ -299,7 +300,6 @@ class CSIS(Importance):
             aux_logprob = -dist.Categorical(aux_probs).log_prob(aux_latents)
           
           aux_logprob = aux_logprob.unsqueeze(-1) # [B, n_slots, 1]
-
           pdist = torch.cat((pdist, aux_logprob), dim=-1) # [B, n_slots, n_latents]
       
       pdist = pdist.unsqueeze(1) # [B, 1, n_slots, n_latents]

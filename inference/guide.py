@@ -201,12 +201,7 @@ class InvSlotAttentionGuide(nn.Module):
     self.stage = stage
     assert self.stage in ["train", "eval"], "stage must be either 'train' or 'eval'"
     self.current_trace = []
-    self.train = True
-
-    self._mixture_components = mixture_components
-    self._low = 0.
-    self._high = 40.
-    self.prior_stddevs = params["prior_stddevs"]
+    self.is_train = True
 
     self.encoder_cnn = Encoder(self.resolution, self.hid_dim)
 
@@ -234,7 +229,6 @@ class InvSlotAttentionGuide(nn.Module):
     add_flag = False
     if var.proposal_distribution == "categorical": last_activ = nn.Softmax(dim=-1)
     elif var.proposal_distribution == "normal": last_activ = nn.Sigmoid()
-    elif var.proposal_distribution == "mixture": last_activ = nn.Identity()
     else: raise ValueError(f"Unknown distribution: {var.proposal_distribution}")
 
     if params["pos_from_attn"] == "attn-masks": input_dim = 1 if var.address in ["locX", "locY"] else self.hid_dim
@@ -253,11 +247,7 @@ class InvSlotAttentionGuide(nn.Module):
 
     # evaluation
     if isinstance(variable, str): 
-      variable_name = variable
-      variable_address = variable.split("_")[0]
-      if variable_address == "N": variable_prior_distribution = "poisson"
-      elif variable_address == "shape": variable_prior_distribution = "categorical"
-      elif variable_address in ["locX", "locY"]: variable_prior_distribution = "uniform"
+      variable_name = variable      
       variable_proposal_distribution = proposal_distribution
     
     # training
@@ -267,94 +257,39 @@ class InvSlotAttentionGuide(nn.Module):
       variable_prior_distribution = variable.prior_distribution
       variable_proposal_distribution = variable.proposal_distribution
     
-    if params['dataset'] == '2Dobjects':
+
+    if variable_proposal_distribution == "normal":
+      proposal = obs.squeeze(-1)
+      
+      if self.stage == 'eval':
+        mean, logvar = mean.expand(params['num_inference_samples'], -1), logvar.expand(params['num_inference_samples'], -1)
+        
+        # logger.info(f"{variable} - mean: {mean.shape} - logvar: {logvar.shape}")
+      
+      std = params['loc_proposal_std']
+      out = pyro.sample(variable_name, dist.Normal(proposal, std))#.to_event(1))
+      # logger.info(f"{variable} - {out}")
+
+    elif variable_proposal_distribution == "categorical":  
+       
+      if self.stage == 'eval': 
+        proposal = proposal.expand(params['num_inference_samples'], -1, -1)
+        # logger.info(f"{variable} - proposal: {proposal.shape}")     
+
+      out = pyro.sample(variable_name, dist.Categorical(probs=proposal))#.to_event(1))
+      # logger.info(f"{variable} - {out}")
+
+    elif variable_proposal_distribution == "bernoulli": 
+       
+      if self.stage == 'eval': 
+        proposal = proposal.expand(params['num_inference_samples'], -1, -1)
+        # logger.info(f"{variable} - proposal: {proposal.shape}") 
+
+      proposal = proposal.squeeze(-1)       
+      out = pyro.sample(variable_name, dist.Bernoulli(proposal))#.to_event(1))
+      # logger.info(f"{variable} - {out}") 
     
-      # get input for proposal layers
-      if variable_address == "N": proposal_layer_input = self.count    
-      else: proposal_layer_input = obs.unsqueeze(0)
-
-      if len(proposal_layer_input.shape) == 1: proposal_layer_input = proposal_layer_input.unsqueeze(dim=0)
-      
-      # sample from prior when, in evaluation, certain prop_net is required and was not trained
-      hidden_addr = ["N"]
-      if params["loc_proposal"] == "wo_net": 
-        for a in ["locX", "locY"]: hidden_addr.append(a)
-
-      #if variable_name not in self.prop_nets and variable_address not in hidden_addr:
-      if variable_address not in self.prop_nets and variable_address not in hidden_addr:
-        if self.stage == "eval":
-          if variable_prior_distribution == "categorical": 
-            if variable_address == "shape": pd = CategoricalVals(vals=self.shape_vals, probs=torch.tensor([1/len(self.shape_vals) for _ in range(len(self.shape_vals))]))
-            elif variable_address == "color": pd = CategoricalVals(vals=self.color_vals, probs=torch.tensor([1/len(self.color_vals) for _ in range(len(self.color_vals))]))
-          elif variable_prior_distribution == "uniform": pd = dist.Uniform(0., 1.)
-          elif variable_prior_distribution == "poisson": pd = dist.Poisson(3., validate_args=False)
-          else: raise ValueError(f"Unknown prior distribution: {variable_prior_distribution}")
-          out = pyro.sample(variable_name, pd)
-          return out
-        else:
-          raise ValueError(f"Cannot sample from prior on stage: {self.stage}")
-      
-      else:
-        # get distribution proposal
-        if variable_address == "N": proposal = proposal_layer_input
-        elif variable_address in ["locX", "locY"]:
-          if params["loc_proposal"] == "wo_net": proposal = proposal_layer_input
-          else: proposal = self.prop_nets[variable_address](proposal_layer_input)
-        else: proposal = self.prop_nets[variable_address](proposal_layer_input)
-        
-        if variable_address == "N": 
-          if variable_proposal_distribution == "normal": out = pyro.sample(variable_name, dist.Normal(proposal, torch.tensor(params["N_prior_std"])))
-          else: raise ValueError(f"Unknown proposal distribution for N: {variable_proposal_distribution}")
-
-        elif variable_address[:2] == "bg": 
-          mu, logvar = proposal[:, 0].mean(dim=0), proposal[:, 1].mean(dim=0)
-          logvar = torch.sigmoid(logvar)
-          std = torch.exp(0.5*logvar)
-          std = std * 0.1
-          eps = torch.tensor(1e-8, device=device)
-          out = pyro.sample(variable_name, TruncatedNormal(mu, std + eps, 0., 1.))
-        
-        elif variable_address == "shape": out = pyro.sample(variable_name, CategoricalVals(vals=self.shape_vals, probs=proposal))
-
-        elif variable_address == "color": out = pyro.sample(variable_name, CategoricalVals(vals=self.color_vals, probs=proposal))
-
-        elif variable_address == "size": out = pyro.sample(variable_name, CategoricalVals(vals=self.size_vals, probs=proposal))
-        
-        elif variable_address in ["locX", "locY"]: 
-          
-          if params["loc_proposal"] == "wo_net": 
-            std = torch.tensor(params["loc_proposal_std"], device=device)
-            out = pyro.sample(variable_name, TruncatedNormal(proposal, std, 0., 1.))
-            if params["running_type"] == "inspect": logging.info(f"position proposal mean for {variable_name}: {proposal}")
-          
-          elif params["loc_proposal"] == "normal":
-            mu, logvar = proposal[:, 0].mean(dim=0), proposal[:, 1].mean(dim=0)
-            logvar = torch.sigmoid(logvar)
-            std = torch.exp(0.5*logvar)
-            std = std * 0.01
-            eps = torch.tensor(1e-8, device=device)
-            out = pyro.sample(variable_name, TruncatedNormal(mu, std + eps, 0., 1.))
-
-          else: raise ValueError(f"Unknown proposal distribution key for loc variables: {params['loc_proposal']}")
-        
-        else: raise ValueError(f"Unknown variable address: {variable_address}")
-      
-    elif params['dataset'] == 'clevr':
-      
-      proposal_layer_input = obs.unsqueeze(0)
-
-      if variable_address in ['x', 'y']: proposal = proposal_layer_input
-      else: proposal = self.prop_nets[variable_address](proposal_layer_input)
-      
-      if variable_proposal_distribution == "normal":
-        std = torch.tensor(params["loc_proposal_std"], device=device)
-        out = pyro.sample(variable_name, TruncatedNormal(proposal, std, 0., 1.))
-      elif variable_proposal_distribution == "categorical": out = pyro.sample(variable_name, dist.Categorical(probs=proposal))
-      else: raise ValueError(f"Unknown variable address: {variable_address}")
-      
-
-    else: raise ValueError(f"Unknown dataset: {params['dataset']}")
-      
+    else: raise ValueError(f"Unknown variable proposal distribution: {variable_proposal_distribution}")
     
     return out
   
@@ -366,12 +301,16 @@ class InvSlotAttentionGuide(nn.Module):
     pyro.module("proposal_nets", self.prop_nets, True)
     pyro.module("sa", self.slot_attention, True)
     pyro.module("mlp", self.mlp, True)
+
+    B, _, _, _ = self.img.shape
     
     self.img = observations["image"]
     self.img = self.img.to(device)
     x = self.encoder_cnn(self.img)
     x = nn.LayerNorm(x.shape[1:]).to(device)(x)
     self.features_to_slots = self.mlp(x)
+
+    n_s = params['num_slots']
 
     if params["running_type"] == "inspect": # save input image
       if not os.path.isdir(params["inspect_img_path"]): os.mkdir(params["inspect_img_path"]) # create dir to save inspect logs
@@ -381,30 +320,10 @@ class InvSlotAttentionGuide(nn.Module):
       plt.close()
 
     if self.stage == "train":
-
-      # logger.info(len(self.current_trace))
-      
-      # for v in self.current_trace:
-      #   logger.info(f"{v.name} - {v.value}")
-      
-      assert N == None, f"During training, type of argument 'N' should be {type(None)}, not {type(N)}!"
-
-      #N = int(self.current_trace[0].value.item())
-
-
-      # THE # OF SLOTS WILL HAVE TO BE THE MAX NO. OF OBJECTS IN THE BATCH...
-      # compute this
-
-
-
-
-
-      n_s = 10
       self.slots, self.slot_pos, attn = self.slot_attention(self.features_to_slots, num_slots=n_s)
       
-      min_slots = 1 if params["no_slots"] == "wo_background" else 1
-      if self.batch_idx == 0 and self.train and n_s > min_slots and self.step % 10 == 0:
-        aux_attn = attn.reshape((1, n_s, 128, 128)) if not params["strided_convs"] else attn.reshape((1, n_s, 32, 32))
+      if self.is_train and self.step % params['step_size'] == 0:
+        aux_attn = attn.reshape((B, n_s, 128, 128)) if not params["strided_convs"] else attn.reshape((B, n_s, 32, 32))
         fig, ax = plt.subplots(ncols=n_s)
         for j in range(n_s):                                       
             im = ax[j].imshow(aux_attn[0, j, :, :].detach().cpu().numpy())
@@ -419,15 +338,13 @@ class InvSlotAttentionGuide(nn.Module):
         plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/img.png")
         plt.close()
 
-      hidden_vars = ["N"]
       for var in self.current_trace:
-        if var.name not in hidden_vars:
-          obj = int(var.name.split("_")[1]) if var.address[:2] != "bg" else -1
+         
           # `slots` has shape: [batch_size, num_slots, slot_size].
-          if var.address == "locX": obs = self.slot_pos[:, obj, 0]
-          elif var.address == "locY": obs = self.slot_pos[:, obj, 1]
+          if var.address == "locX": obs = self.slot_pos[..., 0]
+          elif var.address == "locY": obs = self.slot_pos[..., 1]
           else: 
-            obs = self.slots[0, obj, :]
+            obs = self.slots
 
           # run the proposal for variable var
           _ = self.infer_step(var, obs)

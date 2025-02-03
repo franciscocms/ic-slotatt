@@ -43,7 +43,7 @@ def img_to_tensor(image):
   img_transform = transforms.Compose([transforms.ToTensor()])
   return img_transform(image).unsqueeze(0)
 
-def render(shape_obj, size_obj, color_obj, locx_obj, locy_obj, background, transparent_polygons=False):
+def render(scenes, resolution = (128, 128), background = None, transparent_polygons=False):
   
   """
   - shape is in [ball, square]
@@ -52,20 +52,18 @@ def render(shape_obj, size_obj, color_obj, locx_obj, locy_obj, background, trans
   - locX and locY are the mass centers
   """
   
-  if background is None: background_code = (0, 0, 0)
-  else: background_code = (int(background[0]*255),
-                           int(background[1]*255),
-                           int(background[2]*255))
+  background_code = (0, 0, 0)
+  imgs = []
 
-  img = Image.new('RGB', (128, 128), background_code)
-  draw = ImageDraw.Draw(img) if not transparent_polygons else ImageDraw.Draw(img, 'RGBA')
+  for scene in scenes:
+    img = Image.new('RGB', resolution, background_code)
+    draw = ImageDraw.Draw(img) if not transparent_polygons else ImageDraw.Draw(img, 'RGBA')
 
-  for n in range(len(shape_obj)):
-    shape, size, color = shape_obj[n], size_obj[n], color_obj[n]
-    if shape != None: 
-    
-      locX, locY = locx_obj[n]*127, locy_obj[n]*127
-      
+    for object in scene:
+      shape, size, color = object["shape"], object["size"], object["color"]
+      x, y = object["position"]
+      x, y = x*resolution[0], y*resolution[1]
+        
       # for circles, s corresponds to radius
       if size == "small": s = 10
       elif size == "medium": s = 15
@@ -73,15 +71,16 @@ def render(shape_obj, size_obj, color_obj, locx_obj, locy_obj, background, trans
 
       if shape == "square":
         draw.rectangle(
-          [locX - s//2, locY - s//2, locX + s//2, locY + s//2], # (x0, y0, x1, y1)
+          [x - s//2, y - s//2, x + s//2, y + s//2], # (x0, y0, x1, y1)
           fill=color_to_rgb(color, transparent_polygons)
           )
       elif shape == "ball":
         draw.ellipse(
-          [locX - s//2, locY - s//2, locX + s//2, locY + s//2],
+          [x - s//2, y - s//2, x + s//2, y + s//2],
           fill=color_to_rgb(color, transparent_polygons)
           )
-  return img
+    imgs.append(img)
+  return imgs
 
 def add_gaussian_mask(img, x_list, y_list, sigma=5.0):
     """
