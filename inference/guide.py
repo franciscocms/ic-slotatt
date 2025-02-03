@@ -303,7 +303,7 @@ class InvSlotAttentionGuide(nn.Module):
     pyro.module("sa", self.slot_attention, True)
     pyro.module("mlp", self.mlp, True)
 
-    B, _, _, _ = self.img.shape
+    
     
     self.img = observations["image"]
     self.img = self.img.to(device)
@@ -311,6 +311,7 @@ class InvSlotAttentionGuide(nn.Module):
     x = nn.LayerNorm(x.shape[1:]).to(device)(x)
     self.features_to_slots = self.mlp(x)
 
+    B, _, _, _ = self.img.shape
     n_s = params['num_slots']
 
     if params["running_type"] == "inspect": # save input image
