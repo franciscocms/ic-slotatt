@@ -17,7 +17,6 @@ from utils.var import Variable
 from main.setup import params
 from utils.loss import save_loss, save_loss_plot
 from utils.guide import get_pretrained_wts, load_trained_guide
-from main.clevr_model import clevr_model
 
 import wandb # type: ignore
 
@@ -75,7 +74,7 @@ VAL_BATCH_SIZE = params["batch_size"]
 LR = params["lr"]
 
 optimiser = pyro.optim.Adam({'lr': LR})
-csis = CSIS(model = model if params['dataset'] == '2Dobjects' else clevr_model,
+csis = CSIS(model = model,
             guide = guide,
             optim = optimiser,
             num_inference_samples=params["num_inference_samples"],
