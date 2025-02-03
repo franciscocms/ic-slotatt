@@ -129,7 +129,7 @@ def main():
             # run the inference module
             count_img_path = glob.glob(os.path.abspath(f'images/{COUNT}/*.png'))
             count_img_path.sort()
-            logger.info(count_img_path)
+            #logger.info(count_img_path)
             for img_path in count_img_path:                             
                 
                 sample = img_to_tensor(Image.open(img_path))      
@@ -283,9 +283,6 @@ def main():
 
                 
                 elif params['inference_method'] == 'importance_sampling_only' and params['proposals'] == 'data_driven':
-
-                    resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(posterior.log_weights))]), torch.stack(posterior.log_weights))
-                    resampling_id = resampling().item()
 
                     resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
                     resampling_id = resampling().item()
