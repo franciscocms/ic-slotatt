@@ -10,12 +10,18 @@ import copy
 import os
 import json
 
+import sys
+import os
+sys.path.append(os.path.abspath(__file__+'/../../'))
+
+from main.setup import params
+
 # add project path to sys to import relative modules
 import sys
 sys.path.append(os.path.abspath(__file__+'/../../'))
 
 import logging
-logger = logging.getLogger("baseline")
+logger = logging.getLogger(params["running_type"])
 
 def hungarian_loss(pred, target, loss_fn=F.smooth_l1_loss):
     
@@ -37,7 +43,6 @@ def hungarian_loss(pred, target, loss_fn=F.smooth_l1_loss):
     total_loss = torch.mean(losses.sum(1))
 
     return total_loss, dict(indices=indices)
-
 
 class Trainer:
     def __init__(self, model, dataloaders, params): 
@@ -235,7 +240,7 @@ def process_preds(preds):
     return shape, size, color, locx, locy, real_obj
 
 def distance(loc1, loc2):
-    return torch.sqrt(torch.square(torch.abs(loc1[0]-loc2[0])) + torch.square(torch.abs(loc1[1]-loc2[1])))
+    return torch.sqrt(torch.square(loc1[0]-loc2[0]) + torch.square(loc1[1]-loc2[1]))
 
 def compute_AP(preds, targets, threshold_dist):
 

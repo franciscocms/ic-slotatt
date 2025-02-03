@@ -18,7 +18,7 @@ import sys
 sys.path.append(os.path.abspath(__file__+'/../../'))
 
 import logging
-logfile_name = f'icsa_set_prediction_inspect.log'
+logfile_name = f'icsa_set_prediction.log'
 logger = logging.getLogger("icsa_set_prediction")
 logger.setLevel(logging.INFO)
 fh = logging.FileHandler(logfile_name, mode='w')
@@ -47,22 +47,21 @@ shape_vals = {'ball': 0, 'square': 1}
 size_vals = {'small': 0 , 'medium': 1, 'large': 2}
 color_vals = {'red': 0, 'green': 1, 'blue': 2}
 
-PRINT_INFERENCE_TIME = False
+PRINT_INFERENCE_TIME = True
 
-def process_preds(trace, n):
+def process_preds(trace, id):
     
     """ returns a matrix of predictions from the proposed trace """
-    
-    preds = torch.zeros(n, 11) # 11 - the dimension of all latent variables (countinuous and discrete after OHE)
+    features_dim = 11
+    preds = torch.zeros(params['max_objects'], features_dim) # 11 - the dimension of all latent variables (countinuous and discrete after OHE)
     for name, site in trace.nodes.items():
         if site['type'] == 'sample':
-            i = int(name.split('_')[1])
-            if name.split('_')[0] == 'shape': preds[i, :2] = F.one_hot(torch.tensor(shape_vals[site['value']]), len(shape_vals))
-            if name.split('_')[0] == 'size':  preds[i, 2:5] = F.one_hot(torch.tensor(size_vals[site['value']]), len(size_vals))
-            if name.split('_')[0] == 'color': preds[i, 5:8] = F.one_hot(torch.tensor(color_vals[site['value']]), len(color_vals))
-            if name.split('_')[0] == 'locX': preds[i, 8] = torch.tensor(site['value'])
-            if name.split('_')[0] == 'locY': preds[i, 9] = torch.tensor(site['value'])
-    preds[:, 10] = torch.tensor(1.)
+            if name == 'shape': preds[:, :2] = F.one_hot(site['value'][id], len(shape_vals))
+            if name == 'size':  preds[:, 2:5] = F.one_hot(site['value'][id], len(size_vals))
+            if name == 'color': preds[:, 5:8] = F.one_hot(site['value'][id], len(color_vals))
+            if name == 'locX': preds[:, 8] = site['value'][id]
+            if name == 'locY': preds[:, 9] = site['value'][id]
+            if name == 'mask': preds[:, 10] = site['value'][id]
     return preds
 
 def process_targets(target_dict):   
@@ -80,9 +79,11 @@ def process_targets(target_dict):
     
 def main():    
 
+    assert params["running_type"] == "eval"
+
     logger.info(device)
 
-    seeds = [1, 2, 3, 4, 5]
+    seeds = [1]
     
     for seed in seeds: 
         pyro.set_rng_seed(seed)
@@ -93,9 +94,8 @@ def main():
         guide = InvSlotAttentionGuide(resolution = (128, 128),
                                     num_iterations = 3,
                                     hid_dim = 64,
-                                    stage = "eval",
-                                    mixture_components=params["mixture_components"])
-        guide.to(device)
+                                    stage = "eval"
+                                    ).to(device)
         
         GUIDE_PATH = f"{main_dir}/checkpoint-{params['jobID']}/guide_{params['guide_step']}.pth"
         
@@ -114,7 +114,7 @@ def main():
             shutil.rmtree(plots_dir)
             os.mkdir(plots_dir)
         
-        for COUNT in range(1, 11):
+        for COUNT in range(1, 7):
 
             count_img_dir = os.path.join(plots_dir, str(COUNT))
             if not os.path.isdir(count_img_dir): os.mkdir(count_img_dir)
@@ -136,9 +136,9 @@ def main():
                 sample = sample.to(device)
                 sample_id = img_path.split('/')[-1].split('.')[0]
                 
-                plt.imshow(sample.squeeze(0).permute(1, 2, 0).detach().cpu().numpy())
-                plt.savefig(f'{count_img_dir}/image_{sample_id}.png')
-                plt.close()
+                # plt.imshow(sample.squeeze(0).permute(1, 2, 0).detach().cpu().numpy())
+                # plt.savefig(f'{count_img_dir}/image_{sample_id}.png')
+                # plt.close()
                 
                 logger.info(sample_id)
                 
@@ -146,8 +146,10 @@ def main():
 
                 if PRINT_INFERENCE_TIME: since = time.time()
                 
-                # in ICSA set prediction, we assume that 'N' is known
-                posterior = csis.run(observations={"image": sample}, N=COUNT)
+                posterior = csis.run(observations={"image": sample})
+                prop_traces = posterior.prop_traces[0]
+                traces = posterior.exec_traces[0]
+                log_wts = posterior.log_weights[0]
 
 
                 if params['inference_method'] == 'score_resample' and params['proposals'] == 'data_driven':
@@ -285,42 +287,47 @@ def main():
                     resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(posterior.log_weights))]), torch.stack(posterior.log_weights))
                     resampling_id = resampling().item()
 
+                    resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
+                    resampling_id = resampling().item()
+
+                    logger.info(f"log weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
+
                     traces = posterior.prop_traces
-                    tracking_dict = {}
+                    # tracking_dict = {}
                     
-                    for t in range(len(traces)):
-                        tracking_dict[t] = {}
-                        for name, site in traces[t].nodes.items():
-                            if site['type'] == 'sample': tracking_dict[t][name] = site['value']
+                    # for t in range(len(traces)):
+                    #     tracking_dict[t] = {}
+                    #     for name, site in traces[t].nodes.items():
+                    #         if site['type'] == 'sample': tracking_dict[t][name] = site['value']
 
-                    # create an overlay img with all proposals for object 'vars_id'
-                    img_transform = transforms.Compose([transforms.ToTensor()])
-                    overlay_img = img_transform(render([tracking_dict[t][f"shape_{v}"] for t in range(len(traces)) for v in range(COUNT)],
-                                                    [tracking_dict[t][f"size_{v}"] for t in range(len(traces)) for v in range(COUNT)],
-                                                    [tracking_dict[t][f"color_{v}"] for t in range(len(traces)) for v in range(COUNT)],
-                                                    [tracking_dict[t][f"locX_{v}"] for t in range(len(traces)) for v in range(COUNT)],
-                                                    [tracking_dict[t][f"locY_{v}"] for t in range(len(traces))  for v in range(COUNT)],
-                                                    background=None,
-                                                    transparent_polygons=True
-                                                    )
-                                                    )
+                    # # create an overlay img with all proposals for object 'vars_id'
+                    # img_transform = transforms.Compose([transforms.ToTensor()])
+                    # overlay_img = img_transform(render([tracking_dict[t][f"shape_{v}"] for t in range(len(traces)) for v in range(COUNT)],
+                    #                                 [tracking_dict[t][f"size_{v}"] for t in range(len(traces)) for v in range(COUNT)],
+                    #                                 [tracking_dict[t][f"color_{v}"] for t in range(len(traces)) for v in range(COUNT)],
+                    #                                 [tracking_dict[t][f"locX_{v}"] for t in range(len(traces)) for v in range(COUNT)],
+                    #                                 [tracking_dict[t][f"locY_{v}"] for t in range(len(traces))  for v in range(COUNT)],
+                    #                                 background=None,
+                    #                                 transparent_polygons=True
+                    #                                 )
+                    #                                 )
                     
-                    plt.imshow(overlay_img.permute(1, 2, 0).numpy())
-                    plt.savefig(f'{count_img_dir}/traces_overlay_{sample_id}.png')
-                    plt.close()
+                    # plt.imshow(overlay_img.permute(1, 2, 0).numpy())
+                    # plt.savefig(f'{count_img_dir}/traces_overlay_{sample_id}.png')
+                    # plt.close()
 
-                    resampled_img = img_transform(render([tracking_dict[resampling_id][f"shape_{v}"] for v in range(COUNT)],
-                                                    [tracking_dict[resampling_id][f"size_{v}"] for v in range(COUNT)],
-                                                    [tracking_dict[resampling_id][f"color_{v}"] for v in range(COUNT)],
-                                                    [tracking_dict[resampling_id][f"locX_{v}"] for v in range(COUNT)],
-                                                    [tracking_dict[resampling_id][f"locY_{v}"] for v in range(COUNT)],
-                                                    background=None
-                                                    )
-                                                    )
+                    # resampled_img = img_transform(render([tracking_dict[resampling_id][f"shape_{v}"] for v in range(COUNT)],
+                    #                                 [tracking_dict[resampling_id][f"size_{v}"] for v in range(COUNT)],
+                    #                                 [tracking_dict[resampling_id][f"color_{v}"] for v in range(COUNT)],
+                    #                                 [tracking_dict[resampling_id][f"locX_{v}"] for v in range(COUNT)],
+                    #                                 [tracking_dict[resampling_id][f"locY_{v}"] for v in range(COUNT)],
+                    #                                 background=None
+                    #                                 )
+                    #                                 )
                     
-                    plt.imshow(resampled_img.permute(1, 2, 0).numpy())
-                    plt.savefig(f'{count_img_dir}/pred_{sample_id}.png')
-                    plt.close()
+                    # plt.imshow(resampled_img.permute(1, 2, 0).numpy())
+                    # plt.savefig(f'{count_img_dir}/pred_{sample_id}.png')
+                    # plt.close()
 
                 
                 else: raise ValueError(f"{params['inference_method']} is not valid!")
@@ -330,7 +337,7 @@ def main():
                     logger.info(f'Inference complete in {time_elapsed*1000}ms')      
                     break          
                 
-                preds = process_preds(traces[resampling_id], COUNT)
+                preds = process_preds(prop_traces, resampling_id)
                 targets = process_targets(target_dict)
                     
                 for t in threshold: ap[t] += compute_AP(preds, targets, t)
