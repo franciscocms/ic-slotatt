@@ -260,6 +260,10 @@ def compute_AP(preds, targets, threshold_dist):
     # logger.info(pred_real_obj)
     target_shape, target_size, target_color, target_locx, target_locy, target_real_obj = process_preds(targets)
 
+    logger.info(f"preds: {preds}")
+    logger.info(f"targets: {targets}")
+
+
     # shape, size, ...  has shape (17)
 
     max_objects = shape.shape[0]
