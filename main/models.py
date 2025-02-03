@@ -85,7 +85,7 @@ def model(observations={"image": torch.zeros((1, 3, 128, 128))}, show='all', sav
   
   logger.info(likelihood_fn)
 
-  pyro.sample("image", likelihood_fn.to_event(3), obs=observations["image"])
+  pyro.sample("image", likelihood_fn, obs=observations["image"])
 
 
 # def old_model(observations={"image": torch.zeros((1, 3, 128, 128))}, show='all', save_obs=None, N=None):
