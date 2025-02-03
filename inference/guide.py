@@ -361,12 +361,9 @@ class InvSlotAttentionGuide(nn.Module):
     elif self.stage == "eval":
       with torch.no_grad():
         assert self.current_trace == [], "current_trace list is not empty in the begining of evaluation!"
-        assert type(N) == int, f"During inference, type of argument 'N' should be 'int', not {type(N)}!"
 
-        n_s = None
-        if params["no_slots"] == "wo_background": n_s = N
-        elif params["no_slots"] == "w_background": n_s = N + 1
-        if n_s != None: self.slots, self.slot_pos, attn = self.slot_attention(self.features_to_slots, num_slots=n_s) 
+        n_s = params['max_objects']
+        self.slots, self.slot_pos, attn = self.slot_attention(self.features_to_slots, num_slots=n_s) 
 
         #print(self.slot_pos) 
 
@@ -409,49 +406,76 @@ class InvSlotAttentionGuide(nn.Module):
         # CODE FOR SLOTS ANALYSIS # 
         #      DELETE AFTER       #
          
-        if params["running_type"] == "inspect":
-          logging.info(f"slot_pos: {self.slot_pos}")
-        
-        new_var = Variable(name="N", value=N, prior_distribution="poisson", proposal_distribution=params["N_proposal"], address="N")
-        self.current_trace.append(new_var)
-        
-        """
-        Permute the slots to rank by euclidean distance of the attention maps
-        """
-        
-        # 'slot_pos' shape (b_s, n_s, 2)
-        # 'slots' shape (b_s, n_s, dim)
-        euc_dist = {}
-        for s in range(self.slot_pos.shape[-2]): # iterate over slots
-          euc_dist[s] = torch.sqrt(torch.square(self.slot_pos[0, s, 0]) + torch.square(self.slot_pos[0, s, 1]))
-        sorted_euc_dist = {k: v for k, v in sorted(euc_dist.items(), key=lambda item: item[1])}
-        
-        obj_properties = ["shape", "size", "color", "locX", "locY"]
-        for n in range(N):
-          
-          # set 'slot_idx' according to the euclidean distance ranking of the slots (not following random initial order)
-          slot_idx = list(sorted_euc_dist.keys())[n]
-          
-          for prop in obj_properties:
-            if params["pos_from_attn"] == "attn-masks":
-                if prop == "locX": obs = self.slot_pos[0, slot_idx, 0] 
-                elif prop == "locY": obs = self.slot_pos[0, slot_idx, 1]
-                else: obs = self.slots[0, slot_idx, :]
-            else: obs = self.slots[0, slot_idx, :]
 
-            prop_name = prop + "_" + str(n)
-            prior_distribution = "uniform" if prop_name[:3] == "loc" else "categorical"
-            proposal_distribution = params["loc_proposal"] if prop_name[:3] == "loc" else "categorical"
-            
-            out = self.infer_step(prop_name, obs, proposal_distribution)
-            new_var = Variable(name=prop_name,
-                                value=out,
-                                prior_distribution=prior_distribution,
-                                proposal_distribution=proposal_distribution,
-                                address=prop
-                                )
-            self.current_trace.append(new_var)
+        latents = ["mask", "shape", "color", "size", "locX", "locY"]
+        for var in latents:
+          if var in ["mask"]: 
+            proposal_distribution = "bernoulli"
+            prior_distribution = "bernoulli"
+            obs = self.slots
+          elif var in ["shape", "color", "size"]: 
+            proposal_distribution = "categorical"
+            prior_distribution = "categorical"
+            obs = self.slots
+          elif var in ["locX", "locY"]: 
+            proposal_distribution = "normal"
+            prior_distribution = "uniform"
+            if var == "locX": obs = self.slot_pos[..., 0]
+            elif var == "locY": obs = self.slot_pos[..., 1]
+          
+          out = self.infer_step(var, obs, proposal_distribution)
+
+          new_var = Variable(name=var,
+                             value=out,
+                             prior_distribution=prior_distribution,
+                             proposal_distribution=proposal_distribution,
+                             address=var
+                             )
+          self.current_trace.append(new_var)
+
         self.current_trace = []
-        return 
+        return
+
+        
+        
+        
+        # """
+        # Permute the slots to rank by euclidean distance of the attention maps
+        # """
+        
+        # # 'slot_pos' shape (b_s, n_s, 2)
+        # # 'slots' shape (b_s, n_s, dim)
+        # euc_dist = {}
+        # for s in range(self.slot_pos.shape[-2]): # iterate over slots
+        #   euc_dist[s] = torch.sqrt(torch.square(self.slot_pos[0, s, 0]) + torch.square(self.slot_pos[0, s, 1]))
+        # sorted_euc_dist = {k: v for k, v in sorted(euc_dist.items(), key=lambda item: item[1])}
+        
+        # obj_properties = ["shape", "size", "color", "locX", "locY"]
+        # for n in range(N):
+          
+        #   # set 'slot_idx' according to the euclidean distance ranking of the slots (not following random initial order)
+        #   slot_idx = list(sorted_euc_dist.keys())[n]
+          
+        #   for prop in obj_properties:
+        #     if params["pos_from_attn"] == "attn-masks":
+        #         if prop == "locX": obs = self.slot_pos[0, slot_idx, 0] 
+        #         elif prop == "locY": obs = self.slot_pos[0, slot_idx, 1]
+        #         else: obs = self.slots[0, slot_idx, :]
+        #     else: obs = self.slots[0, slot_idx, :]
+
+        #     prop_name = prop + "_" + str(n)
+        #     prior_distribution = "uniform" if prop_name[:3] == "loc" else "categorical"
+        #     proposal_distribution = params["loc_proposal"] if prop_name[:3] == "loc" else "categorical"
+            
+        #     out = self.infer_step(prop_name, obs, proposal_distribution)
+        #     new_var = Variable(name=prop_name,
+        #                         value=out,
+        #                         prior_distribution=prior_distribution,
+        #                         proposal_distribution=proposal_distribution,
+        #                         address=prop
+        #                         )
+        #     self.current_trace.append(new_var)
+        # self.current_trace = []
+        # return 
    
     else: raise ValueError(f"Unknown stage: {self.stage}")
