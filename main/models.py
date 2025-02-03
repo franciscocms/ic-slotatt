@@ -22,7 +22,7 @@ warnings.filterwarnings("ignore")
 
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(params["running_type"])
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 img_transform = transforms.Compose([transforms.ToTensor()])
@@ -77,6 +77,8 @@ def model(observations={"image": torch.zeros((1, 3, 128, 128))}, show='all', sav
 
   rendered_scenes = render(scenes)
   img = torch.stack([img_transform(s) for s in rendered_scenes])
+
+  logger.info(img.shape)
 
   llh_uncertainty = 0.001 if params['running_type'] == "train" else 0.1
   likelihood_fn = MyNormal(img, torch.tensor(llh_uncertainty)).get_dist()

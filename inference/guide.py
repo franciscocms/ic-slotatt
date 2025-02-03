@@ -22,7 +22,7 @@ import logging
 import warnings
 warnings.filterwarnings("ignore")
 
-logger = logging.getLogger("train")
+logger = logging.getLogger(params["running_type"])
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def build_coords(b_s, resolution=(128, 128)):
