@@ -17,13 +17,6 @@ import time
 import sys
 sys.path.append(os.path.abspath(__file__+'/../../'))
 
-import logging
-logfile_name = f'icsa_set_prediction.log'
-logger = logging.getLogger("icsa_set_prediction")
-logger.setLevel(logging.INFO)
-fh = logging.FileHandler(logfile_name, mode='w')
-logger.addHandler(fh)
-
 main_dir = os.path.abspath(__file__+'/../../')
 
 from main import models
@@ -35,9 +28,16 @@ from utils.generate import img_to_tensor, render
 from inference.guide import InvSlotAttentionGuide
 from utils.distributions import Empirical
 from utils.baseline import compute_AP
-from main import setup
+from main.setup import params
 
-params = setup.params
+import logging
+logfile_name = f'icsa_set_prediction.log'
+logger = logging.getLogger(params["running_type"])
+logger.setLevel(logging.INFO)
+fh = logging.FileHandler(logfile_name, mode='w')
+logger.addHandler(fh)
+
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 torch.set_default_device(device)
