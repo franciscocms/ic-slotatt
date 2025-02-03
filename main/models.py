@@ -57,10 +57,10 @@ def model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
   with pyro.poutine.mask(mask=objects_mask):
     shape = pyro.sample(f"shape", dist.Categorical(probs=torch.tensor([1/len(shape_vals) for _ in range(len(shape_vals))])).expand([B, M]))
-    #color = pyro.sample(f"color", dist.Categorical(probs=torch.tensor([1/len(color_vals) for _ in range(len(color_vals))])).expand([B, M]))
+    color = pyro.sample(f"color", dist.Categorical(probs=torch.tensor([1/len(color_vals) for _ in range(len(color_vals))])).expand([B, M]))
     
-    color_probs = torch.stack([shape_to_color_probs[idx.item()] for idx in shape.flatten()]).view(B, M, -1)
-    color = pyro.sample(f"color", dist.Categorical(probs=color_probs))
+    #color_probs = torch.stack([shape_to_color_probs[idx.item()] for idx in shape.flatten()]).view(B, M, -1)
+    #color = pyro.sample(f"color", dist.Categorical(probs=color_probs))
                         
     size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_vals) for _ in range(len(size_vals))])).expand([B, M]))
     locx, locy = pyro.sample(f"locX", dist.Uniform(0.15, 0.85).expand([B, M])), pyro.sample(f"locY", dist.Uniform(0.15, 0.85).expand([B, M]))
