@@ -259,13 +259,14 @@ class InvSlotAttentionGuide(nn.Module):
 
     if variable_proposal_distribution == "normal":
       proposal = obs.squeeze(-1)
+      std = params['loc_proposal_std']
       
       if self.stage == 'eval':
-        mean, logvar = mean.expand(params['num_inference_samples'], -1), logvar.expand(params['num_inference_samples'], -1)
+        proposal = proposal.expand(params['num_inference_samples'], -1)
         
         # logger.info(f"{variable} - mean: {mean.shape} - logvar: {logvar.shape}")
       
-      std = params['loc_proposal_std']
+      
       out = pyro.sample(variable_name, dist.Normal(proposal, std))#.to_event(1))
       # logger.info(f"{variable} - {out}")
 
