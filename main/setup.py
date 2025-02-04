@@ -19,7 +19,7 @@ params = {
     "resolution": (128, 128),
     "num_slots": 6,
     "max_objects": 6,
-    "guide_step" : 2500,
+    "guide_step" : 4000,
     "print_distributions": False,
     "print_importance_sampling": False,
     "bernoulli_inf_reduction": 'none',
