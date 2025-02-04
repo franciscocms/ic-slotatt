@@ -144,6 +144,8 @@ def main():
                 
                 target_dict = json.load(open(os.path.abspath(f'metadata_ood/{COUNT}/{sample_id}.json')))
 
+                logger.info(target_dict)
+
                 if PRINT_INFERENCE_TIME: since = time.time()
                 
                 posterior = csis.run(observations={"image": sample})
@@ -336,6 +338,8 @@ def main():
                 
                 preds = process_preds(prop_traces, resampling_id)
                 targets = process_targets(target_dict)
+
+                logger.info(preds)
                     
                 for t in threshold: ap[t] += compute_AP(preds, targets, t)
             

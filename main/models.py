@@ -86,7 +86,7 @@ def model(observations={"image": torch.zeros((1, 3, 128, 128))}):
   img = torch.stack([img_transform(s) for s in rendered_scenes])
   
   render_time = time.time() - init_time
-  logger.info(f"Batch generation duration: {render_time} - {render_time/B} per sample")
+  #logger.info(f"Batch generation duration: {render_time} - {render_time/B} per sample")
 
   
 
