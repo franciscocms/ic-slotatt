@@ -19,7 +19,7 @@ params = {
     "resolution": (128, 128),
     "num_slots": 6,
     "max_objects": 6,
-    "guide_step" : 1600,
+    "guide_step" : 2500,
     "print_distributions": False,
     "print_importance_sampling": False,
     "bernoulli_inf_reduction": 'none',
@@ -34,7 +34,7 @@ params = {
     "training_from_scratch" : True,
     "training_iters": 10000, # 10k
     "step_size": 50,
-    "running_type": "train", # train, debug, eval, inspect
+    "running_type": "eval", # train, debug, eval, inspect
     "ood_eval": True,
     "slot_dim" : 16,
     "infer_background": False,
