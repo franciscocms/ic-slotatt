@@ -42,6 +42,8 @@ class SlotAttention(nn.Module):
     self.iters = iters
     self.eps = eps
     self.scale = dim ** -0.5
+
+    self.slot_dim = slot_dim
     
     self.slots_mu = nn.Parameter(torch.randn(1, 1, slot_dim))
     self.slots_sigma = nn.Parameter(torch.rand(1, 1, slot_dim))
@@ -114,13 +116,13 @@ class SlotAttention(nn.Module):
 
       slots = self.gru(
           updates.view(b_s * n_s, d),
-          slots_prev.view(b_s * n_s, d),
+          slots_prev.view(b_s * n_s, self.slot_dim),
       )
 
-      slots = slots.view(b_s, n_s, d)
-      assert_shape(slots.size(), (b_s, n_s, d))
+      slots = slots.view(b_s, n_s, self.slot_dim)
+      assert_shape(slots.size(), (b_s, n_s, self.slot_dim))
       slots = slots + self.fc2(F.relu(self.fc1(self.norm_pre_ff(slots))))
-      assert_shape(slots.size(), (b_s, n_s, d))    
+      assert_shape(slots.size(), (b_s, n_s, self.slot_dim))    
     return slots, slot_pos.reshape((b_s, n_s, 2)), attn#, scales
 
 def build_grid(resolution):
