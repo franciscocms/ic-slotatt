@@ -84,6 +84,8 @@ def main():
     logger.info(device)
 
     seeds = [1]
+
+    OOD_EVAL = False
     
     for seed in seeds: 
         pyro.set_rng_seed(seed)
@@ -124,10 +126,13 @@ def main():
             threshold = [-1., 1., 0.5, 0.25, 0.125, 0.0625]
             ap = {k: 0 for k in threshold}
 
-            n_test_samples = len(glob.glob(os.path.abspath(f'images_ood/{COUNT}/*.png')))
+            if not OOD_EVAL: n_test_samples = len(glob.glob(os.path.abspath(f'images/{COUNT}/*.png')))
+            else: n_test_samples = len(glob.glob(os.path.abspath(f'images_ood/{COUNT}/*.png')))
             
             # run the inference module
-            count_img_path = glob.glob(os.path.abspath(f'images_ood/{COUNT}/*.png'))
+            if not OOD_EVAL: count_img_path = glob.glob(os.path.abspath(f'images/{COUNT}/*.png'))
+            else: count_img_path = glob.glob(os.path.abspath(f'images_ood/{COUNT}/*.png'))
+
             count_img_path.sort()
             #logger.info(count_img_path)
             for img_path in count_img_path:                             
@@ -136,15 +141,16 @@ def main():
                 sample = sample.to(device)
                 sample_id = img_path.split('/')[-1].split('.')[0]
                 
-                plt.imshow(sample.squeeze(0).permute(1, 2, 0).detach().cpu().numpy())
-                plt.savefig(f'{count_img_dir}/image_{sample_id}.png')
-                plt.close()
+                # plt.imshow(sample.squeeze(0).permute(1, 2, 0).detach().cpu().numpy())
+                # plt.savefig(f'{count_img_dir}/image_{sample_id}.png')
+                # plt.close()
                 
                 #logger.info(sample_id)
                 
-                target_dict = json.load(open(os.path.abspath(f'metadata_ood/{COUNT}/{sample_id}.json')))
+                if not OOD_EVAL: target_dict = json.load(open(os.path.abspath(f'metadata/{COUNT}/{sample_id}.json')))
+                else: target_dict = json.load(open(os.path.abspath(f'metadata_ood/{COUNT}/{sample_id}.json')))
 
-                logger.info(target_dict)
+                # logger.info(target_dict)
 
                 if PRINT_INFERENCE_TIME: since = time.time()
                 
@@ -289,18 +295,15 @@ def main():
                     resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
                     resampling_id = resampling().item()
 
-                    logger.info(f"log weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
+                    # logger.info(f"log weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
 
-                    for name, site in traces.nodes.items():                    
-                    # if site["type"] == "sample":
-                    #     logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
-                    
-                        if name == 'image':
-                            for i in range(site["fn"].mean.shape[0]):
-                                output_image = site["fn"].mean[i]
-                                plt.imshow(output_image.permute(1, 2, 0).cpu().numpy())
-                                plt.savefig(f'{count_img_dir}/image_{sample_id}_trace_{i}.png')
-                                plt.close()
+                    # for name, site in traces.nodes.items():                    
+                    #     if name == 'image':
+                    #         for i in range(site["fn"].mean.shape[0]):
+                    #             output_image = site["fn"].mean[i]
+                    #             plt.imshow(output_image.permute(1, 2, 0).cpu().numpy())
+                    #             plt.savefig(f'{count_img_dir}/image_{sample_id}_trace_{i}.png')
+                    #             plt.close()
 
 
 
@@ -354,18 +357,18 @@ def main():
                 preds = process_preds(prop_traces, resampling_id)
                 targets = process_targets(target_dict)
 
-                logger.info(preds)
+                # logger.info(preds)
                     
                 for t in threshold: ap[t] += compute_AP(preds, targets, t)
 
-                break
+                #break
             
             mAP = {k: v/n_test_samples for k, v in ap.items()}
             logger.info(f"COUNT {COUNT}: distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")
             logger.info(f"COUNT {COUNT}: mAP values: {mAP[threshold[0]]} - {mAP[threshold[1]]} - {mAP[threshold[2]]} - {mAP[threshold[3]]} - {mAP[threshold[4]]} - {mAP[threshold[5]]}\n")
             
             
-            break
+            #break
 
 
 
