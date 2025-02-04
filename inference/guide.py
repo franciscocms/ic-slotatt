@@ -240,13 +240,15 @@ class InvSlotAttentionGuide(nn.Module):
     if params["pos_from_attn"] == "attn-masks": 
       input_dim = 1 if var.address in ["locX", "locY"] else self.slot_dim
     
-    proposal_net = nn.Sequential(
-      nn.Linear(input_dim, self.hid_dim), nn.ReLU(),
-      #nn.Linear(self.hid_dim, self.hid_dim), nn.ReLU(),
-      nn.Linear(self.hid_dim, out_dim), last_activ
-      )
+    # proposal_net = nn.Sequential(
+    #   nn.Linear(input_dim, self.hid_dim), nn.ReLU(),
+    #   #nn.Linear(self.hid_dim, self.hid_dim), nn.ReLU(),
+    #   nn.Linear(self.hid_dim, out_dim), last_activ
+    #   )
 
-    #proposal_net = nn.Linear(input_dim, out_dim)
+    proposal_net = nn.Sequential(
+      nn.Linear(input_dim, out_dim), last_activ
+    )
      
     self.prop_nets[var.address] = proposal_net.to(device) 
     if var.address in self.prop_nets: add_flag = True 
