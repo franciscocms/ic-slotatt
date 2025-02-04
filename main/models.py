@@ -52,8 +52,8 @@ def model(observations={"image": torch.zeros((1, 3, 128, 128))}):
   color_vals = ["red", "green", "blue"]
 
   shape_to_color_probs = {
-        0: torch.tensor([1.0, 0.0, 0.0]), 
-        1: torch.tensor([0.0, 0.5, 0.5]),
+        0: torch.tensor([0.5, 0.5, 0.]), 
+        1: torch.tensor([0., 0.5, 0.5]),
     }
 
   objects_mask = pyro.sample(f"mask", dist.Bernoulli(0.5).expand([B, M])).to(torch.bool)

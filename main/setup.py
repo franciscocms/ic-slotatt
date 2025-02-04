@@ -34,7 +34,7 @@ params = {
     "training_from_scratch" : True,
     "training_iters": 10000, # 10k
     "step_size": 50,
-    "running_type": "eval", # train, debug, eval, inspect
+    "running_type": "train", # train, debug, eval, inspect
     "slot_dim" : 64,
     "infer_background": False,
     "slotatt_recurrence": True,
