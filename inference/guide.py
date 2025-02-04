@@ -263,6 +263,9 @@ class InvSlotAttentionGuide(nn.Module):
       std = params['loc_proposal_std']
       
       if self.stage == 'eval':
+        
+        logger.info(f"\n{variable_name} proposed values {proposal}")
+
         proposal = proposal.expand(params['num_inference_samples'], -1)
         
         # logger.info(f"{variable} - mean: {mean.shape} - logvar: {logvar.shape}")
@@ -275,6 +278,9 @@ class InvSlotAttentionGuide(nn.Module):
       proposal = self.prop_nets[variable_name](obs)
        
       if self.stage == 'eval': 
+        
+        logger.info(f"\n{variable_name} proposed values {proposal}")
+        
         proposal = proposal.expand(params['num_inference_samples'], -1, -1)
         # logger.info(f"{variable} - proposal: {proposal.shape}")     
 
@@ -285,6 +291,9 @@ class InvSlotAttentionGuide(nn.Module):
       proposal = self.prop_nets[variable_name](obs)
        
       if self.stage == 'eval': 
+        
+        logger.info(f"\n{variable_name} proposed values {proposal}")
+        
         proposal = proposal.expand(params['num_inference_samples'], -1, -1)
         # logger.info(f"{variable} - proposal: {proposal.shape}") 
 
@@ -298,8 +307,6 @@ class InvSlotAttentionGuide(nn.Module):
       if self.is_train and self.step % params['step_size'] == 0:
         logger.info(f"\n{variable_name} target values {variable.value[0]}")
         logger.info(f"\n{variable_name} proposed values {proposal[0]}")
-    else:
-      logger.info(f"\n{variable_name} proposed values {proposal}")
     
     
     return out
