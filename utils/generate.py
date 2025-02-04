@@ -48,7 +48,7 @@ def render(scenes, resolution = (128, 128), background = None, transparent_polyg
   """
   - shape is in [ball, square]
   - color is in [red, green , blue]
-  - size is in [small, medium, large] -> [10, 20, 40]
+  - size is in [small, medium, large] -> [10, 15, 20]
   - locX and locY are the mass centers
   """
   
