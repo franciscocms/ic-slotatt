@@ -98,7 +98,7 @@ def main():
         # set up trained guide and 'csis' object
         guide = InvSlotAttentionGuide(resolution = (128, 128),
                                     num_iterations = 3,
-                                    hid_dim = 64,
+                                    slot_dim = params["slot_dim"],
                                     stage = "eval"
                                     ).to(device)
         
