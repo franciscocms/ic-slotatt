@@ -119,7 +119,7 @@ def main():
             shutil.rmtree(plots_dir)
             os.mkdir(plots_dir)
         
-        all_mAP = {k: 0 for k in threshold}
+        all_mAP = {k: [] for k in threshold}
         
         for COUNT in range(1, 7):
 
@@ -129,7 +129,7 @@ def main():
             logger.info(f'\nEVALUATION STARTED FOR SCENES WITH {COUNT} OBJECTS\n')
 
             
-            ap = {k: [] for k in threshold}
+            ap = {k: 0 for k in threshold}
 
             if not OOD_EVAL: n_test_samples = len(glob.glob(os.path.abspath(f'images/{COUNT}/*.png')))
             else: n_test_samples = len(glob.glob(os.path.abspath(f'images_ood/{COUNT}/*.png')))
