@@ -49,7 +49,7 @@ logger.info(f"\n... saving model checkpoints in {GUIDE_PATH}")
 
 guide = InvSlotAttentionGuide(resolution = params['resolution'],
                               num_iterations = 3,
-                              hid_dim = params["slot_dim"],
+                              slot_dim = params["slot_dim"],
                               stage="train"
                               ).to(DEVICE)
 run.watch(guide)

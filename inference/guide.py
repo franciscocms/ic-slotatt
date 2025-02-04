@@ -153,7 +153,7 @@ class SoftPositionEmbed(nn.Module):
     return new_embd
 
 class Encoder(nn.Module):
-  def __init__(self, resolution, hid_dim):
+  def __init__(self, resolution):
     super().__init__()
     
     self.encoder_sa = []
@@ -168,7 +168,9 @@ class Encoder(nn.Module):
     #self.encoder_pos = SoftPositionEmbed(hid_dim, resolution)
     if params["strided_convs"]: resolution = (32, 32)
     else: resolution = (128, 128)
-    self.encoder_pos = SoftPositionEmbed(64, resolution)
+    
+    self.last_dim = 64
+    self.encoder_pos = SoftPositionEmbed(self.last_dim, resolution)
 
 
   def forward(self, x):
@@ -182,7 +184,7 @@ class Encoder(nn.Module):
 
 """Slot Attention-based auto-encoder for object discovery."""
 class InvSlotAttentionGuide(nn.Module):
-  def __init__(self, resolution, num_iterations, hid_dim, stage):
+  def __init__(self, resolution, num_iterations, slot_dim, stage):
     """Builds the Slot Attention-based auto-encoder.
     Args:
     resolution: Tuple of integers specifying width and height of input image.
@@ -190,7 +192,7 @@ class InvSlotAttentionGuide(nn.Module):
     num_iterations: Number of iterations in Slot Attention.
     """
     super().__init__()
-    self.hid_dim = hid_dim
+    self.slot_dim = slot_dim
     self.resolution = resolution
     self.num_slots = 0
     self.num_iterations = num_iterations
@@ -202,17 +204,19 @@ class InvSlotAttentionGuide(nn.Module):
     self.current_trace = []
     self.is_train = True
 
-    self.encoder_cnn = Encoder(self.resolution, self.hid_dim)
+    self.encoder_cnn = Encoder(self.resolution)
+
+    self.hid_dim = self.encoder_cnn.last_dim
 
     self.mlp = nn.Sequential(
-       nn.Linear(hid_dim, hid_dim), # used to be hid_dim, hid_dim
+       nn.Linear(self.hid_dim, self.hid_dim), # used to be hid_dim, hid_dim
        nn.ReLU(inplace=True),
-       nn.Linear(hid_dim, hid_dim)
+       nn.Linear(self.hid_dim, self.hid_dim)
     )
 
     self.slot_attention = SlotAttention(
         num_slots=self.num_slots,
-        dim=hid_dim,
+        dim=self.hid_dim,
         iters = self.num_iterations,
         eps = 1e-8, 
         hidden_dim = 128)
@@ -231,7 +235,7 @@ class InvSlotAttentionGuide(nn.Module):
     else: raise ValueError(f"Unknown distribution: {var.proposal_distribution}")
 
     if params["pos_from_attn"] == "attn-masks": 
-      input_dim = 1 if var.address in ["locX", "locY"] else self.hid_dim
+      input_dim = 1 if var.address in ["locX", "locY"] else self.slot_dim
     
     proposal_net = nn.Sequential(
       nn.Linear(input_dim, self.hid_dim), nn.ReLU(),
