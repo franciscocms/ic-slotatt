@@ -62,7 +62,7 @@ class SlotAttention(nn.Module):
     self.norm_pre_ff = nn.LayerNorm(dim)
 
     self.mlp_weight_input = nn.Linear(dim, 1)
-    self.mlp_weight_slots = nn.Linear(dim, 1)
+    self.mlp_weight_slots = nn.Linear(slot_dim, 1)
     
     self.eps = torch.tensor(1e-8, device=device)
 
