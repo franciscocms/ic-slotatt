@@ -42,7 +42,7 @@ params = {
     "softmax_temperature": 1.0,
     "strided_convs": True,
     "check_attn": True,
-    "jobID": 71, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects
+    "jobID": 70, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects
     "mesh_iters": 4,
     "mesh_lr": 5, # 76: 3, 77: 5
     "logprob_coeff": 1.,
