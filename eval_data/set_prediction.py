@@ -146,9 +146,9 @@ def main():
                 sample = sample.to(device)
                 sample_id = img_path.split('/')[-1].split('.')[0]
                 
-                # plt.imshow(sample.squeeze(0).permute(1, 2, 0).detach().cpu().numpy())
-                # plt.savefig(f'{count_img_dir}/image_{sample_id}.png')
-                # plt.close()
+                plt.imshow(sample.squeeze(0).permute(1, 2, 0).detach().cpu().numpy())
+                plt.savefig(f'{count_img_dir}/image_{sample_id}.png')
+                plt.close()
                 
                 #logger.info(sample_id)
                 
@@ -300,15 +300,15 @@ def main():
                     resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
                     resampling_id = resampling().item()
 
-                    # logger.info(f"log weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
+                    logger.info(f"log weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
 
-                    # for name, site in traces.nodes.items():                    
-                    #     if name == 'image':
-                    #         for i in range(site["fn"].mean.shape[0]):
-                    #             output_image = site["fn"].mean[i]
-                    #             plt.imshow(output_image.permute(1, 2, 0).cpu().numpy())
-                    #             plt.savefig(f'{count_img_dir}/image_{sample_id}_trace_{i}.png')
-                    #             plt.close()
+                    for name, site in traces.nodes.items():                    
+                        if name == 'image':
+                            for i in range(site["fn"].mean.shape[0]):
+                                output_image = site["fn"].mean[i]
+                                plt.imshow(output_image.permute(1, 2, 0).cpu().numpy())
+                                plt.savefig(f'{count_img_dir}/image_{sample_id}_trace_{i}.png')
+                                plt.close()
 
 
 
@@ -366,7 +366,7 @@ def main():
                     
                 for t in threshold: ap[t] += compute_AP(preds, targets, t)
 
-                #break
+                break
             
             mAP = {k: v/n_test_samples for k, v in ap.items()}
             logger.info(f"COUNT {COUNT}: distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")
@@ -374,7 +374,7 @@ def main():
             
             for k in threshold:
                 all_mAP[k].append(mAP[k])
-            #break
+            break
 
         logger.info(f"Average mAP: ")
         for k in threshold:
