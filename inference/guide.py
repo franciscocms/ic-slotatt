@@ -56,8 +56,8 @@ class SlotAttention(nn.Module):
 
     hidden_dim = max(dim, hidden_dim)
 
-    self.fc1 = nn.Linear(dim, hidden_dim)
-    self.fc2 = nn.Linear(hidden_dim, dim)
+    self.fc1 = nn.Linear(slot_dim, hidden_dim)
+    self.fc2 = nn.Linear(hidden_dim, slot_dim)
 
     self.norm_input  = nn.LayerNorm(dim)
     self.norm_slots  = nn.LayerNorm(slot_dim)
