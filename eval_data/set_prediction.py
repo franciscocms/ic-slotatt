@@ -357,6 +357,8 @@ def main():
                 logger.info(preds)
                     
                 for t in threshold: ap[t] += compute_AP(preds, targets, t)
+
+                break
             
             mAP = {k: v/n_test_samples for k, v in ap.items()}
             logger.info(f"COUNT {COUNT}: distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")
