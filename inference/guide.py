@@ -36,17 +36,17 @@ def build_coords(b_s, resolution=(128, 128)):
   return xv, yv
 
 class SlotAttention(nn.Module):
-  def __init__(self, num_slots, dim = 64, iters = 3, eps = 1e-8, hidden_dim = 128):
+  def __init__(self, num_slots, slot_dim = 64, dim = 64, iters = 3, eps = 1e-8, hidden_dim = 128):
     super().__init__()
     self.num_slots = num_slots
     self.iters = iters
     self.eps = eps
     self.scale = dim ** -0.5
     
-    self.slots_mu = nn.Parameter(torch.randn(1, 1, dim))
-    self.slots_sigma = nn.Parameter(torch.rand(1, 1, dim))
+    self.slots_mu = nn.Parameter(torch.randn(1, 1, slot_dim))
+    self.slots_sigma = nn.Parameter(torch.rand(1, 1, slot_dim))
 
-    self.to_q = nn.Linear(dim, dim, bias=False)
+    self.to_q = nn.Linear(slot_dim, dim, bias=False)
     self.to_k = nn.Linear(dim, dim, bias=False)
     self.to_v = nn.Linear(dim, dim, bias=False)
 
@@ -216,6 +216,7 @@ class InvSlotAttentionGuide(nn.Module):
 
     self.slot_attention = SlotAttention(
         num_slots=self.num_slots,
+        slot_dim = self.slot_dim,
         dim=self.hid_dim,
         iters = self.num_iterations,
         eps = 1e-8, 
