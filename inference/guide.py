@@ -261,6 +261,8 @@ class InvSlotAttentionGuide(nn.Module):
       variable_prior_distribution = variable.prior_distribution
       variable_proposal_distribution = variable.proposal_distribution
     
+    logger.info(obs.shape)
+    
 
     if variable_proposal_distribution == "normal":
       proposal = obs.squeeze(-1)
