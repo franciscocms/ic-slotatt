@@ -85,7 +85,7 @@ def main():
 
     seeds = [1]
 
-    OOD_EVAL = False
+    OOD_EVAL = params["ood_eval"]
     
     for seed in seeds: 
         

@@ -19,11 +19,11 @@ params = {
     "resolution": (128, 128),
     "num_slots": 6,
     "max_objects": 6,
-    "guide_step" : 5000,
+    "guide_step" : 350,
     "print_distributions": False,
     "print_importance_sampling": False,
     "bernoulli_inf_reduction": 'none',
-    "num_inference_samples": 50,
+    "num_inference_samples": 10,
     "N_proposal" : "normal", # mixture
     "loc_proposal" : "wo_net",
     "loc_proposal_std": 0.05, 
@@ -35,13 +35,14 @@ params = {
     "training_iters": 10000, # 10k
     "step_size": 50,
     "running_type": "eval", # train, debug, eval, inspect
+    "ood_eval": True,
     "slot_dim" : 64,
     "infer_background": False,
     "slotatt_recurrence": True,
     "softmax_temperature": 1.0,
     "strided_convs": True,
     "check_attn": True,
-    "jobID": 70, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects
+    "jobID": 71, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects
     "mesh_iters": 4,
     "mesh_lr": 5, # 76: 3, 77: 5
     "logprob_coeff": 1.,
