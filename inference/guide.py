@@ -169,7 +169,7 @@ class Encoder(nn.Module):
     if params["strided_convs"]: resolution = (32, 32)
     else: resolution = (128, 128)
     self.encoder_pos = SoftPositionEmbed(64, resolution)
-    self.last_dim = 64
+
 
   def forward(self, x):
     x = self.encoder_sa(x)
@@ -205,9 +205,9 @@ class InvSlotAttentionGuide(nn.Module):
     self.encoder_cnn = Encoder(self.resolution, self.hid_dim)
 
     self.mlp = nn.Sequential(
-       nn.Linear(self.encoder_cnn.last_dim, self.encoder_cnn.last_dim), # used to be hid_dim, hid_dim
+       nn.Linear(hid_dim, hid_dim), # used to be hid_dim, hid_dim
        nn.ReLU(inplace=True),
-       nn.Linear(self.encoder_cnn.last_dim, self.encoder_cnn.last_dim)
+       nn.Linear(hid_dim, hid_dim)
     )
 
     self.slot_attention = SlotAttention(
