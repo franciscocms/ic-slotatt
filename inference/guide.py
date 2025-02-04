@@ -182,7 +182,7 @@ class Encoder(nn.Module):
 
 """Slot Attention-based auto-encoder for object discovery."""
 class InvSlotAttentionGuide(nn.Module):
-  def __init__(self, resolution, num_iterations, hid_dim, stage, mixture_components=5):
+  def __init__(self, resolution, num_iterations, hid_dim, stage):
     """Builds the Slot Attention-based auto-encoder.
     Args:
     resolution: Tuple of integers specifying width and height of input image.
@@ -294,10 +294,10 @@ class InvSlotAttentionGuide(nn.Module):
     
     else: raise ValueError(f"Unknown variable proposal distribution: {variable_proposal_distribution}")
     
-    if self.stage == 'train':
-      if self.is_train and self.step % params['step_size'] == 0:
-        logger.info(f"\n{variable_name} target values {variable.value[0]}")
-        logger.info(f"\n{variable_name} proposed values {proposal[0]}")
+    #if self.stage == 'train':
+    if self.is_train and self.step % params['step_size'] == 0:
+      logger.info(f"\n{variable_name} target values {variable.value[0]}")
+      logger.info(f"\n{variable_name} proposed values {proposal[0]}")
     
     
     return out
