@@ -140,7 +140,7 @@ def main():
 
             count_img_path.sort()
             #logger.info(count_img_path)
-            for img_path in count_img_path:                             
+            for img_idx, img_path in enumerate(count_img_path): 
                 
                 sample = img_to_tensor(Image.open(img_path))      
                 sample = sample.to(device)
@@ -366,7 +366,7 @@ def main():
                     
                 for t in threshold: ap[t] += compute_AP(preds, targets, t)
 
-                break
+                if img_idx == 10: break
             
             mAP = {k: v/n_test_samples for k, v in ap.items()}
             logger.info(f"COUNT {COUNT}: distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")
@@ -374,6 +374,7 @@ def main():
             
             for k in threshold:
                 all_mAP[k].append(mAP[k])
+            
             break
 
         logger.info(f"Average mAP: ")
