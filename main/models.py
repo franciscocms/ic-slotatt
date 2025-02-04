@@ -12,6 +12,8 @@ from utils.generate import overflow, overlap, render
 from utils.guide import to_int
 from .setup import params
 
+import multiprocessing as mp
+
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -40,10 +42,7 @@ def occlusion(new_object, object):
   if x_cond and y_cond: return True
   else: return False
 
-def model(observations={"image": torch.zeros((1, 3, 128, 128))}):
-
-  init_time = time.time()
-
+def sample_scenes():
   B = params['batch_size'] if params["running_type"] == "train" else params['num_inference_samples']
   M = params['max_objects']
   
@@ -60,10 +59,10 @@ def model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
   with pyro.poutine.mask(mask=objects_mask):
     shape = pyro.sample(f"shape", dist.Categorical(probs=torch.tensor([1/len(shape_vals) for _ in range(len(shape_vals))])).expand([B, M]))
-    #color = pyro.sample(f"color", dist.Categorical(probs=torch.tensor([1/len(color_vals) for _ in range(len(color_vals))])).expand([B, M]))
+    color = pyro.sample(f"color", dist.Categorical(probs=torch.tensor([1/len(color_vals) for _ in range(len(color_vals))])).expand([B, M]))
     
-    color_probs = torch.stack([shape_to_color_probs[idx.item()] for idx in shape.flatten()]).view(B, M, -1)
-    color = pyro.sample(f"color", dist.Categorical(probs=color_probs))
+    # color_probs = torch.stack([shape_to_color_probs[idx.item()] for idx in shape.flatten()]).view(B, M, -1)
+    # color = pyro.sample(f"color", dist.Categorical(probs=color_probs))
                         
     size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_vals) for _ in range(len(size_vals))])).expand([B, M]))
     locx, locy = pyro.sample(f"locX", dist.Uniform(0.15, 0.85).expand([B, M])), pyro.sample(f"locY", dist.Uniform(0.15, 0.85).expand([B, M]))
@@ -81,14 +80,21 @@ def model(observations={"image": torch.zeros((1, 3, 128, 128))}):
         })
 
     scenes.append(objects)
+  return scenes
+
+def model(observations={"image": torch.zeros((1, 3, 128, 128))}):
+
+  init_time = time.time()
+  
+  B = params['batch_size'] if params["running_type"] == "train" else params['num_inference_samples']
+  
+  scenes = sample_scenes()
 
   rendered_scenes = render(scenes)
   img = torch.stack([img_transform(s) for s in rendered_scenes])
   
   render_time = time.time() - init_time
   #logger.info(f"Batch generation duration: {render_time} - {render_time/B} per sample")
-
-  
 
   llh_uncertainty = 0.001 if params['running_type'] == "train" else 0.1
   likelihood_fn = MyNormal(img, torch.tensor(llh_uncertainty)).get_dist()

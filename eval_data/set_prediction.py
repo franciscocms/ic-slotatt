@@ -88,7 +88,10 @@ def main():
     OOD_EVAL = False
     
     for seed in seeds: 
+        
         pyro.set_rng_seed(seed)
+        
+        threshold = [-1., 1., 0.5, 0.25, 0.125, 0.0625]
         
         model = models.model
         
@@ -116,6 +119,8 @@ def main():
             shutil.rmtree(plots_dir)
             os.mkdir(plots_dir)
         
+        all_mAP = {k: 0 for k in threshold}
+        
         for COUNT in range(1, 7):
 
             count_img_dir = os.path.join(plots_dir, str(COUNT))
@@ -123,8 +128,8 @@ def main():
 
             logger.info(f'\nEVALUATION STARTED FOR SCENES WITH {COUNT} OBJECTS\n')
 
-            threshold = [-1., 1., 0.5, 0.25, 0.125, 0.0625]
-            ap = {k: 0 for k in threshold}
+            
+            ap = {k: [] for k in threshold}
 
             if not OOD_EVAL: n_test_samples = len(glob.glob(os.path.abspath(f'images/{COUNT}/*.png')))
             else: n_test_samples = len(glob.glob(os.path.abspath(f'images_ood/{COUNT}/*.png')))
@@ -367,9 +372,13 @@ def main():
             logger.info(f"COUNT {COUNT}: distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")
             logger.info(f"COUNT {COUNT}: mAP values: {mAP[threshold[0]]} - {mAP[threshold[1]]} - {mAP[threshold[2]]} - {mAP[threshold[3]]} - {mAP[threshold[4]]} - {mAP[threshold[5]]}\n")
             
-            
+            for k in threshold:
+                all_mAP[k].append(mAP[k])
             #break
 
+        logger.info(f"Average mAP: ")
+        for k in threshold:
+            logger.info(f"{k}: {np.mean(all_mAP[k])}")
 
 
 if __name__ == '__main__':
