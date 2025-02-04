@@ -124,10 +124,10 @@ def main():
             threshold = [-1., 1., 0.5, 0.25, 0.125, 0.0625]
             ap = {k: 0 for k in threshold}
 
-            n_test_samples = len(glob.glob(os.path.abspath(f'images/{COUNT}/*.png')))
+            n_test_samples = len(glob.glob(os.path.abspath(f'images_ood/{COUNT}/*.png')))
             
             # run the inference module
-            count_img_path = glob.glob(os.path.abspath(f'images/{COUNT}/*.png'))
+            count_img_path = glob.glob(os.path.abspath(f'images_ood/{COUNT}/*.png'))
             count_img_path.sort()
             #logger.info(count_img_path)
             for img_path in count_img_path:                             
@@ -142,7 +142,7 @@ def main():
                 
                 #logger.info(sample_id)
                 
-                target_dict = json.load(open(os.path.abspath(f'metadata/{COUNT}/{sample_id}.json')))
+                target_dict = json.load(open(os.path.abspath(f'metadata_ood/{COUNT}/{sample_id}.json')))
 
                 if PRINT_INFERENCE_TIME: since = time.time()
                 
