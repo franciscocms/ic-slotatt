@@ -190,9 +190,24 @@ def main():
                             plt.imshow(visualize(output_image[:3].permute(1, 2, 0).cpu().numpy()))
                             plt.savefig(os.path.join(plots_dir, f"trace_{img_index}_{i}.png"))
                             plt.close()
-                            
 
-                preds = process_preds(prop_traces, resampling_id)
+                
+                # check which posterior trace maximizes overall (over all distance thresholds) AP
+                max_ap_idx = 0
+                best_overall_ap = 0.   
+                for i in range(len(log_wts)):
+                    aux_ap = {k: 0 for k in threshold}
+                    preds = process_preds(prop_traces, i)
+                    for t in threshold: 
+                        aux_ap[t] = compute_AP(preds, target, t)
+                    overall_ap = np.mean(aux_ap.values())
+                    if overall_ap > best_overall_ap:
+                        best_overall_ap = overall_ap
+                        max_ap_idx = i
+                
+                logger.info(f"trace that maximizes AP: {max_ap_idx} with {best_overall_ap}")
+                # compute the final AP
+                preds = process_preds(prop_traces, max_ap_idx)
                 for t in threshold: ap[t] += compute_AP(preds, target, t)
                 n_test_samples += 1
 
