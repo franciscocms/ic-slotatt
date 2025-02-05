@@ -91,12 +91,11 @@ def model(observations={"image": torch.zeros((1, 3, 128, 128))}):
   B = params['batch_size'] if params["running_type"] == "train" else params['num_inference_samples']
   
   scenes = sample_scenes()
-
   rendered_scenes = render(scenes)
   img = torch.stack([img_transform(s) for s in rendered_scenes])
   
   render_time = time.time() - init_time
-  #logger.info(f"Batch generation duration: {render_time} - {render_time/B} per sample")
+  logger.info(f"Batch generation duration: {render_time} - {render_time/B} per sample")
 
   llh_uncertainty = 0.001 if params['running_type'] == "train" else 0.1
   likelihood_fn = MyNormal(img, torch.tensor(llh_uncertainty)).get_dist()
