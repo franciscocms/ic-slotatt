@@ -15,11 +15,11 @@ main_dir = os.path.abspath(__file__+'/../../')
 
 params = {
     "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
-    "dataset": "2Dobjects", # 'clevr' or '2Dobjects'
+    "dataset": "clevr", # 'clevr' or '2Dobjects'
     "resolution": (128, 128),
     "num_slots": 6,
     "max_objects": 6,
-    "guide_step" : 5000,
+    "guide_step" : 11050,
     "print_distributions": False,
     "print_importance_sampling": False,
     "bernoulli_inf_reduction": 'none',
@@ -31,18 +31,18 @@ params = {
     "prior_stddevs" : 0.05,
     "N_prior_std" : 0.1,
     "pos_from_attn" : "attn-masks", # "attn-masks" if computing locations from slot attention masks (alternative: "dme" from the estimated density maps)
-    "training_from_scratch" : True,
+    "training_from_scratch" : False,
     "training_iters": 10000, # 10k
     "step_size": 50,
-    "running_type": "eval", # train, debug, eval, inspect
+    "running_type": "train", # train, debug, eval, inspect
     "ood_eval": True,
-    "slot_dim" : 16,
+    "slot_dim" : 64,
     "infer_background": False,
     "slotatt_recurrence": True,
     "softmax_temperature": 1.0,
     "strided_convs": True,
     "check_attn": True,
-    "jobID": 72, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects
+    "jobID": 90, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects
     "mesh_iters": 4,
     "mesh_lr": 5, # 76: 3, 77: 5
     "logprob_coeff": 1.,
