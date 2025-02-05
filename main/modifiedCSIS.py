@@ -148,6 +148,8 @@ class CSIS(Importance):
       if p["loc_proposal"] == "wo_net": 
         hidden_addr.append("locX")
         hidden_addr.append("locY")
+    else:
+      hidden_addr = []
 
     for name, vals in model_trace.nodes.items(): 
 
