@@ -595,7 +595,7 @@ def render_scene_in_blender(blender_script):
 def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     if params['running_type'] == 'train': llh_uncertainty = 0.001
-    elif params['running_type'] == 'eval': llh_uncertainty = 0.1
+    elif params['running_type'] == 'eval': llh_uncertainty = 0.01
 
     if params['running_type'] == "train":
         if not os.path.isdir(os.path.join(dir_path, str(params['jobID']))): os.mkdir(os.path.join(dir_path, str(params['jobID'])))
