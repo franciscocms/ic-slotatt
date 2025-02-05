@@ -196,7 +196,7 @@ def main():
                 for t in threshold: ap[t] += compute_AP(preds, target, t)
                 n_test_samples += 1
 
-                if n_test_samples == 10: break
+                #if n_test_samples == 10: break
                 
         mAP = {k: v/n_test_samples for k, v in ap.items()}
         logger.info(f"distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")
