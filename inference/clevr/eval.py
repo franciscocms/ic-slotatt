@@ -158,11 +158,11 @@ def main():
                 img_index = target_dict['image_index'].item()
 
                 logger.info(f"\ntarget image index: {img_index} - {n_test_samples}/{len(test_dataset)}")
-                logger.info(f"# of objects: {len(target_dict['objects'])}")
+                #logger.info(f"# of objects: {len(target_dict['objects'])}")
 
-                plt.imshow(visualize(img.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
-                plt.savefig(os.path.join(plots_dir, f"image_{img_index}.png"))
-                plt.close()                
+                # plt.imshow(visualize(img.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
+                # plt.savefig(os.path.join(plots_dir, f"image_{img_index}.png"))
+                # plt.close()                
 
                 # log_weights, model_trace, guide_trace = vectorized_importance_weights(model, guide, observations={"image": img},
                 #                                                                       num_samples=params['num_inference_samples'],
@@ -179,17 +179,17 @@ def main():
 
                 logger.info(f"log weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
                 
-                logger.info("\n")
-                for name, site in traces.nodes.items():                    
-                    # if site["type"] == "sample":
-                    #     logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
+                # logger.info("\n")
+                # for name, site in traces.nodes.items():                    
+                #     # if site["type"] == "sample":
+                #     #     logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
                     
-                    if name == 'image':
-                        for i in range(site["fn"].mean.shape[0]):
-                            output_image = site["fn"].mean[i]
-                            plt.imshow(visualize(output_image[:3].permute(1, 2, 0).cpu().numpy()))
-                            plt.savefig(os.path.join(plots_dir, f"trace_{img_index}_{i}.png"))
-                            plt.close()
+                #     if name == 'image':
+                #         for i in range(site["fn"].mean.shape[0]):
+                #             output_image = site["fn"].mean[i]
+                #             plt.imshow(visualize(output_image[:3].permute(1, 2, 0).cpu().numpy()))
+                #             plt.savefig(os.path.join(plots_dir, f"trace_{img_index}_{i}.png"))
+                #             plt.close()
 
                 
                 # check which posterior trace maximizes overall (over all distance thresholds) AP
@@ -200,7 +200,7 @@ def main():
                     preds = process_preds(prop_traces, i)
                     for t in threshold: 
                         aux_ap[t] = compute_AP(preds, target, t)
-                    logger.info(f"proposal trace {i} - AP values: {list(aux_ap.values())}")
+                    #logger.info(f"proposal trace {i} - AP values: {list(aux_ap.values())}")
                     overall_ap = np.mean(list(aux_ap.values()))
                     if overall_ap > best_overall_ap:
                         best_overall_ap = overall_ap
@@ -212,7 +212,7 @@ def main():
                 for t in threshold: ap[t] += compute_AP(preds, target, t)
                 n_test_samples += 1
 
-                if n_test_samples == 10: break
+                #if n_test_samples == 10: break
                 
         mAP = {k: v/n_test_samples for k, v in ap.items()}
         logger.info(f"distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")
