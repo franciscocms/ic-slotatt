@@ -200,7 +200,8 @@ def main():
                     preds = process_preds(prop_traces, i)
                     for t in threshold: 
                         aux_ap[t] = compute_AP(preds, target, t)
-                    overall_ap = np.mean(aux_ap.values())
+                        logger.info(f"proposal trace {i} - AP values: {aux_ap.values()}")
+                    overall_ap = np.mean([aux_ap.values()])
                     if overall_ap > best_overall_ap:
                         best_overall_ap = overall_ap
                         max_ap_idx = i
