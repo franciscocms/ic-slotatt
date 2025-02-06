@@ -181,6 +181,11 @@ def main():
                     correct_count_idx = [p for p, pred in enumerate(preds) if torch.sum(pred[:, -1]) == COUNT]
                     preds = preds[correct_count_idx]
 
+                    # remove padded objects from each particle
+                    for p, pred in enumerate(preds):
+                        real_objects_idx = [int(i) for i in list(torch.nonzero(pred[:, -1]))]
+                        preds[p] = pred[real_objects_idx]
+
                     logger.info(f"after selecting the particles with correct counting: {preds.shape}")
 
                     # permute them according to the order defined by location (euclidean distance)
@@ -197,7 +202,10 @@ def main():
                         
                         scenes = []
                         for p, particle in enumerate(sorted_preds):
-                            render_objects = particle[:o, :]
+                            real_objects_idx = [int(i) for i in list(torch.nonzero(particle[:, -1]))]
+                            real_objects = particle[real_objects_idx, :] # [#real_objects, feature_dim]
+                            render_objects = real_objects[:o, :]
+
                             scene = []
                             for s in range(render_objects.shape[0]):
                                 shape = torch.argmax(render_objects[s, :2], dim=-1)
