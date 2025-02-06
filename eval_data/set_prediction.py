@@ -27,7 +27,7 @@ from main import modifiedImportance as mImportance
 from utils.guide import load_trained_guide
 from utils.generate import img_to_tensor, render
 from inference.guide import InvSlotAttentionGuide
-from utils.distributions import Empirical
+from utils.distributions import Empirical, MyNormal
 from utils.baseline import compute_AP
 from main.setup import params
 
@@ -220,7 +220,8 @@ def main():
                         particles = torch.stack([img_transform(s) for s in rendered_particles])
 
                         # evaluate the likelihood of each generated image against the observation (iteration log weights)
-                        partial_likelihood = dist.Normal(particles, 0.1).log_prob(sample)
+                        partial_likelihood_fn = MyNormal(particles, 0.1).get_dist()
+                        partial_likelihood = partial_likelihood_fn.log_prob(sample)
                         
                         # choose the trace with best likelihood
                         resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(partial_likelihood))]), partial_likelihood)
