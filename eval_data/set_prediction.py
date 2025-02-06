@@ -204,9 +204,7 @@ def main():
                         
                         scenes = []
                         for p, particle in enumerate(sorted_preds):
-                            real_objects_idx = [int(i) for i in list(torch.nonzero(particle[:, -1]))]
-                            real_objects = particle[real_objects_idx, :] # [#real_objects, feature_dim]
-                            render_objects = real_objects[:o, :]
+                            render_objects = particle[:o+1, :]
 
                             scene = []
                             for s in range(render_objects.shape[0]):
