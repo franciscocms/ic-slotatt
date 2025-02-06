@@ -177,6 +177,12 @@ def main():
                     # get the predictions of each trace
                     preds = torch.stack([process_preds(prop_traces, i) for i in range(len(log_wts))]) # [nif, M, feature_dim]
 
+                    # only use the particles that got the # of objects right
+                    correct_count_idx = [p for p, pred in enumerate(preds) if torch.sum(pred[:, -1]) == COUNT]
+                    preds = preds[correct_count_idx]
+
+                    logger.info(f"after selecting the particles with correct counting: {preds.shape}")
+
                     # permute them according to the order defined by location (euclidean distance)
                     x = preds[:, :, 8]
                     y = preds[:, :, 9]
@@ -184,22 +190,14 @@ def main():
                     distance = torch.sqrt(x**2 + y**2) # [nif, M]
                     sorted, indices = torch.sort(distance, dim=-1)
                     sorted_preds = torch.gather(preds, 1, indices.unsqueeze(-1).expand(-1, -1, preds.shape[-1])) # [nif, M, feature_dim]
-
-                    no_objects = torch.sum(torch.round(sorted_preds[:, :, -1]), dim=-1, keepdim=True) # [nif]
-                    min_no_objects = int(torch.min(no_objects).item())
-
-                    logger.info(f"{min_no_objects} minimum objects found across all particles...")
                     
-                    for o in range(min_no_objects):
+                    for o in range(COUNT):
                         
                         logger.info(f"\nstarting score-resample procedure for object {o}...")
                         
                         scenes = []
                         for p, particle in enumerate(sorted_preds):
-                            real_objects_idx = [int(i) for i in list(torch.nonzero(particle[:, -1]))]
-                            real_objects = particle[real_objects_idx, :] # [#real_objects, feature_dim]
-                            render_objects = real_objects[:o, :]
-
+                            render_objects = particle[:o, :]
                             scene = []
                             for s in range(render_objects.shape[0]):
                                 shape = torch.argmax(render_objects[s, :2], dim=-1)
