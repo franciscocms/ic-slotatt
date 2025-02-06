@@ -146,7 +146,9 @@ def main():
             else: count_img_path = glob.glob(os.path.abspath(f'images_ood/{COUNT}/*.png'))
 
             count_img_path.sort()
-            #logger.info(count_img_path)
+            
+            resampled_logwts = {k: {c: {} for c in range(COUNT)} for k in len(count_img_path)}
+
             for img_idx, img_path in enumerate(count_img_path): 
                 
                 sample = img_to_tensor(Image.open(img_path))      
@@ -237,6 +239,9 @@ def main():
 
                         logger.info(f"particle {resampling_id} chosen with features {sorted_preds[resampling_id, o]}")
 
+                        resampled_logwts[img_idx][o]['mean'] = torch.mean(partial_likelihood)
+                        resampled_logwts[img_idx][o]['std'] = torch.std(partial_likelihood)
+
                         # save chosen image
                         plt.imshow(particles[resampling_id].permute(1, 2, 0).cpu().numpy())
                         plt.savefig(f'{count_img_dir}/image_{sample_id}_trace_{o}.png')
@@ -253,7 +258,7 @@ def main():
                         logger.info(f"sorted_preds after iteration {o}: {sorted_preds}\n")
 
                     
-
+                    logger.info(resampled_logwts)
                     
                     
                     
