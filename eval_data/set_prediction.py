@@ -229,7 +229,7 @@ def main():
                         partial_likelihood_fn = MyNormal(particles, torch.tensor(0.1)).get_dist()
                         partial_likelihood = torch.sum(partial_likelihood_fn.log_prob(sample), dim=[1, 2, 3])/(sample.shape[-1]**2)
 
-                        logger.info(partial_likelihood.shape)
+                        logger.info(partial_likelihood)
                         
                         # choose the trace with best likelihood
                         resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(partial_likelihood))]), partial_likelihood)
