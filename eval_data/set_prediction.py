@@ -229,7 +229,7 @@ def main():
                         resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(partial_likelihood))]), partial_likelihood)
                         resampling_id = resampling().item()
 
-                        logger.info(f"particle {resampling_id} chosen...")
+                        logger.info(f"particle {resampling_id} chosen with features {sorted_preds[resampling_id, o]}")
 
                         # save chosen image
                         plt.imshow(particles[resampling_id].permute(1, 2, 0).cpu().numpy())
