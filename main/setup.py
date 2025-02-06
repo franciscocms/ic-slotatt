@@ -15,11 +15,11 @@ main_dir = os.path.abspath(__file__+'/../../')
 
 params = {
     "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
-    "dataset": "2Dobjects", # 'clevr' or '2Dobjects'
+    "dataset": "clevr", # 'clevr' or '2Dobjects'
     "resolution": (128, 128),
     "num_slots": 6,
     "max_objects": 6,
-    "guide_step" : 8350, # !!!!!!!!! 11050 for clevr6 sp results !!!!!!!!!
+    "guide_step" : 11050, # !!!!!!!!! 11050 for clevr6 sp results !!!!!!!!!
     "print_distributions": False,
     "print_importance_sampling": False,
     "bernoulli_inf_reduction": 'none',
@@ -36,13 +36,13 @@ params = {
     "step_size": 50,
     "running_type": "eval", # train, debug, eval, inspect
     "ood_eval": True,
-    "slot_dim" : 4, # !!!!!!!!! 64 for clevr6 SP results !!!!!!!!!
+    "slot_dim" : 64, # !!!!!!!!! 64 for clevr6 SP results !!!!!!!!!
     "infer_background": False,
     "slotatt_recurrence": True,
     "softmax_temperature": 1.0,
     "strided_convs": True,
     "check_attn": True,
-    "jobID": 72, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects
+    "jobID": 90, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects
     "mesh_iters": 4,
     "mesh_lr": 5, # 76: 3, 77: 5
     "logprob_coeff": 1.,
@@ -55,7 +55,7 @@ params = {
 
 # set job split settings for inference
 JOB_SPLIT = {
-            'id': 3,
+            'id': 4,
             'total': 4
             }
 
