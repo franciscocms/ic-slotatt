@@ -220,7 +220,7 @@ def main():
                         particles = torch.stack([img_transform(s) for s in rendered_particles])
 
                         # evaluate the likelihood of each generated image against the observation (iteration log weights)
-                        partial_likelihood_fn = MyNormal(particles, 0.1).get_dist()
+                        partial_likelihood_fn = MyNormal(particles, torch.tensor(0.1)).get_dist()
                         partial_likelihood = partial_likelihood_fn.log_prob(sample)
                         
                         # choose the trace with best likelihood
