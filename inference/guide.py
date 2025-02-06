@@ -278,6 +278,7 @@ class InvSlotAttentionGuide(nn.Module):
         logger.info(f"\n{variable_name} proposed values {proposal}")
 
         proposal = proposal.expand(params['num_inference_samples'], -1)
+        proposal = torch.clamp(proposal, 0.15, 0.85)
         
         # logger.info(f"{variable} - mean: {mean.shape} - logvar: {logvar.shape}")
       
