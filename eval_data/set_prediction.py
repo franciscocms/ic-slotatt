@@ -48,6 +48,10 @@ shape_vals = {'ball': 0, 'square': 1}
 size_vals = {'small': 0 , 'medium': 1, 'large': 2}
 color_vals = {'red': 0, 'green': 1, 'blue': 2}
 
+shape_lib = list(shape_vals.keys())
+size_lib = list(size_vals.keys())
+color_lib = list(color_vals.keys())
+
 img_transform = transforms.Compose([transforms.ToTensor()])
 
 PRINT_INFERENCE_TIME = False
@@ -202,17 +206,11 @@ def main():
                                 size = torch.argmax(render_objects[s, 2:5], dim=-1)
                                 color = torch.argmax(render_objects[s, 5:8], dim=-1)
                                 locx, locy = render_objects[s, 8], render_objects[s, 9]
-
-                                logger.info(shape)
-                                logger.info(size)
-                                logger.info(color)
-                                logger.info(locx)
-                                logger.info(locy)
                                 
                                 scene.append({
-                                    "shape": shape_vals[shape.item()],
-                                    "color": color_vals[color.item()],
-                                    "size": size_vals[size.item()],
+                                    "shape": shape_lib[shape.item()],
+                                    "color": color_lib[color.item()],
+                                    "size": size_lib[size.item()],
                                     "position": (locx.item(), locy.item())
                                 })
                             scenes.append(scene)
