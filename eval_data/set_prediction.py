@@ -409,7 +409,7 @@ def main():
                     logger.info(f'Inference complete in {time_elapsed*1000}ms')      
                     #break          
                 
-                preds = process_preds(prop_traces, resampling_id)
+                preds = process_preds(prop_traces, resampling_id) if params['inference_method'] == 'importance_sampling_only' else sorted_preds
                 targets = process_targets(target_dict)
 
                 # logger.info(preds)
