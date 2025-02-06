@@ -202,6 +202,12 @@ def main():
                                 size = torch.argmax(render_objects[s, 2:5], dim=-1)
                                 color = torch.argmax(render_objects[s, 5:8], dim=-1)
                                 locx, locy = render_objects[s, 8], render_objects[s, 9]
+
+                                logger.info(shape)
+                                logger.info(size)
+                                logger.info(color)
+                                logger.info(locx)
+                                logger.info(locy)
                                 
                                 scene.append({
                                     "shape": shape_vals[shape.item()],
