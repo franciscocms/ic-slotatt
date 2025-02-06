@@ -182,9 +182,11 @@ def main():
                     preds = preds[correct_count_idx]
 
                     # remove padded objects from each particle
+                    real_preds = []
                     for p, pred in enumerate(preds):
                         real_objects_idx = [int(i) for i in list(torch.nonzero(pred[:, -1]))]
-                        preds[p] = pred[real_objects_idx]
+                        real_preds.append(pred[real_objects_idx])
+                    preds = torch.stack(real_preds)
 
                     logger.info(f"after selecting the particles with correct counting: {preds.shape}")
 
@@ -416,7 +418,7 @@ def main():
                     
                 for t in threshold: ap[t] += compute_AP(preds, targets, t)
 
-                if img_idx == 10: break
+                if img_idx == 1: break
             
             mAP = {k: v/n_test_samples for k, v in ap.items()}
             logger.info(f"COUNT {COUNT}: distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")
