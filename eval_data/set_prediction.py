@@ -153,7 +153,7 @@ def main():
                 plt.savefig(f'{count_img_dir}/image_{sample_id}.png')
                 plt.close()
                 
-                #logger.info(sample_id)
+                logger.info(sample_id)
                 
                 if not OOD_EVAL: target_dict = json.load(open(os.path.abspath(f'metadata/{COUNT}/{sample_id}.json')))
                 else: target_dict = json.load(open(os.path.abspath(f'metadata_ood/{COUNT}/{sample_id}.json')))
@@ -183,8 +183,13 @@ def main():
 
                     no_objects = torch.sum(torch.round(sorted_preds[:, :, -1]), dim=-1, keepdim=True) # [nif]
                     min_no_objects = int(torch.min(no_objects).item())
+
+                    logger.info(f"{min_no_objects} minimum objects found across all particles...")
                     
                     for o in range(1, min_no_objects):
+                        
+                        logger.info(f"\nstarting score-resample procedure for object {o}...")
+                        
                         scenes = []
                         for p, particle in enumerate(sorted_preds):
                             real_objects_idx = [int(i) for i in list(torch.nonzero(particle[:, -1]))]
@@ -217,6 +222,8 @@ def main():
                         resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(partial_likelihood))]), partial_likelihood)
                         resampling_id = resampling().item()
 
+                        logger.info(f"particle {resampling_id} chosen...")
+
                         # save chosen image
                         plt.imshow(particles[resampling_id].permute(1, 2, 0).cpu().numpy())
                         plt.savefig(f'{count_img_dir}/image_{sample_id}_trace_{o}.png')
@@ -226,6 +233,8 @@ def main():
                         # assign the chosen object features to all particles
                         for p in range(len(sorted_preds)):
                             sorted_preds[p, o] = render_objects[resampling_id]
+                        
+                        logger.info(f"score-resample procedure done for object {o}...")
 
                     
                     
