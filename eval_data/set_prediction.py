@@ -241,10 +241,12 @@ def main():
                         logger.info(f"sorted preds shape: {sorted_preds.shape}")
                         
                         for p in range(sorted_preds.shape[0]):
-                            
-                            sorted_preds[p, o] = render_objects[resampling_id]
+                            sorted_preds[p, o] = sorted_preds[resampling_id, o]
                         
                         logger.info(f"score-resample procedure done for object {o}...")
+                        logger.info(f"sorted_preds after iteration {o}: {sorted_preds}\n")
+
+                    
 
                     
                     
