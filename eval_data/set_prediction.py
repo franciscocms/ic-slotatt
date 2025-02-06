@@ -238,7 +238,10 @@ def main():
 
 
                         # assign the chosen object features to all particles
-                        for p in range(len(sorted_preds)):
+                        logger.info(f"sorted preds shape: {sorted_preds.shape}")
+                        
+                        for p in range(sorted_preds.shape[0]):
+                            
                             sorted_preds[p, o] = render_objects[resampling_id]
                         
                         logger.info(f"score-resample procedure done for object {o}...")
