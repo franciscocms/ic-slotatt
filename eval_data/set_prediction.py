@@ -147,7 +147,7 @@ def main():
 
             count_img_path.sort()
             
-            resampled_logwts = {k: {c: {} for c in range(COUNT)} for k in len(count_img_path)}
+            resampled_logwts = {k: {} for k in len(count_img_path)}
 
             for img_idx, img_path in enumerate(count_img_path): 
                 
@@ -201,6 +201,8 @@ def main():
                     sorted_preds = torch.gather(preds, 1, indices.unsqueeze(-1).expand(-1, -1, preds.shape[-1])) # [nif, M, feature_dim]
                     
                     for o in range(COUNT):
+
+                        resampled_logwts[img_idx][o] = {}
                         
                         logger.info(f"\nstarting score-resample procedure for object {o}...")
                         
