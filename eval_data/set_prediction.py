@@ -147,7 +147,7 @@ def main():
 
             count_img_path.sort()
             
-            resampled_logwts = {k: {} for k in len(count_img_path)}
+            resampled_logwts = {k: {} for k in range(len(count_img_path))}
 
             for img_idx, img_path in enumerate(count_img_path): 
                 
