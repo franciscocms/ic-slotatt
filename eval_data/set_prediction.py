@@ -1,4 +1,5 @@
 import pyro
+import pyro.distributions as dist
 import pyro.poutine as poutine
 import torch
 from torchvision import transforms
@@ -46,6 +47,8 @@ main_dir = os.path.abspath(__file__+'/../../')
 shape_vals = {'ball': 0, 'square': 1}
 size_vals = {'small': 0 , 'medium': 1, 'large': 2}
 color_vals = {'red': 0, 'green': 1, 'blue': 2}
+
+img_transform = transforms.Compose([transforms.ToTensor()])
 
 PRINT_INFERENCE_TIME = False
 
@@ -121,7 +124,7 @@ def main():
         
         all_mAP = {k: [] for k in threshold}
         
-        for COUNT in range(1, 7):
+        for COUNT in range(5, 6):
 
             count_img_dir = os.path.join(plots_dir, str(COUNT))
             if not os.path.isdir(count_img_dir): os.mkdir(count_img_dir)
@@ -164,135 +167,196 @@ def main():
                 traces = posterior.exec_traces[0]
                 log_wts = posterior.log_weights[0]
 
-
                 if params['inference_method'] == 'score_resample' and params['proposals'] == 'data_driven':
 
-                    # STEP 1: search for object-wise latent variables
-                    latent_vars = []
-                    hidden_vars = ['N']
-                    traces = posterior.prop_traces
-
-                    for tr in traces:
-                        for name, site in tr.nodes.items():
-                            if site['type'] == 'sample': 
-                                if name not in hidden_vars and name not in latent_vars and int(name.split('_')[1]) < int(COUNT): 
-                                    latent_vars.append(name)
                     
-                    temp_v = {}
-                    for v in latent_vars:
-                        object_id = v.split('_')[1]
-                        if object_id not in temp_v: temp_v[object_id] = [v]
-                        else: temp_v[object_id].append(v)
-                    latent_vars = list(temp_v.values())
-                
-                    # STEP 2: for each object, iterate over all traces to score each one considering only one object at a time
-                    replace_params = {}
-                    include_ids = []
+                    # get the predictions of each trace
+                    preds = torch.stack([process_preds(prop_traces, i) for i in range(len(log_wts))]) # [nif, M, feature_dim]
+
+                    # permute them according to the order defined by location (euclidean distance)
+                    x = preds[:, :, 8]
+                    y = preds[:, :, 9]
+
+                    distance = torch.sqrt(x**2 + y**2) # [nif, M]
+                    sorted, indices = torch.sort(distance, dim=-1)
+                    sorted_preds = torch.gather(preds, 1, indices.unsqueeze(-1).expand(-1, -1, preds.shape[-1])) # [nif, M, feature_dim]
+
+                    no_objects = torch.sum(torch.round(sorted_preds[:, :, -1]), dim=-1, keepdim=True) # [nif]
+                    min_no_objects = int(torch.min(no_objects).item())
                     
-                    for vars in latent_vars: # 'vars' represent the group of latent variables associated with the same object
-                        
-                        #logger.info(f"loop over all traces to score vars {vars}\n")
-                        vars_log_w = {}
-                        vars_id = vars[0].split('_')[1]
-                        include_ids.append(vars_id)
-                        tracking_dict = {}
+                    for o in range(1, min_no_objects):
+                        scenes = []
+                        for p, particle in enumerate(sorted_preds):
+                            real_objects_idx = [int(i) for i in list(torch.nonzero(particle[:, -1]))]
+                            real_objects = particle[real_objects_idx, :] # [#real_objects, feature_dim]
+                            render_objects = real_objects[:o, :]
 
-                        for t in range(len(traces)):
-                
-                            tracking_dict[t] = {}
-                            
-                            # mask -> False for all latent variables but 'vars'
-                            for name, site in traces[t].nodes.items():
-                                if site['type'] == 'sample':
-                                    if name not in vars: site['mask'] = False
-                                    else:  
-                                        site['mask'] = True
+                            scene = []
+                            for s in range(render_objects.shape[0]):
+                                shape = torch.argmax(render_objects[s, :2], dim=-1)
+                                size = torch.argmax(render_objects[s, 2:5], dim=-1)
+                                color = torch.argmax(render_objects[s, 5:8], dim=-1)
+                                locx, locy = render_objects[s, 8], render_objects[s, 9]
+                                
+                                scene.append({
+                                    "shape": shape_vals[shape.item()],
+                                    "color": color_vals[color.item()],
+                                    "size": size_vals[size.item()],
+                                    "position": (locx.item(), locy.item())
+                                })
+                            scenes.append(scene)
 
-                                        # track all hypotheses for the same object to get an idea of how close these are
-                                        tracking_dict[t][name] = site['value']
-                                    del site['log_prob_sum']
+                        # render only the properties of objects 1:o
+                        rendered_particles = render(scenes)
+                        particles = torch.stack([img_transform(s) for s in rendered_particles])
 
-                                    if site['mask']: site['log_prob_sum'] = site['fn'].log_prob(site['value']).sum()
-                                    else: site['log_prob_sum'] = torch.tensor(0.)    
-                            
-                            model_trace = poutine.trace(poutine.replay(model, trace=traces[t])).get_trace(
-                                observations={'image': sample},
-                                show=vars,
-                                N=COUNT
-                                )
-                            
-                            for name, site in model_trace.nodes.items():
-                                if site['type'] == 'sample': 
-                                    site['mask'] = True if name in vars or name == 'image' else False
-                                    try: del site['log_prob']
-                                    except: pass
-                            
-                            model_trace.compute_log_prob()
-                            vars_log_w[t] = model_trace.log_prob_sum() - traces[t].log_prob_sum()
+                        # evaluate the likelihood of each generated image against the observation (iteration log weights)
+                        partial_likelihood = dist.Normal(particles, 0.1).log_prob(sample)
                         
-                        # create an overlay img with all proposals for object 'vars_id'
-                        img_transform = transforms.Compose([transforms.ToTensor()])
-                        overlay_img = img_transform(render([tracking_dict[t][f"shape_{vars_id}"] for t in range(len(traces)) if t in tracking_dict],
-                                                        [tracking_dict[t][f"size_{vars_id}"] for t in range(len(traces)) if t in tracking_dict],
-                                                        [tracking_dict[t][f"color_{vars_id}"] for t in range(len(traces)) if t in tracking_dict],
-                                                        [tracking_dict[t][f"locX_{vars_id}"] for t in range(len(traces)) if t in tracking_dict],
-                                                        [tracking_dict[t][f"locY_{vars_id}"] for t in range(len(traces)) if t in tracking_dict],
-                                                        background=None,
-                                                        transparent_polygons=True
-                                                        )
-                                                        )
-                        
-                        # TO DO: save img overlay 
-                        plt.imshow(overlay_img.permute(1, 2, 0).numpy())
-                        plt.savefig(f'{count_img_dir}/traces_overlay_{sample_id}_vars_{vars_id}.png')
+                        # choose the trace with best likelihood
+                        resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(partial_likelihood))]), partial_likelihood)
+                        resampling_id = resampling().item()
+
+                        # save chosen image
+                        plt.imshow(particles[resampling_id].permute(1, 2, 0).cpu().numpy())
+                        plt.savefig(f'{count_img_dir}/image_{sample_id}_trace_{o}.png')
                         plt.close()
 
-                        resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(traces)) if i in tracking_dict]), torch.stack([v for k, v in vars_log_w.items()]))
-                        resampling_id = resampling().item()
-                        
-                        resampled_model_trace = poutine.trace(poutine.replay(model, trace=traces[resampling_id])).get_trace(
-                            observations = {'image': sample},
-                            show=vars,
-                            N=COUNT
-                            )
-                        
-                        for name, site in resampled_model_trace.nodes.items():
-                            if site['type'] == 'sample': 
-                                site['mask'] = True if name in vars or name == 'image' else False
-                                try: del site['log_prob']
-                                except: pass
-                            
-                            # save image at every object-wise SMC step
-                            if name == 'image': # and vars == latent_vars[-1]:
-                                plt.imshow(site["fn"].mean.squeeze().permute(1, 2, 0).cpu().numpy())
-                                plt.savefig(f'{count_img_dir}/pred_{sample_id}_vars_{vars_id}.png')
-                                plt.close()
 
-                        
-                        resampled_model_trace.compute_log_prob()                
+                        # assign the chosen object features to all particles
+                        for p in range(len(sorted_preds)):
+                            sorted_preds[p, o] = render_objects[resampling_id]
 
-                        # STEP 3: replace the params of 'vars' sample statements of all traces with the params of 'traces[resampling_id]'
-                        for name, site in traces[resampling_id].nodes.items():
-                            if name in vars: 
-                                replace_params[name] = site
-                            
-                        
-                        for t in range(len(traces)):
-                            for name, site in traces[t].nodes.items():
-                                if name in replace_params.keys(): 
-                                    msg = replace_params[name]
-                                    for k, v in msg.items(): site[k] = v
-                                if site['type'] == 'sample': 
-                                    del site['log_prob_sum']
-
-                                    if site['mask']: site['log_prob_sum'] = site['fn'].log_prob(site['value']).sum()
-                                    else: site['log_prob_sum'] = torch.tensor(0.)
                     
                     
-                    # TO DO: make sure that all traces are equal now...
-                    try: trace = traces[resampling_id] 
-                    except:
-                        logger.info(len(traces))
+                    
+                    
+                    # # STEP 1: search for object-wise latent variables
+                    # latent_vars = []
+                    # hidden_vars = ['N']
+                    # traces = posterior.prop_traces
+
+                    # for tr in traces:
+                    #     for name, site in tr.nodes.items():
+                    #         if site['type'] == 'sample': 
+                    #             if name not in hidden_vars and name not in latent_vars and int(name.split('_')[1]) < int(COUNT): 
+                    #                 latent_vars.append(name)
+                    
+                    # temp_v = {}
+                    # for v in latent_vars:
+                    #     object_id = v.split('_')[1]
+                    #     if object_id not in temp_v: temp_v[object_id] = [v]
+                    #     else: temp_v[object_id].append(v)
+                    # latent_vars = list(temp_v.values())
+                
+                    # # STEP 2: for each object, iterate over all traces to score each one considering only one object at a time
+                    # replace_params = {}
+                    # include_ids = []
+                    
+                    # for vars in latent_vars: # 'vars' represent the group of latent variables associated with the same object
+                        
+                    #     #logger.info(f"loop over all traces to score vars {vars}\n")
+                    #     vars_log_w = {}
+                    #     vars_id = vars[0].split('_')[1]
+                    #     include_ids.append(vars_id)
+                    #     tracking_dict = {}
+
+                    #     for t in range(len(traces)):
+                
+                    #         tracking_dict[t] = {}
+                            
+                    #         # mask -> False for all latent variables but 'vars'
+                    #         for name, site in traces[t].nodes.items():
+                    #             if site['type'] == 'sample':
+                    #                 if name not in vars: site['mask'] = False
+                    #                 else:  
+                    #                     site['mask'] = True
+
+                    #                     # track all hypotheses for the same object to get an idea of how close these are
+                    #                     tracking_dict[t][name] = site['value']
+                    #                 del site['log_prob_sum']
+
+                    #                 if site['mask']: site['log_prob_sum'] = site['fn'].log_prob(site['value']).sum()
+                    #                 else: site['log_prob_sum'] = torch.tensor(0.)    
+                            
+                    #         model_trace = poutine.trace(poutine.replay(model, trace=traces[t])).get_trace(
+                    #             observations={'image': sample},
+                    #             show=vars,
+                    #             N=COUNT
+                    #             )
+                            
+                    #         for name, site in model_trace.nodes.items():
+                    #             if site['type'] == 'sample': 
+                    #                 site['mask'] = True if name in vars or name == 'image' else False
+                    #                 try: del site['log_prob']
+                    #                 except: pass
+                            
+                    #         model_trace.compute_log_prob()
+                    #         vars_log_w[t] = model_trace.log_prob_sum() - traces[t].log_prob_sum()
+                        
+                    #     # create an overlay img with all proposals for object 'vars_id'
+                    #     img_transform = transforms.Compose([transforms.ToTensor()])
+                    #     overlay_img = img_transform(render([tracking_dict[t][f"shape_{vars_id}"] for t in range(len(traces)) if t in tracking_dict],
+                    #                                     [tracking_dict[t][f"size_{vars_id}"] for t in range(len(traces)) if t in tracking_dict],
+                    #                                     [tracking_dict[t][f"color_{vars_id}"] for t in range(len(traces)) if t in tracking_dict],
+                    #                                     [tracking_dict[t][f"locX_{vars_id}"] for t in range(len(traces)) if t in tracking_dict],
+                    #                                     [tracking_dict[t][f"locY_{vars_id}"] for t in range(len(traces)) if t in tracking_dict],
+                    #                                     background=None,
+                    #                                     transparent_polygons=True
+                    #                                     )
+                    #                                     )
+                        
+                    #     # TO DO: save img overlay 
+                    #     plt.imshow(overlay_img.permute(1, 2, 0).numpy())
+                    #     plt.savefig(f'{count_img_dir}/traces_overlay_{sample_id}_vars_{vars_id}.png')
+                    #     plt.close()
+
+                    #     resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(traces)) if i in tracking_dict]), torch.stack([v for k, v in vars_log_w.items()]))
+                    #     resampling_id = resampling().item()
+                        
+                    #     resampled_model_trace = poutine.trace(poutine.replay(model, trace=traces[resampling_id])).get_trace(
+                    #         observations = {'image': sample},
+                    #         show=vars,
+                    #         N=COUNT
+                    #         )
+                        
+                    #     for name, site in resampled_model_trace.nodes.items():
+                    #         if site['type'] == 'sample': 
+                    #             site['mask'] = True if name in vars or name == 'image' else False
+                    #             try: del site['log_prob']
+                    #             except: pass
+                            
+                    #         # save image at every object-wise SMC step
+                    #         if name == 'image': # and vars == latent_vars[-1]:
+                    #             plt.imshow(site["fn"].mean.squeeze().permute(1, 2, 0).cpu().numpy())
+                    #             plt.savefig(f'{count_img_dir}/pred_{sample_id}_vars_{vars_id}.png')
+                    #             plt.close()
+
+                        
+                    #     resampled_model_trace.compute_log_prob()                
+
+                    #     # STEP 3: replace the params of 'vars' sample statements of all traces with the params of 'traces[resampling_id]'
+                    #     for name, site in traces[resampling_id].nodes.items():
+                    #         if name in vars: 
+                    #             replace_params[name] = site
+                            
+                        
+                    #     for t in range(len(traces)):
+                    #         for name, site in traces[t].nodes.items():
+                    #             if name in replace_params.keys(): 
+                    #                 msg = replace_params[name]
+                    #                 for k, v in msg.items(): site[k] = v
+                    #             if site['type'] == 'sample': 
+                    #                 del site['log_prob_sum']
+
+                    #                 if site['mask']: site['log_prob_sum'] = site['fn'].log_prob(site['value']).sum()
+                    #                 else: site['log_prob_sum'] = torch.tensor(0.)
+                    
+                    
+                    # # TO DO: make sure that all traces are equal now...
+                    # try: trace = traces[resampling_id] 
+                    # except:
+                    #     logger.info(len(traces))
 
                 
                 elif params['inference_method'] == 'importance_sampling_only' and params['proposals'] == 'data_driven':
@@ -309,47 +373,6 @@ def main():
                                 plt.imshow(output_image.permute(1, 2, 0).cpu().numpy())
                                 plt.savefig(f'{count_img_dir}/image_{sample_id}_trace_{i}.png')
                                 plt.close()
-
-
-
-
-
-
-                    # tracking_dict = {}
-                    
-                    # for t in range(len(traces)):
-                    #     tracking_dict[t] = {}
-                    #     for name, site in traces[t].nodes.items():
-                    #         if site['type'] == 'sample': tracking_dict[t][name] = site['value']
-
-                    # # create an overlay img with all proposals for object 'vars_id'
-                    # img_transform = transforms.Compose([transforms.ToTensor()])
-                    # overlay_img = img_transform(render([tracking_dict[t][f"shape_{v}"] for t in range(len(traces)) for v in range(COUNT)],
-                    #                                 [tracking_dict[t][f"size_{v}"] for t in range(len(traces)) for v in range(COUNT)],
-                    #                                 [tracking_dict[t][f"color_{v}"] for t in range(len(traces)) for v in range(COUNT)],
-                    #                                 [tracking_dict[t][f"locX_{v}"] for t in range(len(traces)) for v in range(COUNT)],
-                    #                                 [tracking_dict[t][f"locY_{v}"] for t in range(len(traces))  for v in range(COUNT)],
-                    #                                 background=None,
-                    #                                 transparent_polygons=True
-                    #                                 )
-                    #                                 )
-                    
-                    # plt.imshow(overlay_img.permute(1, 2, 0).numpy())
-                    # plt.savefig(f'{count_img_dir}/traces_overlay_{sample_id}.png')
-                    # plt.close()
-
-                    # resampled_img = img_transform(render([tracking_dict[resampling_id][f"shape_{v}"] for v in range(COUNT)],
-                    #                                 [tracking_dict[resampling_id][f"size_{v}"] for v in range(COUNT)],
-                    #                                 [tracking_dict[resampling_id][f"color_{v}"] for v in range(COUNT)],
-                    #                                 [tracking_dict[resampling_id][f"locX_{v}"] for v in range(COUNT)],
-                    #                                 [tracking_dict[resampling_id][f"locY_{v}"] for v in range(COUNT)],
-                    #                                 background=None
-                    #                                 )
-                    #                                 )
-                    
-                    # plt.imshow(resampled_img.permute(1, 2, 0).numpy())
-                    # plt.savefig(f'{count_img_dir}/pred_{sample_id}.png')
-                    # plt.close()
 
                 
                 else: raise ValueError(f"{params['inference_method']} is not valid!")
