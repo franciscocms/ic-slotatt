@@ -190,7 +190,7 @@ def main():
 
                     logger.info(f"{min_no_objects} minimum objects found across all particles...")
                     
-                    for o in range(1, min_no_objects+1):
+                    for o in range(min_no_objects):
                         
                         logger.info(f"\nstarting score-resample procedure for object {o}...")
                         
