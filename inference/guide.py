@@ -275,7 +275,7 @@ class InvSlotAttentionGuide(nn.Module):
       
       if self.stage == 'eval':
         
-        logger.info(f"\n{variable_name} proposed values {proposal}")
+        #logger.info(f"\n{variable_name} proposed values {proposal}")
 
         proposal = proposal.expand(params['num_inference_samples'], -1)
         proposal = torch.clamp(proposal, 0.15, 0.85)
@@ -291,7 +291,7 @@ class InvSlotAttentionGuide(nn.Module):
        
       if self.stage == 'eval': 
         
-        logger.info(f"\n{variable_name} proposed values {proposal}")
+        #logger.info(f"\n{variable_name} proposed values {proposal}")
         
         proposal = proposal.expand(params['num_inference_samples'], -1, -1)
         # logger.info(f"{variable} - proposal: {proposal.shape}")     
@@ -304,7 +304,7 @@ class InvSlotAttentionGuide(nn.Module):
        
       if self.stage == 'eval': 
         
-        logger.info(f"\n{variable_name} proposed values {proposal}")
+        #logger.info(f"\n{variable_name} proposed values {proposal}")
         
         proposal = proposal.expand(params['num_inference_samples'], -1, -1)
         # logger.info(f"{variable} - proposal: {proposal.shape}") 
