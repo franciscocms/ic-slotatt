@@ -54,7 +54,7 @@ color_lib = list(color_vals.keys())
 
 img_transform = transforms.Compose([transforms.ToTensor()])
 
-PRINT_INFERENCE_TIME = True
+PRINT_INFERENCE_TIME = False
 
 def process_preds(trace, id):
     
@@ -90,7 +90,7 @@ def main():
 
     logger.info(device)
 
-    seeds = [1]
+    seeds = [1, 2, 3, 4, 5]
 
     OOD_EVAL = params["ood_eval"]
     
@@ -114,7 +114,7 @@ def main():
         if os.path.isfile(GUIDE_PATH): guide = load_trained_guide(guide, GUIDE_PATH)
         else: raise ValueError(f'{GUIDE_PATH} is not a valid path!')
         
-        logger.info(f'seed {seed}')
+        logger.info(f'\n\nseed {seed}\n\n')
         logger.info(GUIDE_PATH)
 
         optimiser = pyro.optim.Adam({'lr': 1e-4})
@@ -295,9 +295,9 @@ def main():
                     targets = process_targets(target_dict)
                     for t in threshold: ap[t] += compute_AP(preds, targets, t)
 
-                if img_idx == 0: break
+                #if img_idx == 0: break
             
-            logger.info(resampled_logwts)
+            #logger.info(resampled_logwts)
             
             if params['inference_method'] == 'score_resample':
                 avg_log_wts = {k: [] for k in range(COUNT)}
@@ -306,12 +306,9 @@ def main():
                         for k in range(COUNT):
                             avg_log_wts[k].append(count_dict[k].item())
                 
-            logger.info("\naveraged log_wts across all inference iterations:")
-            logger.info(avg_log_wts)
+            # logger.info("\naveraged log_wts across all inference iterations:")
+            # logger.info(avg_log_wts)
 
-
-            
-            
             mAP = {k: v/n_test_samples for k, v in ap.items()}
             logger.info(f"COUNT {COUNT}: distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")
             logger.info(f"COUNT {COUNT}: mAP values: {mAP[threshold[0]]} - {mAP[threshold[1]]} - {mAP[threshold[2]]} - {mAP[threshold[3]]} - {mAP[threshold[4]]} - {mAP[threshold[5]]}\n")
