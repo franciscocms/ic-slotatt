@@ -237,7 +237,7 @@ def main():
                         resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(partial_likelihood))]), partial_likelihood)
                         resampling_id = resampling().item()
 
-                        logger.info(f"particle {resampling_id} chosen with features {sorted_preds[resampling_id, o]}")
+                        logger.info(f"particle {resampling_id} chosen with likelihood {partial_likelihood[resampling_id]}")
 
                         resampled_logwts[img_idx][o] = torch.mean(partial_likelihood)
 
