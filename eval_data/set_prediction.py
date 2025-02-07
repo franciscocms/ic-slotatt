@@ -190,7 +190,7 @@ def main():
                         real_preds.append(pred[real_objects_idx])
                     preds = torch.stack(real_preds)
 
-                    logger.info(f"after selecting the particles with correct counting: {preds.shape}")
+                    # logger.info(f"after selecting the particles with correct counting: {preds.shape}")
 
                     # permute them according to the order defined by location (euclidean distance)
                     x = preds[:, :, 8]
@@ -201,10 +201,8 @@ def main():
                     sorted_preds = torch.gather(preds, 1, indices.unsqueeze(-1).expand(-1, -1, preds.shape[-1])) # [nif, M, feature_dim]
                     
                     for o in range(COUNT):
-
-                        resampled_logwts[img_idx][o] = {}
                         
-                        logger.info(f"\nstarting score-resample procedure for object {o}...")
+                        # logger.info(f"\nstarting score-resample procedure for object {o}...")
                         
                         scenes = []
                         for p, particle in enumerate(sorted_preds):
@@ -233,34 +231,42 @@ def main():
                         partial_likelihood_fn = MyNormal(particles, torch.tensor(0.05)).get_dist()
                         partial_likelihood = torch.sum(partial_likelihood_fn.log_prob(sample), dim=[1, 2, 3])/(sample.shape[-1]**2)
 
-                        logger.info(partial_likelihood)
+                        # logger.info(partial_likelihood)
                         
                         # choose the trace with best likelihood
                         resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(partial_likelihood))]), partial_likelihood)
                         resampling_id = resampling().item()
 
-                        logger.info(f"particle {resampling_id} chosen with features {sorted_preds[resampling_id, o]}")
+                        # logger.info(f"particle {resampling_id} chosen with features {sorted_preds[resampling_id, o]}")
 
-                        resampled_logwts[img_idx][o]['mean'] = torch.mean(partial_likelihood)
-                        resampled_logwts[img_idx][o]['std'] = torch.std(partial_likelihood)
+                        resampled_logwts[img_idx][o] = torch.mean(partial_likelihood)
 
                         # save chosen image
-                        plt.imshow(particles[resampling_id].permute(1, 2, 0).cpu().numpy())
-                        plt.savefig(f'{count_img_dir}/image_{sample_id}_trace_{o}.png')
-                        plt.close()
+                        # plt.imshow(particles[resampling_id].permute(1, 2, 0).cpu().numpy())
+                        # plt.savefig(f'{count_img_dir}/image_{sample_id}_trace_{o}.png')
+                        # plt.close()
 
 
                         # assign the chosen object features to all particles
-                        logger.info(f"sorted preds shape: {sorted_preds.shape}")
+                        # logger.info(f"sorted preds shape: {sorted_preds.shape}")
                         
                         for p in range(sorted_preds.shape[0]):
                             sorted_preds[p, o] = sorted_preds[resampling_id, o]
                         
-                        logger.info(f"score-resample procedure done for object {o}...")
-                        logger.info(f"sorted_preds after iteration {o}: {sorted_preds}\n")
+                        # logger.info(f"score-resample procedure done for object {o}...")
+                        # logger.info(f"sorted_preds after iteration {o}: {sorted_preds}\n")
 
                     
-                    logger.info(resampled_logwts)
+                    #logger.info(resampled_logwts)
+
+                    # run for all images and average the values on each resample operation -> make a plot!
+
+
+
+
+
+
+
                     
                     
                     
@@ -423,7 +429,20 @@ def main():
                     
                 for t in threshold: ap[t] += compute_AP(preds, targets, t)
 
-                if img_idx == 1: break
+                #if img_idx == 2: break
+            
+            
+            if params['inference_method'] == 'score_resample':
+                avg_log_wts = {k: [] for k in range(COUNT)}
+                for s, count_dict in resampled_logwts.items():
+                    for k in range(COUNT):
+                        avg_log_wts[k].append(count_dict[k])
+                
+            logger.info("\naveraged log_wts across all inference iterations:")
+            logger.info(avg_log_wts)
+
+
+            
             
             mAP = {k: v/n_test_samples for k, v in ap.items()}
             logger.info(f"COUNT {COUNT}: distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")
@@ -437,6 +456,9 @@ def main():
         logger.info(f"Average mAP: ")
         for k in threshold:
             logger.info(f"{k}: {np.mean(all_mAP[k])}")
+        
+
+
 
 
 if __name__ == '__main__':
