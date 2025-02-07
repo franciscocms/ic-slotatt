@@ -228,7 +228,7 @@ def main():
                         particles = torch.stack([img_transform(s) for s in rendered_particles])
 
                         # evaluate the likelihood of each generated image against the observation (iteration log weights)
-                        partial_likelihood_fn = MyNormal(particles, torch.tensor(0.01)).get_dist()
+                        partial_likelihood_fn = MyNormal(particles, torch.tensor(0.1)).get_dist()
                         partial_likelihood = torch.sum(partial_likelihood_fn.log_prob(sample), dim=[1, 2, 3])/(sample.shape[-1]**2)
 
                         # logger.info(partial_likelihood)
@@ -422,6 +422,7 @@ def main():
                     logger.info(f'Inference complete in {time_elapsed*1000}ms')      
                     #break          
                 
+
                 preds = process_preds(prop_traces, resampling_id) if params['inference_method'] == 'importance_sampling_only' else sorted_preds[0]
                 targets = process_targets(target_dict)
 
