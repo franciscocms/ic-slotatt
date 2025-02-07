@@ -93,6 +93,8 @@ def main():
     seeds = [1, 2, 3, 4, 5]
 
     OOD_EVAL = params["ood_eval"]
+
+    all_mAP = {k: [] for k in threshold}
     
     for seed in seeds: 
         
@@ -126,7 +128,7 @@ def main():
             shutil.rmtree(plots_dir)
             os.mkdir(plots_dir)
         
-        all_mAP = {k: [] for k in threshold}
+        
         
         for COUNT in range(5, 6):
 
