@@ -54,7 +54,7 @@ color_lib = list(color_vals.keys())
 
 img_transform = transforms.Compose([transforms.ToTensor()])
 
-PRINT_INFERENCE_TIME = False
+PRINT_INFERENCE_TIME = True
 
 def process_preds(trace, id):
     
@@ -155,9 +155,9 @@ def main():
                 sample = sample.to(device)
                 sample_id = img_path.split('/')[-1].split('.')[0]
                 
-                plt.imshow(sample.squeeze(0).permute(1, 2, 0).detach().cpu().numpy())
-                plt.savefig(f'{count_img_dir}/image_{sample_id}.png')
-                plt.close()
+                # plt.imshow(sample.squeeze(0).permute(1, 2, 0).detach().cpu().numpy())
+                # plt.savefig(f'{count_img_dir}/image_{sample_id}.png')
+                # plt.close()
                 
                 logger.info(sample_id)
                 
@@ -185,7 +185,7 @@ def main():
                     correct_count_idx = [p for p, pred in enumerate(preds) if torch.sum(pred[:, -1]) == COUNT]
                     preds = preds[correct_count_idx]
 
-                    logger.info(preds.shape)
+                    #logger.info(preds.shape)
                     if len(preds.shape) == 2: preds = preds.unsqueeze(0)
 
                     if preds.shape[0] != 0: 
@@ -209,7 +209,7 @@ def main():
                         
                         for o in range(COUNT):
                             
-                            logger.info(f"starting score-resample procedure for object {o}...")
+                            #logger.info(f"starting score-resample procedure for object {o}...")
                             
                             scenes = []
                             for p, particle in enumerate(sorted_preds):
@@ -244,14 +244,14 @@ def main():
                             resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(partial_likelihood))]), partial_likelihood)
                             resampling_id = resampling().item()
 
-                            logger.info(f"particle {resampling_id} chosen with likelihood {partial_likelihood[resampling_id]}")
+                            #logger.info(f"particle {resampling_id} chosen with likelihood {partial_likelihood[resampling_id]}")
 
                             resampled_logwts[img_idx][o] = torch.mean(partial_likelihood)
 
                             # save chosen image
-                            plt.imshow(particles[resampling_id].permute(1, 2, 0).cpu().numpy())
-                            plt.savefig(f'{count_img_dir}/image_{sample_id}_trace_{o}.png')
-                            plt.close()
+                            # plt.imshow(particles[resampling_id].permute(1, 2, 0).cpu().numpy())
+                            # plt.savefig(f'{count_img_dir}/image_{sample_id}_trace_{o}.png')
+                            # plt.close()
 
 
                             # assign the chosen object features to all particles
@@ -261,7 +261,7 @@ def main():
                                 sorted_preds[p, o] = sorted_preds[resampling_id, o]
                             
                             # logger.info(f"score-resample procedure done for object {o}...")
-                            logger.info(f"sorted_preds after iteration {o}: {sorted_preds}\n")
+                            #logger.info(f"sorted_preds after iteration {o}: {sorted_preds}\n")
 
                     else:
                         compute_ap_flag = False
@@ -295,7 +295,7 @@ def main():
                     targets = process_targets(target_dict)
                     for t in threshold: ap[t] += compute_AP(preds, targets, t)
 
-                #if img_idx == 5: break
+                if img_idx == 1: break
             
             logger.info(resampled_logwts)
             
