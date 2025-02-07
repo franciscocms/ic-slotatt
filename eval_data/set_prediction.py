@@ -94,13 +94,14 @@ def main():
 
     OOD_EVAL = params["ood_eval"]
 
+    threshold = [-1., 1., 0.5, 0.25, 0.125, 0.0625]
     all_mAP = {k: [] for k in threshold}
     
     for seed in seeds: 
         
         pyro.set_rng_seed(seed)
         
-        threshold = [-1., 1., 0.5, 0.25, 0.125, 0.0625]
+        
         
         model = models.model
         
