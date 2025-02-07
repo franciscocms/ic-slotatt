@@ -76,8 +76,8 @@ def main():
 
             #logger.info(img_path)
 
-            test_dataset = MyDataset(img = img_path[:5],
-                                    target = target_path[:5],
+            test_dataset = MyDataset(img = img_path[:1],
+                                    target = target_path[:1],
                                     params = params)
             
             #logger.info(test_dataset.__len__())
