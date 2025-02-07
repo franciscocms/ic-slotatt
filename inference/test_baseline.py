@@ -51,8 +51,8 @@ def main():
     for seed in seeds:
 
         logger.info(f'seed {seed}')
-        #GUIDE_PATH = f"{params['checkpoint_path']}/model_epoch_{params['epoch_to_load']}.pth"
-        GUIDE_PATH = f"/Users/franciscosilva/Downloads/model_epoch_{params['epoch_to_load']}.pth"
+        GUIDE_PATH = f"{params['checkpoint_path']}/model_epoch_{params['epoch_to_load']}.pth"
+        #GUIDE_PATH = f"/Users/franciscosilva/Downloads/model_epoch_{params['epoch_to_load']}.pth"
         logger.info(GUIDE_PATH)
 
         model = Baseline(resolution = (128, 128), num_iterations = 3, hid_dim = params["slot_dim"], stage="train", num_slots=params['max_objects'])
@@ -67,11 +67,11 @@ def main():
 
             #logger.info(f'\nEVALUATION STARTED FOR SCENES WITH {COUNT} OBJECTS\n')
 
-            #img_path = glob.glob(f"/nas-ctm01/homes/fcsilva/ic-slotatt/eval_data/images/{COUNT}/*.png")
-            img_path = glob.glob(f'/Users/franciscosilva/Downloads/eval_data/images/{COUNT}/*.png')
+            img_path = glob.glob(f"/nas-ctm01/homes/fcsilva/ic-slotatt/eval_data/images/{COUNT}/*.png")
+            #img_path = glob.glob(f'/Users/franciscosilva/Downloads/eval_data/images/{COUNT}/*.png')
             img_path.sort()
-            #target_path = glob.glob(f"/nas-ctm01/homes/fcsilva/ic-slotatt/eval_data/metadata/{COUNT}/*.json")
-            target_path = glob.glob(f'/Users/franciscosilva/Downloads/eval_data/metadata/{COUNT}/*.json')
+            target_path = glob.glob(f"/nas-ctm01/homes/fcsilva/ic-slotatt/eval_data/metadata/{COUNT}/*.json")
+            #target_path = glob.glob(f'/Users/franciscosilva/Downloads/eval_data/metadata/{COUNT}/*.json')
             target_path.sort()
 
             #logger.info(img_path)
