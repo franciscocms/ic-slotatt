@@ -202,7 +202,7 @@ def main():
                     
                     for o in range(COUNT):
                         
-                        # logger.info(f"\nstarting score-resample procedure for object {o}...")
+                        logger.info(f"starting score-resample procedure for object {o}...")
                         
                         scenes = []
                         for p, particle in enumerate(sorted_preds):
@@ -237,14 +237,14 @@ def main():
                         resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(partial_likelihood))]), partial_likelihood)
                         resampling_id = resampling().item()
 
-                        # logger.info(f"particle {resampling_id} chosen with features {sorted_preds[resampling_id, o]}")
+                        logger.info(f"particle {resampling_id} chosen with features {sorted_preds[resampling_id, o]}")
 
                         resampled_logwts[img_idx][o] = torch.mean(partial_likelihood)
 
                         # save chosen image
-                        # plt.imshow(particles[resampling_id].permute(1, 2, 0).cpu().numpy())
-                        # plt.savefig(f'{count_img_dir}/image_{sample_id}_trace_{o}.png')
-                        # plt.close()
+                        plt.imshow(particles[resampling_id].permute(1, 2, 0).cpu().numpy())
+                        plt.savefig(f'{count_img_dir}/image_{sample_id}_trace_{o}.png')
+                        plt.close()
 
 
                         # assign the chosen object features to all particles
