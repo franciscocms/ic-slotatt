@@ -48,7 +48,7 @@ params = {
     "logprob_coeff": 1.,
     "slot_pos_learned_init": False,
     "perm_inv_loss": True,
-    "inference_method": "importance_sampling_only", # score_resample, rejuvenation_ft, importance_sampling_only, neural_baseline
+    "inference_method": "score_resample", # score_resample, rejuvenation_ft, importance_sampling_only, neural_baseline
     "proposals": "data_driven", # "data_driven", "prior"
     "plots_dir": f'{main_dir}/plots'
 }
