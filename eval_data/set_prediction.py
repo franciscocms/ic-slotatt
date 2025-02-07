@@ -295,7 +295,7 @@ def main():
                     targets = process_targets(target_dict)
                     for t in threshold: ap[t] += compute_AP(preds, targets, t)
 
-                if img_idx == 1: break
+                if img_idx == 0: break
             
             logger.info(resampled_logwts)
             
