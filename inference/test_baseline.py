@@ -2,6 +2,7 @@ import os
 import torch
 import glob
 import json
+import time
 
 # add project path to sys to import relative modules
 import sys
@@ -60,11 +61,11 @@ def main():
         model.to(DEVICE)
 
         overall_mAP = {}
-        for COUNT in range(1, 11):
+        for COUNT in range(5, 6):
 
             overall_mAP[COUNT] = 0.
 
-            logger.info(f'\nEVALUATION STARTED FOR SCENES WITH {COUNT} OBJECTS\n')
+            #logger.info(f'\nEVALUATION STARTED FOR SCENES WITH {COUNT} OBJECTS\n')
 
             #img_path = glob.glob(f"/nas-ctm01/homes/fcsilva/ic-slotatt/eval_data/images/{COUNT}/*.png")
             img_path = glob.glob(f'/Users/franciscosilva/Downloads/eval_data/images/{COUNT}/*.png')
@@ -73,17 +74,21 @@ def main():
             target_path = glob.glob(f'/Users/franciscosilva/Downloads/eval_data/metadata/{COUNT}/*.json')
             target_path.sort()
 
-            logger.info(img_path)
+            #logger.info(img_path)
 
             test_dataset = MyDataset(img = img_path[:5],
                                     target = target_path[:5],
                                     params = params)
             
-            logger.info(test_dataset.__len__())
+            #logger.info(test_dataset.__len__())
 
-            testloader = torch.utils.data.DataLoader(test_dataset, batch_size=params['batch_size'], shuffle=False)
+            testloader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
             tester = Tester(model, testloader, params)
+            
+            init_time = time.time()
             preds, targets = tester.test()
+            logger.info(time.time() - init_time)
+
 
             logger.info(preds.shape) # (50, 17, 11)
             logger.info(targets.shape) # (50, 17, 11)
