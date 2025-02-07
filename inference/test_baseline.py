@@ -87,7 +87,8 @@ def main():
             
             init_time = time.time()
             preds, targets = tester.test()
-            logger.info(time.time() - init_time)
+            inf_time = time.time() - init_time
+            logger.info(inf_time*1000)
 
 
             logger.info(preds.shape) # (50, 17, 11)
