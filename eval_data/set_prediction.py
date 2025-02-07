@@ -321,9 +321,9 @@ def main():
             
             #break
 
-        logger.info(f"Average mAP: ")
-        for k in threshold:
-            logger.info(f"{k}: {np.mean(all_mAP[k])} +- {np.std(all_mAP[k])}")
+    logger.info(f"Average mAP: ")
+    for k in threshold:
+        logger.info(f"{k}: {np.mean(all_mAP[k])} +- {np.std(all_mAP[k])}")
         
 
 
