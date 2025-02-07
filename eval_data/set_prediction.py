@@ -183,6 +183,7 @@ def main():
                     correct_count_idx = [p for p, pred in enumerate(preds) if torch.sum(pred[:, -1]) == COUNT]
                     preds = preds[correct_count_idx]
 
+                    logger.info(preds.shape)
                     if len(preds.shape) == 2: preds = preds.unsqueeze(0)
 
                     # remove padded objects from each particle
