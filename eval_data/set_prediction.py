@@ -254,7 +254,7 @@ def main():
                             sorted_preds[p, o] = sorted_preds[resampling_id, o]
                         
                         # logger.info(f"score-resample procedure done for object {o}...")
-                        # logger.info(f"sorted_preds after iteration {o}: {sorted_preds}\n")
+                        logger.info(f"sorted_preds after iteration {o}: {sorted_preds}\n")
 
                     
                     #logger.info(resampled_logwts)
