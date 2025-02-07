@@ -429,7 +429,7 @@ def main():
                     
                 for t in threshold: ap[t] += compute_AP(preds, targets, t)
 
-                if img_idx == 5: break
+                #if img_idx == 5: break
             
             logger.info(resampled_logwts)
             
