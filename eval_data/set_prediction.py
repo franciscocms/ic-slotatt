@@ -431,6 +431,7 @@ def main():
 
                 if img_idx == 5: break
             
+            logger.info(resampled_logwts)
             
             if params['inference_method'] == 'score_resample':
                 avg_log_wts = {k: [] for k in range(COUNT)}
