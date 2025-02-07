@@ -436,8 +436,9 @@ def main():
             if params['inference_method'] == 'score_resample':
                 avg_log_wts = {k: [] for k in range(COUNT)}
                 for s, count_dict in resampled_logwts.items():
-                    for k in range(COUNT):
-                        avg_log_wts[k].append(count_dict[k].item())
+                    if len(count_dict) > 0:
+                        for k in range(COUNT):
+                            avg_log_wts[k].append(count_dict[k].item())
                 
             logger.info("\naveraged log_wts across all inference iterations:")
             logger.info(avg_log_wts)
