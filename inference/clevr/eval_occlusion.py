@@ -170,6 +170,7 @@ def main():
                 real_obj = torch.round(preds[:, 17])
 
                 logger.info(real_obj)
+                logger.info(torch.sum(real_obj))
 
                 if torch.sum(real_obj) == 2.:
                     occluder_shape = torch.tensor(2.)
