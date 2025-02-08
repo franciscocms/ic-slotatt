@@ -178,19 +178,10 @@ def main():
                     occluder_color = torch.tensor(2.)
                     occluder_mat = torch.tensor(1.)
 
-                    for o in range(shape[0]):
-                        logger.info(shape[o])
-                        logger.info(color[o])
-                        logger.info(size[o])
-                        logger.info(mat[o])
-                        logger.info(real_obj[o])
+                    for o in range(shape.shape[0]):
 
                         if real_obj[o]:
                             # exclude the occluder
-                            
-                            logger.info(shape[o])
-                            logger.info(shape[o] == occluder_shape)
-
                             if shape[o] == occluder_shape and color[o] == occluder_color and size[o] == occluder_size and mat[o] == occluder_mat:
                                 logger.info(f"found occluder in trace {i}")
                                 #continue
