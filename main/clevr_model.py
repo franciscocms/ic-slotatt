@@ -393,8 +393,8 @@ render_args.resolution_percentage = 100
 bpy.data.worlds['World'].cycles.sample_as_light = True
 bpy.context.scene.cycles.blur_glossy = 2.0
 bpy.context.scene.cycles.samples = 512
-bpy.context.scene.cycles.transparent_min_bounces = 4
-bpy.context.scene.cycles.transparent_max_bounces = 4
+bpy.context.scene.cycles.transparent_min_bounces = 8
+bpy.context.scene.cycles.transparent_max_bounces = 8
 bpy.context.scene.cycles.device = 'GPU'
 bpy.context.preferences.addons['cycles'].preferences.compute_device_type = 'CUDA'
 
