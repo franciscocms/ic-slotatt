@@ -132,7 +132,7 @@ def main():
         # define dataset
         img_transform = transforms.Compose([transforms.ToTensor()])
         
-        img = torch.from_numpy(np.asarray(Image.open('occlusion_imgs/unoccluded.png'))).permute(2, 0, 1).unsqueeze(0)
+        img = torch.from_numpy(np.asarray(Image.open('occlusion_imgs/occluded.png'))).permute(2, 0, 1).unsqueeze(0)
         img = preprocess_clevr(img)
         logger.info(img.shape)
 
@@ -158,9 +158,33 @@ def main():
             resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
             resampling_id = resampling().item()
 
+            shape_pred_dict = {s: 0 for s in range(3)}
+
             for i in range(len(log_wts)):
                 preds = process_preds(prop_traces, i)
-                logger.info(f"\npreds for trace {i}: {preds}")
+                
+                shape = torch.argmax(preds[:, :3], dim=-1)
+                color = torch.argmax(preds[:, 3:11], dim=-1)
+                size = torch.argmax(preds[:, 11:13], dim=-1)
+                mat = torch.argmax(preds[:, 13:15], dim=-1)
+                real_obj = torch.round(preds[:, 17])
+
+                if torch.sum(real_obj) == 2.:
+                    occluder_shape = torch.tensor(2.)
+                    occluder_size = torch.tensor(0.)
+                    occluder_color = torch.tensor(2.)
+                    occluder_mat = torch.tensor(1.)
+
+                    for o in range(shape[0]):
+                        if real_obj[o]:
+                            # exclude the occluder
+                            if shape[o] == occluder_shape and color[o] == occluder_color and size[o] == occluder_size and mat[o] == occluder_mat:
+                                continue
+                            else:
+                                shape_pred_dict[shape[o].item()] += 1
+
+                
+            logger.info(shape_pred_dict)
             
             for name, site in traces.nodes.items():                    
                 # if site["type"] == "sample":
