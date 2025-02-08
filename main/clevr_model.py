@@ -392,7 +392,7 @@ render_args.resolution_percentage = 100
 # Some CYCLES-specific stuff
 bpy.data.worlds['World'].cycles.sample_as_light = True
 bpy.context.scene.cycles.blur_glossy = 2.0
-bpy.context.scene.cycles.samples = 64
+bpy.context.scene.cycles.samples = 512
 bpy.context.scene.cycles.transparent_min_bounces = 4
 bpy.context.scene.cycles.transparent_max_bounces = 4
 bpy.context.scene.cycles.device = 'GPU'
