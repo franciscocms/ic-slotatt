@@ -179,6 +179,12 @@ def main():
                     occluder_mat = torch.tensor(1.)
 
                     for o in range(shape[0]):
+                        logger.info(shape[o])
+                        logger.info(color[o])
+                        logger.info(size[o])
+                        logger.info(mat[o])
+                        logger.info(real_obj[o])
+
                         if real_obj[o]:
                             # exclude the occluder
                             
