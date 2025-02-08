@@ -135,6 +135,16 @@ def main():
         img = preprocess_clevr(img)
         logger.info(img.shape)
 
+        occlusion_plots_dir = os.path.abspath("occlusion_plots")
+        if not os.path.isdir(occlusion_plots_dir): os.mkdir(occlusion_plots_dir)
+        else: 
+            shutil.rmtree(occlusion_plots_dir)
+            os.mkdir(occlusion_plots_dir)
+
+        plt.imshow(visualize(img.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
+        plt.savefig(os.path.join(occlusion_plots_dir, f"occluded_image.png"))
+        plt.close() 
+
         guide.eval()
         with torch.no_grad():
             img = img.to(device)
@@ -150,6 +160,18 @@ def main():
             for i in range(len(log_wts)):
                 preds = process_preds(prop_traces, i)
                 logger.info(f"\npreds for trace {i}: {preds}")
+            
+            for name, site in traces.nodes.items():                    
+                # if site["type"] == "sample":
+                #     logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
+                
+                if name == 'image':
+                    for i in range(site["fn"].mean.shape[0]):
+                        output_image = site["fn"].mean[i]
+                        plt.imshow(visualize(output_image[:3].permute(1, 2, 0).cpu().numpy()))
+                        plt.savefig(os.path.join(occlusion_plots_dir, f"trace_{i}.png"))
+                        plt.close()
+
 
 
     inference_time = time.time() - init_time 
