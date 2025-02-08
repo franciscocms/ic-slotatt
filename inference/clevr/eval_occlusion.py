@@ -179,9 +179,9 @@ def main():
                     
                     analysed_traces += 1
                     
-                    occluder_shape = torch.tensor(2.)
+                    occluder_shape = torch.tensor(0.)
                     occluder_size = torch.tensor(0.)
-                    occluder_color = torch.tensor(2.)
+                    occluder_color = torch.tensor(1.)
                     occluder_mat = torch.tensor(1.)
 
                     for o in range(shape.shape[0]):
