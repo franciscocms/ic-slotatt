@@ -91,7 +91,7 @@ class SlotAttention(nn.Module):
 
     self.step = 0
 
-  def forward(self, inputs, num_slots = None):
+  def forward(self, inputs, num_slots = None, is_train = False):
     
     b_s, num_inputs, d = inputs.shape # 'inputs' have shape (b_s, W*H, dim)
     n_s = num_slots if num_slots is not None else self.num_slots
@@ -115,7 +115,7 @@ class SlotAttention(nn.Module):
     # logger.info(f"inputs: {inputs.shape}")
     # logger.info(f"keys: {k.shape}")
 
-    if self.step % params['step_size'] == 0:
+    if is_train and self.step % params['step_size'] == 0:
         fig, axes = plt.subplots(int(np.sqrt(k.shape[-1])), int(np.sqrt(k.shape[-1])), figsize=(10, 10))
         axes = axes.flatten()  # Flatten the grid to access each subplot easily
         
@@ -149,7 +149,7 @@ class SlotAttention(nn.Module):
         # logger.info(f"queries: {q.shape}")
         # logger.info(f"attn logits: {attn_logits.shape}")     
         
-        if self.step % params['step_size'] == 0 and iteration == self.iters - 1:
+        if is_train and self.step % params['step_size'] == 0 and iteration == self.iters - 1:
             #aux_attn = attn_logits.reshape((b_s, n_s, 128, 128)) if not params["strided_convs"] else attn_logits.reshape((b_s, n_s, 32, 32))
             aux_attn = torch.unflatten(attn_logits, 1, (l[0], l[1]))
             fig, ax = plt.subplots(ncols=n_s)
@@ -162,7 +162,7 @@ class SlotAttention(nn.Module):
 
         attn_logits, p, q = minimize_entropy_of_sinkhorn(attn_logits, a, b, mesh_lr=params["mesh_lr"], n_mesh_iters=params["mesh_iters"]) 
 
-        if self.step % params['step_size'] == 0 and iteration == self.iters - 1:
+        if is_train and self.step % params['step_size'] == 0 and iteration == self.iters - 1:
             aux_attn = torch.unflatten(attn_logits, 1, (l[0], l[1]))
             fig, ax = plt.subplots(ncols=n_s)
             for j in range(n_s):                                       
@@ -237,13 +237,13 @@ class Encoder(nn.Module):
 
   def forward(self, x):    
     x = self.relu(self.conv1(x))
-    if self.step % params['step_size'] == 0: save_intermediate_output(x, self.step, "conv1")
+    #if self.step % params['step_size'] == 0: save_intermediate_output(x, self.step, "conv1")
     x = self.relu(self.conv2(x))
-    if self.step % params['step_size'] == 0: save_intermediate_output(x, self.step, "conv2")
+    #if self.step % params['step_size'] == 0: save_intermediate_output(x, self.step, "conv2")
     x = self.relu(self.conv3(x))
-    if self.step % params['step_size'] == 0: save_intermediate_output(x, self.step, "conv3")
+    #if self.step % params['step_size'] == 0: save_intermediate_output(x, self.step, "conv3")
     x = self.relu(self.conv4(x))
-    if self.step % params['step_size'] == 0: save_intermediate_output(x, self.step, "conv4")
+    #if self.step % params['step_size'] == 0: save_intermediate_output(x, self.step, "conv4")
 
     # logger.info(f"after encoder: {x.shape}")
 
@@ -277,7 +277,7 @@ class InvSlotAttentionGuide(nn.Module):
     self.stage = stage
     assert self.stage in ["train", "eval"], "stage must be either 'train' or 'eval'"
     self.current_trace = []
-    self.is_train = True
+    self.is_train = True if self.stage == "train" else False
 
     self.prior_stddevs = params["prior_stddevs"]
 
@@ -426,7 +426,7 @@ class InvSlotAttentionGuide(nn.Module):
     n_s = params['num_slots']
 
     if self.stage == "train":        
-        self.slots, attn = self.slot_attention(self.features_to_slots, num_slots=n_s)
+        self.slots, attn = self.slot_attention(self.features_to_slots, num_slots=n_s, is_train=self.is_train)
 
         # for b in range(B):
         #     plot_img = np.transpose(self.img[b].detach().cpu().numpy(), (1, 2, 0))
@@ -480,7 +480,7 @@ class InvSlotAttentionGuide(nn.Module):
       with torch.no_grad():
         assert self.current_trace == [], "current_trace list is not empty in the begining of evaluation!"
 
-        self.slots, attn = self.slot_attention(self.features_to_slots, num_slots=n_s)         
+        self.slots, attn = self.slot_attention(self.features_to_slots, num_slots=n_s, is_train=self.is_train)         
         
         # define the latent variables
         # infer the posterior of each latent variable
