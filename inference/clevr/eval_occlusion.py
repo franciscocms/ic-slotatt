@@ -179,8 +179,10 @@ def main():
                         if real_obj[o]:
                             # exclude the occluder
                             if shape[o] == occluder_shape and color[o] == occluder_color and size[o] == occluder_size and mat[o] == occluder_mat:
-                                continue
+                                logger.info(f"found occluder in trace {i}")
+                                #continue
                             else:
+                                logger.info(shape[o])
                                 shape_pred_dict[shape[o].item()] += 1
 
                 
