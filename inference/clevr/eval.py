@@ -206,7 +206,7 @@ def main():
                         best_overall_ap = overall_ap
                         max_ap_idx = i
                 
-                #logger.info(f"trace that maximizes AP: {max_ap_idx} with {best_overall_ap}")
+                logger.info(f"trace that maximizes AP: {max_ap_idx} with {best_overall_ap}")
                 # compute the final AP
                 preds = process_preds(prop_traces, max_ap_idx)
                 for t in threshold: ap[t] += compute_AP(preds, target, t)
