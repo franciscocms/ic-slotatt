@@ -169,6 +169,8 @@ def main():
                 mat = torch.argmax(preds[:, 13:15], dim=-1)
                 real_obj = torch.round(preds[:, 17])
 
+                logger.info(real_obj)
+
                 if torch.sum(real_obj) == 2.:
                     occluder_shape = torch.tensor(2.)
                     occluder_size = torch.tensor(0.)
