@@ -37,7 +37,7 @@ def process_preds(preds):
 def distance(loc1, loc2):
     return torch.sqrt(torch.square(loc1[0]-loc2[0]) + torch.square(loc1[1]-loc2[1]))
 
-def compute_AP(preds, targets, threshold_dist):
+def compute_AP(preds, targets, threshold_dist, print_ap=False):
 
     """
     adapted from 'https://github.com/google-research/google-research/blob/master/slot_attention/utils.py'
@@ -126,5 +126,6 @@ def compute_AP(preds, targets, threshold_dist):
     for i in indices_recall:
         average_precision += precision[i + 1] * (recall[i + 1] - recall[i])
 
-    #logger.info(f'ap: {average_precision}')
+    if print_ap:
+        logger.info(f'ap: {average_precision}')
     return average_precision
