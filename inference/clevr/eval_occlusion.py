@@ -92,7 +92,7 @@ def main():
 
     assert params['batch_size'] == 1
     
-    logfile_name = f"eval_split_{JOB_SPLIT['id']}.log"
+    logfile_name = f"eval_occlusion.log"
     logger = logging.getLogger("eval")
     logger.setLevel(logging.INFO)
     fh = logging.FileHandler(logfile_name, mode='w')
@@ -124,29 +124,16 @@ def main():
                                                                              size_map=size_mapping,
                                                                              color_map=color_mapping))
         else: raise ValueError(f'{GUIDE_PATH} is not a valid path!')
-
-        logger.info(f'seed {seed}')
         logger.info(GUIDE_PATH)
 
         optimiser = pyro.optim.Adam({'lr': 1e-4})
         csis = CSIS(model, guide, optimiser, training_batch_size=256, num_inference_samples=params["num_inference_samples"])
 
-        plots_dir = os.path.abspath("set_prediction_plots")
-        if not os.path.isdir(plots_dir): os.mkdir(plots_dir)
-        else: 
-            shutil.rmtree(plots_dir)
-            os.mkdir(plots_dir)
-        
-        threshold = [-1., 1., 0.5, 0.25, 0.125, 0.0625]
-        ap = {k: 0 for k in threshold}
-
         # define dataset
         img_transform = transforms.Compose([transforms.ToTensor()])
-        img = img_transform(Image.open('/Users/franciscosilva/Downloads/occlusion_data/occluded.png')).unsqueeze(0) # img shape is (1, 4, 240, 320)
+        img = img_transform(Image.open('occlusion_imgs/occluded.png')).unsqueeze(0) # img shape is (1, 4, 240, 320)
         img = preprocess_clevr(img)
-        print(img.shape)
-        
-        n_test_samples = 0
+        logger.info(img.shape)
 
         guide.eval()
         with torch.no_grad():
