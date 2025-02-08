@@ -198,7 +198,7 @@ def main():
                                 color_pred_dict[color[o].item()] += 1
                                 mat_pred_dict[mat[o].item()] += 1
 
-                
+            logger.info(f"{analysed_traces} used for uncertainty quantification...")
             logger.info(shape_pred_dict)
             shape_pred_dict = {k: v/analysed_traces for k, v in shape_pred_dict.items()}
             size_pred_dict = {k: v/analysed_traces for k, v in size_pred_dict.items()}
