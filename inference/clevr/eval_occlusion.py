@@ -142,9 +142,9 @@ def main():
             shutil.rmtree(occlusion_plots_dir)
             os.mkdir(occlusion_plots_dir)
 
-        plt.imshow(visualize(img.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
-        plt.savefig(os.path.join(occlusion_plots_dir, f"occluded_image.png"))
-        plt.close() 
+        # plt.imshow(visualize(img.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
+        # plt.savefig(os.path.join(occlusion_plots_dir, f"occluded_image.png"))
+        # plt.close() 
 
         guide.eval()
         with torch.no_grad():
@@ -159,6 +159,12 @@ def main():
             resampling_id = resampling().item()
 
             shape_pred_dict = {s: 0 for s in range(3)}
+            size_pred_dict = {s: 0 for s in range(2)}
+            color_pred_dict = {s: 0 for s in range(8)}
+            mat_pred_dict = {s: 0 for s in range(2)}
+
+            
+            analysed_traces = 0
 
             for i in range(len(log_wts)):
                 preds = process_preds(prop_traces, i)
@@ -171,7 +177,7 @@ def main():
 
                 if torch.sum(real_obj) == 2.:
                     
-                    logger.info("got in here!")
+                    analysed_traces += 1
                     
                     occluder_shape = torch.tensor(2.)
                     occluder_size = torch.tensor(0.)
@@ -183,25 +189,38 @@ def main():
                         if real_obj[o]:
                             # exclude the occluder
                             if shape[o] == occluder_shape and color[o] == occluder_color and size[o] == occluder_size and mat[o] == occluder_mat:
-                                logger.info(f"found occluder in trace {i}")
-                                #continue
+                                #logger.info(f"found occluder in trace {i}")
+                                continue
                             else:
                                 logger.info(shape[o])
                                 shape_pred_dict[shape[o].item()] += 1
+                                size_pred_dict[size[o].item()] += 1
+                                color_pred_dict[color[o].item()] += 1
+                                mat_pred_dict[mat[o].item()] += 1
 
                 
             logger.info(shape_pred_dict)
+            shape_pred_dict = {k: v/analysed_traces for k, v in shape_pred_dict.items()}
+            size_pred_dict = {k: v/analysed_traces for k, v in size_pred_dict.items()}
+            color_pred_dict = {k: v/analysed_traces for k, v in color_pred_dict.items()}
+            mat_pred_dict = {k: v/analysed_traces for k, v in mat_pred_dict.items()}
             
-            for name, site in traces.nodes.items():                    
-                # if site["type"] == "sample":
-                #     logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
+            logger.info(f"shape distributions: {shape_pred_dict}")
+            logger.info(f"size distributions: {size_pred_dict}")
+            logger.info(f"color distributions: {color_pred_dict}")
+            logger.info(f"mat distributions: {mat_pred_dict}")
+
+            
+            # for name, site in traces.nodes.items():                    
+            #     # if site["type"] == "sample":
+            #     #     logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
                 
-                if name == 'image':
-                    for i in range(site["fn"].mean.shape[0]):
-                        output_image = site["fn"].mean[i]
-                        plt.imshow(visualize(output_image[:3].permute(1, 2, 0).cpu().numpy()))
-                        plt.savefig(os.path.join(occlusion_plots_dir, f"trace_{i}.png"))
-                        plt.close()
+            #     if name == 'image':
+            #         for i in range(site["fn"].mean.shape[0]):
+            #             output_image = site["fn"].mean[i]
+            #             plt.imshow(visualize(output_image[:3].permute(1, 2, 0).cpu().numpy()))
+            #             plt.savefig(os.path.join(occlusion_plots_dir, f"trace_{i}.png"))
+            #             plt.close()
 
 
 
