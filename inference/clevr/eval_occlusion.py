@@ -132,7 +132,7 @@ def main():
         # define dataset
         img_transform = transforms.Compose([transforms.ToTensor()])
         
-        img = torch.from_numpy(np.asarray(Image.open('occlusion_imgs/occluded_2.png'))).permute(2, 0, 1).unsqueeze(0)
+        img = torch.from_numpy(np.asarray(Image.open('occlusion_imgs/unoccluded_2.png'))).permute(2, 0, 1).unsqueeze(0)
         img = preprocess_clevr(img)
         logger.info(img.shape)
 
