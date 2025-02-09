@@ -345,7 +345,7 @@ def sample_clevr_scene(llh_uncertainty):
         scenes.append(objects)
     return scenes
 
-def generate_blender_script(objects, id, save_dir):
+def generate_blender_script(objects, id, save_dir, gen_samples):
     """
     Generate a Blender Python script to render the CLEVR-like scene.
     """
@@ -392,7 +392,7 @@ render_args.resolution_percentage = 100
 # Some CYCLES-specific stuff
 bpy.data.worlds['World'].cycles.sample_as_light = True
 bpy.context.scene.cycles.blur_glossy = 2.0
-bpy.context.scene.cycles.samples = 512
+bpy.context.scene.cycles.samples = {gen_samples}
 bpy.context.scene.cycles.transparent_min_bounces = 8
 bpy.context.scene.cycles.transparent_max_bounces = 8
 bpy.context.scene.cycles.device = 'GPU'
@@ -632,7 +632,8 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     #init_time = time.time()
     # Generate the Blender script for the sampled scene
-    blender_scripts = [generate_blender_script(scene, idx, imgs_path) for idx, scene in enumerate(clevr_scenes)]
+    gen_samples = 64 if params["running_type"] == "train" else 512
+    blender_scripts = [generate_blender_script(scene, idx, imgs_path, gen_samples) for idx, scene in enumerate(clevr_scenes)]
     #script_time = time.time() - init_time
     #logger.info(f"Scene scripting time: {script_time}")
     
@@ -644,7 +645,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     with mp.Pool(processes=10) as pool:
       pool.map(render_scene_in_blender, blender_scripts)
     batch_time = time.time() - init_time
-    #logger.info(f"Batch generation duration: {batch_time} - {batch_time/B} per sample")
+    if params["running_type"] == "train": logger.info(f"Batch generation duration: {batch_time} - {batch_time/B} per sample")
 
     # init_time = time.time()
     # for blender_script in blender_scripts:

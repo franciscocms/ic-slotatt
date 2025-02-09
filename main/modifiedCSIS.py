@@ -254,28 +254,25 @@ class CSIS(Importance):
 
   def _differentiable_loss_particle(self, guide_trace):
     
-    """
-    save the GT latents separately
-    """
+    B = self.batch_size
+    M = p['num_slots']
     
     true_latents = {}
     for name, vals in guide_trace.nodes.items():
       if vals["type"] == "sample": # only consider object-wise properties
         true_latents[name] = vals['value'] # [B, M]
     
-    # for k, v in true_latents.items():
-    #   logger.info(f"{k} - {v}")
+    # pad true latents if params["num_slots"] != params["max_objects"]
+    if p["num_slots"] != p["max_objects"]:
+      assert p["num_slots"] > p["max_objects"]
 
-    B = self.batch_size
-    M = p['num_slots']
-
-    # B_pdist = torch.tensor([], requires_grad=self.guide.is_train)
-    # for b in range(B):
-
-    #logger.info(f"\nSAMPLE {b}/{B-1}")
+      for k, v in true_latents.items():
+        true_latents[k] = torch.cat(
+          true_latents[k],
+          torch.zeros(B, p["num_slots"]-p["max_objects"])
+        )
 
     N_pdist = torch.tensor([], requires_grad=self.guide.is_train)
-    
     for i in range(M):
       
       #logger.info(f"\nOBJECT {i}")
@@ -289,17 +286,20 @@ class CSIS(Importance):
           # for each scenes, assign the true latents as if object 'i' was the overall ground-truth
           aux_latents = true_latents[name][:, i].unsqueeze(-1).expand(-1, M) 
 
+          # only account for real objects
+          aux_mask = true_latents["mask"][:, i].unsqueeze(-1).expand(-1, M)
+
           # logger.info(aux_latents)
           
           if isinstance(vals['fn'], dist.Normal):
             aux_mean, aux_std = vals['fn'].loc, vals['fn'].scale             
-            aux_logprob = -dist.Normal(aux_mean, aux_std).log_prob(aux_latents)
+            aux_logprob = -dist.Normal(aux_mean, aux_std).log_prob(aux_latents)*aux_mask
           elif isinstance(vals['fn'], dist.Bernoulli):
             aux_probs = vals['fn'].probs
-            aux_logprob = -dist.Bernoulli(aux_probs).log_prob(aux_latents)
+            aux_logprob = -dist.Bernoulli(aux_probs).log_prob(aux_latents)*aux_mask
           elif isinstance(vals['fn'], dist.Categorical):
             aux_probs = vals['fn'].probs
-            aux_logprob = -dist.Categorical(aux_probs).log_prob(aux_latents)
+            aux_logprob = -dist.Categorical(aux_probs).log_prob(aux_latents)*aux_mask
           
           aux_logprob = aux_logprob.unsqueeze(-1) # [B, n_slots, 1]
           pdist = torch.cat((pdist, aux_logprob), dim=-1) # [B, n_slots, n_latents]
