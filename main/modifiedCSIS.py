@@ -266,10 +266,11 @@ class CSIS(Importance):
     if p["num_slots"] != p["max_objects"]:
       assert p["num_slots"] > p["max_objects"]
 
-      for k, v in true_latents.items():
+      for k, _ in true_latents.items():
         true_latents[k] = torch.cat(
           true_latents[k],
-          torch.zeros(B, p["num_slots"]-p["max_objects"])
+          torch.zeros(B, p["num_slots"]-p["max_objects"]),
+          dim=-1
         )
 
     N_pdist = torch.tensor([], requires_grad=self.guide.is_train)
