@@ -268,8 +268,7 @@ class CSIS(Importance):
 
       for k, _ in true_latents.items():
         true_latents[k] = torch.cat(
-          true_latents[k],
-          torch.zeros(B, p["num_slots"]-p["max_objects"]),
+          (true_latents[k], torch.zeros(B, p["num_slots"]-p["max_objects"])),
           dim=-1
         )
 
