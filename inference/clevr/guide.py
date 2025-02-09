@@ -115,19 +115,19 @@ class SlotAttention(nn.Module):
     # logger.info(f"inputs: {inputs.shape}")
     # logger.info(f"keys: {k.shape}")
 
-    if is_train and self.step % params['step_size'] == 0:
-        fig, axes = plt.subplots(int(np.sqrt(k.shape[-1])), int(np.sqrt(k.shape[-1])), figsize=(10, 10))
-        axes = axes.flatten()  # Flatten the grid to access each subplot easily
+    # if is_train and self.step % params['step_size'] == 0:
+    #     fig, axes = plt.subplots(int(np.sqrt(k.shape[-1])), int(np.sqrt(k.shape[-1])), figsize=(10, 10))
+    #     axes = axes.flatten()  # Flatten the grid to access each subplot easily
         
-        # Plot each of the 64 figures
-        aux_k = torch.unflatten(k, 1, (int(np.sqrt(k.shape[1])), int(np.sqrt(k.shape[1]))))
-        for i in range(k.shape[-1]):  # 64 slots to match the tensor's last dimension
-            ax = axes[i]
-            ax.imshow(aux_k[0, :, :, i].detach().cpu().numpy())  # Customize colormap if needed
-            ax.axis('off')  # Hide axes for a cleaner look
-        plt.tight_layout()
-        plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/keys.png")
-        plt.close()
+    #     # Plot each of the 64 figures
+    #     aux_k = torch.unflatten(k, 1, (int(np.sqrt(k.shape[1])), int(np.sqrt(k.shape[1]))))
+    #     for i in range(k.shape[-1]):  # 64 slots to match the tensor's last dimension
+    #         ax = axes[i]
+    #         ax.imshow(aux_k[0, :, :, i].detach().cpu().numpy())  # Customize colormap if needed
+    #         ax.axis('off')  # Hide axes for a cleaner look
+    #     plt.tight_layout()
+    #     plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/keys.png")
+    #     plt.close()
 
     if params["strided_convs"]: l = (int(params['resolution'][0]/4), int(params['resolution'][1]/4))
     else: l = params['resolution']
@@ -149,28 +149,28 @@ class SlotAttention(nn.Module):
         # logger.info(f"queries: {q.shape}")
         # logger.info(f"attn logits: {attn_logits.shape}")     
         
-        if is_train and self.step % params['step_size'] == 0 and iteration == self.iters - 1:
-            #aux_attn = attn_logits.reshape((b_s, n_s, 128, 128)) if not params["strided_convs"] else attn_logits.reshape((b_s, n_s, 32, 32))
-            aux_attn = torch.unflatten(attn_logits, 1, (l[0], l[1]))
-            fig, ax = plt.subplots(ncols=n_s)
-            for j in range(n_s):                                       
-                im = ax[j].imshow(aux_attn[0, :, :, j].detach().cpu().numpy())
-                ax[j].grid(False)
-                ax[j].axis('off')        
-            plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/attn_logits.png")
-            plt.close()
+        # if is_train and self.step % params['step_size'] == 0 and iteration == self.iters - 1:
+        #     #aux_attn = attn_logits.reshape((b_s, n_s, 128, 128)) if not params["strided_convs"] else attn_logits.reshape((b_s, n_s, 32, 32))
+        #     aux_attn = torch.unflatten(attn_logits, 1, (l[0], l[1]))
+        #     fig, ax = plt.subplots(ncols=n_s)
+        #     for j in range(n_s):                                       
+        #         im = ax[j].imshow(aux_attn[0, :, :, j].detach().cpu().numpy())
+        #         ax[j].grid(False)
+        #         ax[j].axis('off')        
+        #     plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/attn_logits.png")
+        #     plt.close()
 
         attn_logits, p, q = minimize_entropy_of_sinkhorn(attn_logits, a, b, mesh_lr=params["mesh_lr"], n_mesh_iters=params["mesh_iters"]) 
 
-        if is_train and self.step % params['step_size'] == 0 and iteration == self.iters - 1:
-            aux_attn = torch.unflatten(attn_logits, 1, (l[0], l[1]))
-            fig, ax = plt.subplots(ncols=n_s)
-            for j in range(n_s):                                       
-                im = ax[j].imshow(aux_attn[0, :, :, j].detach().cpu().numpy())
-                ax[j].grid(False)
-                ax[j].axis('off')        
-            plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/attn_logits_low_entropy.png")
-            plt.close()
+        # if is_train and self.step % params['step_size'] == 0 and iteration == self.iters - 1:
+        #     aux_attn = torch.unflatten(attn_logits, 1, (l[0], l[1]))
+        #     fig, ax = plt.subplots(ncols=n_s)
+        #     for j in range(n_s):                                       
+        #         im = ax[j].imshow(aux_attn[0, :, :, j].detach().cpu().numpy())
+        #         ax[j].grid(False)
+        #         ax[j].axis('off')        
+        #     plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/attn_logits_low_entropy.png")
+        #     plt.close()
             
         attn, _, _ = sinkhorn(attn_logits, a, b, u=p, v=q) # 'attn' shape (b_s, num_inputs, n_s)
         attn = attn.permute(0, 2, 1) # 'attn' shape (b_s, n_s, num_inputs)
