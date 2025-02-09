@@ -206,13 +206,13 @@ def main():
                         best_overall_ap = overall_ap
                         max_ap_idx = i
                 
-                #logger.info(f"trace that maximizes AP: {max_ap_idx} with {best_overall_ap}")
+                logger.info(f"trace that maximizes AP: {max_ap_idx} with {best_overall_ap}")
                 # compute the final AP
                 preds = process_preds(prop_traces, max_ap_idx)
-                for t in threshold: ap[t] += compute_AP(preds, target, t)
+                for t in threshold: ap[t] += compute_AP(preds, target, t, True)
                 n_test_samples += 1
 
-                #if n_test_samples == 10: break
+                if n_test_samples == 10: break
                 
         mAP = {k: v/n_test_samples for k, v in ap.items()}
         logger.info(f"distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")

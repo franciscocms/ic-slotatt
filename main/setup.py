@@ -18,7 +18,7 @@ params = {
     "dataset": "clevr", # 'clevr' or '2Dobjects'
     "resolution": (128, 128),
     "num_slots": 6,
-    "max_objects": 6,
+    "max_objects": 10, # 6 for general clevr6 runs!
     "guide_step" : 11050, # !!!!!!!!! 7750 for 2Dobjects - 11050 for clevr6 !!!!!!!!!
     "print_distributions": False,
     "print_importance_sampling": False,
