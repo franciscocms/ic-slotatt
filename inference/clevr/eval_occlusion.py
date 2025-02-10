@@ -158,7 +158,18 @@ def main():
             resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
             resampling_id = resampling().item()
 
-            logger.info(f"trace resampled with logwt: {log_wts[resampling_id]}")
+            logger.info(f"trace {resampling_id} resampled with logwt: {log_wts[resampling_id]}")
+
+            for name, site in traces.nodes.items():                    
+                    # if site["type"] == "sample":
+                    #     logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
+                    
+                    if name == 'image':
+                        for i in range(site["fn"].mean.shape[0]):
+                            output_image = site["fn"].mean[i]
+                            plt.imshow(visualize(output_image[:3].permute(1, 2, 0).cpu().numpy()))
+                            plt.savefig(os.path.join(occlusion_plots_dir, f"trace_{i}.png"))
+                            plt.close()
 
             shape_pred_dict = {s: 0 for s in range(3)}
             size_pred_dict = {s: 0 for s in range(2)}
@@ -168,8 +179,8 @@ def main():
             
             analysed_traces = 0
 
-            cylinder_log_wts = []
-            cube_log_wts = []
+            cylinder_log_wts = {}
+            cube_log_wts = {}
 
             for i in range(len(log_wts)):
                 preds = process_preds(prop_traces, i)
@@ -204,8 +215,8 @@ def main():
                                 mat_pred_dict[mat[o].item()] += 1
 
                                 # check log weight of traces regarding their shape predictions
-                                if shape[o].item() == 0: cube_log_wts.append(log_wts[i])
-                                elif shape[o].item() == 2: cylinder_log_wts.append(log_wts[i])
+                                if shape[o].item() == 0: cube_log_wts[i: log_wts[i].item()]
+                                elif shape[o].item() == 2: cylinder_log_wts[i: log_wts[i].item()]
 
             logger.info(f"{analysed_traces} used for uncertainty quantification...")
             logger.info(shape_pred_dict)
