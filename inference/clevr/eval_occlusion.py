@@ -158,6 +158,8 @@ def main():
             resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
             resampling_id = resampling().item()
 
+            logger.info(f"trace resampled with logwt: {log_wts[resampling_id]}")
+
             shape_pred_dict = {s: 0 for s in range(3)}
             size_pred_dict = {s: 0 for s in range(2)}
             color_pred_dict = {s: 0 for s in range(8)}
@@ -165,6 +167,9 @@ def main():
 
             
             analysed_traces = 0
+
+            cylinder_log_wts = []
+            cube_log_wts = []
 
             for i in range(len(log_wts)):
                 preds = process_preds(prop_traces, i)
@@ -198,6 +203,10 @@ def main():
                                 color_pred_dict[color[o].item()] += 1
                                 mat_pred_dict[mat[o].item()] += 1
 
+                                # check log weight of traces regarding their shape predictions
+                                if size[o].item() == 0: cube_log_wts.append(log_wts[i])
+                                elif size[o].item() == 2: cylinder_log_wts.append(log_wts[i])
+
             logger.info(f"{analysed_traces} used for uncertainty quantification...")
             logger.info(shape_pred_dict)
             shape_pred_dict = {k: v/analysed_traces for k, v in shape_pred_dict.items()}
@@ -212,6 +221,9 @@ def main():
 
             preds = process_preds(prop_traces, resampling_id)
             logger.info(f"preds of resampled trace: {preds}")
+
+            logger.info(f"cube traces log weigths: {cube_log_wts}")
+            logger.info(f"cylinder traces log weigths: {cylinder_log_wts}")
 
             
             # for name, site in traces.nodes.items():                    
