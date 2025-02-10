@@ -10,6 +10,9 @@ logger = logging.getLogger("eval")
 
 def transform_coords(coords):
     #return (coords/2) + 0.5
+    """
+    re-scale coordinates (both predicted and target) from [-1., 1.] to [-3., 3.]
+    """
     return coords*3.
 
 def process_preds(preds):
