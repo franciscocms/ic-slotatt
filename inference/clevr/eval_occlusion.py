@@ -215,8 +215,8 @@ def main():
                                 mat_pred_dict[mat[o].item()] += 1
 
                                 # check log weight of traces regarding their shape predictions
-                                if shape[o].item() == 0: cube_log_wts[i: log_wts[i].item()]
-                                elif shape[o].item() == 2: cylinder_log_wts[i: log_wts[i].item()]
+                                if shape[o].item() == 0: cube_log_wts[i] = log_wts[i].item()
+                                elif shape[o].item() == 2: cylinder_log_wts[i] = log_wts[i].item()
 
             logger.info(f"{analysed_traces} used for uncertainty quantification...")
             logger.info(shape_pred_dict)
