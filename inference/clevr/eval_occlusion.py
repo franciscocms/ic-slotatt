@@ -210,6 +210,9 @@ def main():
             logger.info(f"color distributions: {color_pred_dict}")
             logger.info(f"mat distributions: {mat_pred_dict}")
 
+            preds = process_preds(prop_traces, resampling_id)
+            logger.info(f"preds of resampled trace: {preds}")
+
             
             # for name, site in traces.nodes.items():                    
             #     # if site["type"] == "sample":
