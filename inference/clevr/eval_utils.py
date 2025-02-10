@@ -9,22 +9,12 @@ import logging
 logger = logging.getLogger("eval")
 
 def transform_coords(coords):
-    return (coords/2) + 0.5
+    #return (coords/2) + 0.5
+    return coords*3.
 
 def process_preds(preds):
     # preds must have shape (max_objects, n_features)
     assert len(preds.shape) == 2
-
-    #logger.info(preds)
-
-    # if name == 'shape': preds[:, :3] = F.one_hot(site['value'], len(object_mapping))
-    # if name == 'color': preds[:, 3:11] = F.one_hot(site['value'], len(color_mapping))
-    # if name == 'size': preds[:, 11:13] = F.one_hot(site['value'], len(size_mapping))
-    # if name == 'mat': preds[:, 13:15] = F.one_hot(site['value'], len(material_mapping))
-    # #if name == 'pose': site['value']
-    # if name == 'x': preds[:, 15] = site['value']
-    # if name == 'y': preds[:, 16] = site['value']
-    # if name == 'mask': preds[:, 17] = site['value']
 
     shape = torch.argmax(preds[:, :3], dim=-1)
     color = torch.argmax(preds[:, 3:11], dim=-1)
