@@ -158,7 +158,7 @@ def main():
                 img_index = target_dict['image_index'].item()
 
                 logger.info(f"\ntarget image index: {img_index} - {n_test_samples}/{len(test_dataset)}")
-                logger.info(f"# of objects: {len(target_dict['objects'])}")
+                #logger.info(f"# of objects: {len(target_dict['objects'])}")
 
                 # plt.imshow(visualize(img.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
                 # plt.savefig(os.path.join(plots_dir, f"image_{img_index}.png"))
@@ -206,10 +206,10 @@ def main():
                         best_overall_ap = overall_ap
                         max_ap_idx = i
                 
-                logger.info(f"trace that maximizes AP: {max_ap_idx} with {best_overall_ap}")
+                #logger.info(f"trace that maximizes AP: {max_ap_idx} with {best_overall_ap}")
                 # compute the final AP
                 preds = process_preds(prop_traces, max_ap_idx)
-                for t in threshold: ap[t] += compute_AP(preds, target, t, True)
+                for t in threshold: ap[t] += compute_AP(preds, target, t)
                 n_test_samples += 1
 
                 logger.info(f"current stats:")
