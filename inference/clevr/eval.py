@@ -212,6 +212,10 @@ def main():
                 for t in threshold: ap[t] += compute_AP(preds, target, t, True)
                 n_test_samples += 1
 
+                logger.info(f"current stats:")
+                aux_mAP = {k: v/n_test_samples for k, v in ap.items()}
+                logger.info(aux_mAP)
+
                 #if n_test_samples == 10: break
                 
         mAP = {k: v/n_test_samples for k, v in ap.items()}
