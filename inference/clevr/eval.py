@@ -75,7 +75,8 @@ def process_preds(trace, id):
 
 def process_targets(target_dict):   
     features_dim = 18
-    target = torch.zeros(params['max_objects'], features_dim)
+    max_obj = max(params['max_objects'], params['num_slots'])
+    target = torch.zeros(max_obj, features_dim)
 
     for o, object in enumerate(target_dict['objects']):               
         target[o, :3] = F.one_hot(torch.tensor([idx for idx, tup in enumerate(object_mapping) if tup[1] == object['shape'][0]]), len(object_mapping))
