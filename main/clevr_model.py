@@ -155,7 +155,7 @@ def sample_clevr_scene(llh_uncertainty):
     # SAMPLE POSITIONS
     x_min, x_max = -3. + min_margin, 3. - min_margin
     y_min, y_max = -3. + min_margin, 3. - min_margin
-    sampling_radius = 0.4
+    sampling_radius = 0.3
     positions = []
     ncandidates = 100
     for b in range(B):
