@@ -38,6 +38,18 @@ max_retries = 50
 min_dist = 0.25
 min_margin = 0.4
 
+# Load the property file
+with open(properties_json_path, 'r') as f:
+    properties = json.load(f)
+    color_name_to_rgba = {}
+    for name, rgb in properties['colors'].items():
+        rgba = [float(c) / 255.0 for c in rgb] + [1.0]
+        color_name_to_rgba[name] = rgba
+        material_mapping = [(v, k) for k, v in properties['materials'].items()]
+    object_mapping = [(v, k) for k, v in properties['shapes'].items()]
+    size_mapping = list(properties['sizes'].items())
+    color_mapping = list(color_name_to_rgba.items())
+
 # imgs_path = os.path.join(dir_path, str(params['jobID']))
 # if not os.path.isdir: os.mkdir(imgs_path)
 
@@ -55,6 +67,18 @@ def preprocess_clevr(image, resolution=params['resolution']):
     image = F.interpolate(input=image, size=resolution, mode='bilinear', antialias=True)
     image = torch.clamp(image, -1., 1.)
     return image
+
+def get_size_mapping(size):
+    return size_mapping[int(size)]
+    
+def get_shape_mapping(shape):
+    return object_mapping[int(shape)]
+
+def get_color_mapping(color):
+    return color_mapping[int(color)]
+
+def get_mat_mapping(mat):
+    return material_mapping[int(mat)]
 
 def sample_clevr_scene(llh_uncertainty):
     
@@ -75,35 +99,7 @@ def sample_clevr_scene(llh_uncertainty):
     scene_struct['directions']['left'] = tuple(plane_left)
     scene_struct['directions']['right'] = tuple(-plane_left)
     scene_struct['directions']['above'] = tuple(plane_up)
-    scene_struct['directions']['below'] = tuple(-plane_up)
-    
-    pyro.clear_param_store()
-    
-    #logger.info("generating clevr scene...")
-    
-    # Load the property file
-    with open(properties_json_path, 'r') as f:
-        properties = json.load(f)
-        color_name_to_rgba = {}
-        for name, rgb in properties['colors'].items():
-            rgba = [float(c) / 255.0 for c in rgb] + [1.0]
-            color_name_to_rgba[name] = rgba
-            material_mapping = [(v, k) for k, v in properties['materials'].items()]
-        object_mapping = [(v, k) for k, v in properties['shapes'].items()]
-        size_mapping = list(properties['sizes'].items())
-        color_mapping = list(color_name_to_rgba.items())
-    
-    def get_size_mapping(size):
-        return size_mapping[int(size)]
-    
-    def get_shape_mapping(shape):
-        return object_mapping[int(shape)]
-    
-    def get_color_mapping(color):
-        return color_mapping[int(color)]
-    
-    def get_mat_mapping(mat):
-        return material_mapping[int(mat)]
+    scene_struct['directions']['below'] = tuple(-plane_up)    
 
     B = params['batch_size'] if params["running_type"] == "train" else params['num_inference_samples']
     M = max_objects 
@@ -219,7 +215,7 @@ def sample_clevr_scene(llh_uncertainty):
     r_b_ = torch.zeros(B, M)
     size_b_ = torch.zeros(B, M)
 
-    restart_dic = {}
+    # restart_dic = {}
 
     for b in range(B):
         
@@ -312,8 +308,7 @@ def sample_clevr_scene(llh_uncertainty):
                 y = torch.flatten(y, 0, 1)
             # logger.info(x.shape)
             # logger.info(y.shape)
-
-        
+   
         size = pyro.sample(f"size", dist.Delta(size_b_))
         
         if params['running_type'] == 'eval': 
