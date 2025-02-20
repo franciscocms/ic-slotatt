@@ -228,10 +228,10 @@ def sample_clevr_scene(llh_uncertainty):
         max_tries = 100
         t = 0
         m = 0
-        restart = 0
-        restart_dic[b] = dict(
-            no_obj=num_objects[b]
-        )
+        # restart = 0
+        # restart_dic[b] = dict(
+        #     no_obj=num_objects[b]
+        # )
 
         while m < M:
         
@@ -273,7 +273,7 @@ def sample_clevr_scene(llh_uncertainty):
                                 margins_good = False
                 
                 if t == max_tries:
-                    restart += 1
+                    #restart += 1
                     m = 0
                     dists_good = False
                     margins_good = False
@@ -298,11 +298,8 @@ def sample_clevr_scene(llh_uncertainty):
 
                 m += 1
         
-        restart_dic[b]['no_restart'] = restart
-        
-        # if b % 10 == 0: logger.info(f"batch sample {b} - sampled all objects with tries {all_t}")
-    
-    logger.info(restart_dic)
+        #restart_dic[b]['no_restart'] = restart    
+    #logger.info(restart_dic)
 
     with pyro.poutine.mask(mask=objects_mask):
         #if params['running_type'] == 'train':
@@ -642,7 +639,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     #init_time = time.time()
     # Generate the Blender script for the sampled scene
-    gen_samples = 64 if params["running_type"] == "train" else 512
+    gen_samples = 128 if params["running_type"] == "train" else 512
     blender_scripts = [generate_blender_script(scene, idx, imgs_path, gen_samples) for idx, scene in enumerate(clevr_scenes)]
     #script_time = time.time() - init_time
     #logger.info(f"Scene scripting time: {script_time}")
