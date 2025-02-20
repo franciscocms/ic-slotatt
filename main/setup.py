@@ -19,7 +19,7 @@ params = {
     "resolution": (128, 128),
     "num_slots": 10,
     "max_objects": 6,
-    "guide_step" : 600, # !!!!!!!!! 7750 for 2Dobjects - 11050 for clevr6 !!!!!!!!!
+    "guide_step" : 20500, # !!!!!!!!! 7750 for 2Dobjects - 11050 for clevr6 !!!!!!!!!
     "print_distributions": False,
     "print_importance_sampling": False,
     "bernoulli_inf_reduction": 'none',
@@ -34,7 +34,7 @@ params = {
     "training_from_scratch" : False,
     "training_iters": 20000, # 10k
     "step_size": 50,
-    "running_type": "train", # train, debug, eval, inspect
+    "running_type": "eval", # train, debug, eval, inspect
     "ood_eval": False,
     "slot_dim" : 64, # !!!!!!!!! 64 for clevr6 SP results !!!!!!!!!
     "infer_background": False,
@@ -55,7 +55,7 @@ params = {
 
 # set job split settings for inference
 JOB_SPLIT = {
-            'id': 4,
+            'id': 1,
             'total': 4
             }
 
