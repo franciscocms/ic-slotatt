@@ -286,20 +286,18 @@ class CSIS(Importance):
           # for each scenes, assign the true latents as if object 'i' was the overall ground-truth
           aux_latents = true_latents[name][:, i].unsqueeze(-1).expand(-1, M) 
 
-          # only account for real objects
+          # only account for real objects (rows of 1's or 0's according to object 'm' being real or not)
           aux_mask = true_latents["mask"][:, i].unsqueeze(-1).expand(-1, M)
-
-          # logger.info(aux_latents)
           
           if isinstance(vals['fn'], dist.Normal):
             aux_mean, aux_std = vals['fn'].loc, vals['fn'].scale             
-            aux_logprob = -dist.Normal(aux_mean, aux_std).log_prob(aux_latents)
+            aux_logprob = -dist.Normal(aux_mean, aux_std).log_prob(aux_latents) * aux_mask
           elif isinstance(vals['fn'], dist.Bernoulli):
             aux_probs = vals['fn'].probs
-            aux_logprob = -dist.Bernoulli(aux_probs).log_prob(aux_latents)
+            aux_logprob = -dist.Bernoulli(aux_probs).log_prob(aux_latents) * aux_mask
           elif isinstance(vals['fn'], dist.Categorical):
             aux_probs = vals['fn'].probs
-            aux_logprob = -dist.Categorical(aux_probs).log_prob(aux_latents)
+            aux_logprob = -dist.Categorical(aux_probs).log_prob(aux_latents) * aux_mask
           
           aux_logprob = aux_logprob.unsqueeze(-1) # [B, n_slots, 1]
           pdist = torch.cat((pdist, aux_logprob), dim=-1) # [B, n_slots, n_latents]

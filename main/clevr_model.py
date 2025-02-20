@@ -267,6 +267,7 @@ def sample_clevr_scene(llh_uncertainty):
                                 margins_good = False
                 
                 if t == max_tries:
+                    logger.info("max tries reached!")
                     m = 0
                     dists_good = False
                     margins_good = False
