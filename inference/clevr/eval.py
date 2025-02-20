@@ -55,9 +55,11 @@ PRINT_INFERENCE_TIME = False
 def process_preds(trace, id):
     
     """ returns a matrix of predictions from the proposed trace """
+
+    max_obj = max(params['max_objects'], params['num_slots'])
     
     features_dim = 18
-    preds = torch.zeros(params['max_objects'], features_dim)
+    preds = torch.zeros(max_obj, features_dim)
     for name, site in trace.nodes.items():
         if site['type'] == 'sample':
             if name == 'shape': preds[:, :3] = F.one_hot(site['value'][id], len(object_mapping))
