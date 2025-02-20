@@ -219,6 +219,8 @@ def sample_clevr_scene(llh_uncertainty):
     r_b_ = torch.zeros(B, M)
     size_b_ = torch.zeros(B, M)
 
+    restart_dic = {}
+
     for b in range(B):
         
         positions = []
@@ -226,6 +228,10 @@ def sample_clevr_scene(llh_uncertainty):
         max_tries = 100
         t = 0
         m = 0
+        restart = 0
+        restart_dic[b] = dict(
+            no_obj=num_objects[b]
+        )
 
         while m < M:
         
@@ -267,7 +273,7 @@ def sample_clevr_scene(llh_uncertainty):
                                 margins_good = False
                 
                 if t == max_tries:
-                    logger.info("max tries reached!")
+                    restart += 1
                     m = 0
                     dists_good = False
                     margins_good = False
@@ -292,9 +298,12 @@ def sample_clevr_scene(llh_uncertainty):
 
                 m += 1
         
+        restart_dic[b]['no_restart'] = restart
+        
         # if b % 10 == 0: logger.info(f"batch sample {b} - sampled all objects with tries {all_t}")
     
-    
+    logger.info(restart_dic)
+
     with pyro.poutine.mask(mask=objects_mask):
         #if params['running_type'] == 'train':
         x = pyro.sample(f"x", dist.Normal(x_b_/3., llh_uncertainty))*3.
