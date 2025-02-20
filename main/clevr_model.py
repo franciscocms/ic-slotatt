@@ -162,6 +162,9 @@ def sample_clevr_scene(llh_uncertainty):
         pre_positions = engine.random(M)
         pre_positions[:, 0] = pre_positions[:, 0] * (x_max - x_min) + x_min  # Scale X positions
         pre_positions[:, 1] = pre_positions[:, 1] * (y_max - y_min) + y_min  # Scale Y positions
+        
+        logger.info(pre_positions.shape)
+
         positions.append(torch.tensor(pre_positions))
     positions = torch.stack(positions) # [B, M, 2]
 
