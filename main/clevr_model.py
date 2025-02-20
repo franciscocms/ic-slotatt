@@ -629,11 +629,11 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
         if img.split('/')[-1].split('_')[:2] == ["rendered", "scene"]: os.remove(img)
 
     
-    #init_time = time.time()
+    init_time = time.time()
     # Sample a CLEVR-like scene using Pyro
     clevr_scenes = sample_clevr_scene(llh_uncertainty)
-    #sample_time = time.time() - init_time
-    #logger.info(f"Scene sampling time: {sample_time}")
+    sample_time = time.time() - init_time
+    logger.info(f"Scene sampling time: {sample_time}")
 
     B = params['batch_size'] if params["running_type"] == "train" else params['num_inference_samples']
 
