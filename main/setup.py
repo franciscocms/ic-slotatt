@@ -18,7 +18,7 @@ params = {
     "dataset": "clevr", # 'clevr' or '2Dobjects'
     "resolution": (128, 128),
     "num_slots": 10,
-    "max_objects": 6,
+    "max_objects": 10,
     "guide_step" : 20500, # !!!!!!!!! 7750 for 2Dobjects - 11050 for clevr6 !!!!!!!!!
     "print_distributions": False,
     "print_importance_sampling": False,
@@ -32,7 +32,7 @@ params = {
     "N_prior_std" : 0.1,
     "pos_from_attn" : "attn-masks", # "attn-masks" if computing locations from slot attention masks (alternative: "dme" from the estimated density maps)
     "training_from_scratch" : True,
-    "training_iters": 20000, # 10k
+    "training_iters": 1, # 10k
     "step_size": 50,
     "running_type": "train", # train, debug, eval, inspect
     "ood_eval": False,
@@ -42,7 +42,7 @@ params = {
     "softmax_temperature": 1.0,
     "strided_convs": True,
     "check_attn": True,
-    "jobID": 92, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects
+    "jobID": 93, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects
     "mesh_iters": 4,
     "mesh_lr": 5, # 76: 3, 77: 5
     "logprob_coeff": 1.,

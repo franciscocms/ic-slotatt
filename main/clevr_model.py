@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from torch import Tensor
 from torchvision import transforms
 import numpy as np
+from scipy.stats import qmc
 
 import subprocess
 import multiprocessing as mp
@@ -119,7 +120,8 @@ def sample_clevr_scene(llh_uncertainty):
         color = pyro.sample(f"color", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])).expand([B, M]))
         theta = pyro.sample(f"pose", dist.Uniform(0., 1.).expand([B, M])) * 360. 
         mat = pyro.sample(f"mat", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([B, M]))
-        
+        size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])).expand([B, M]))
+
         if params['running_type'] == 'eval':
             if shape.dim() > 2: shape = torch.flatten(shape, 0, 1)
             if color.dim() > 2: color = torch.flatten(color, 0, 1)
@@ -129,109 +131,135 @@ def sample_clevr_scene(llh_uncertainty):
     shape_mapping_list = {}
     color_mapping_list = {}
     mat_mapping_list = {}
+    size_mapping_list = {}
     for b in range(B):
         shape_mapping_list[b] = list(map(get_shape_mapping, shape[b].tolist())) # list of tuples [('name', value)]
         color_mapping_list[b] = list(map(get_color_mapping, color[b].tolist())) # list of tuples [('name', value)]
         mat_mapping_list[b] = list(map(get_mat_mapping, mat[b].tolist()))
+        mat_mapping_list[b] = list(map(get_size_mapping, size[b].tolist()))
     
     obj_name = {}
     color_name = {}
     rgba = {}
     mat_name = {}
+
+    r = {}
     for b in range(B):
         obj_name[b] = [e[0] for e in shape_mapping_list[b]]
         color_name[b] = [e[0] for e in color_mapping_list[b]]
         rgba[b] = [e[1] for e in color_mapping_list[b]]
         mat_name[b] = [e[0] for e in mat_mapping_list[b]]
+        r[b] = [e[1] for e in size_mapping_list[b]]
 
-    x_b_ = torch.zeros(B, M)
-    y_b_ = torch.zeros(B, M)
-    r_b_ = torch.zeros(B, M)
-    size_b_ = torch.zeros(B, M)
+    
+    # SAMPLE POSITIONS
+    x_min, x_max = -3. + min_margin, 3. - min_margin
+    y_min, y_max = -3. + min_margin, 3. - min_margin
+    sampling_radius = 0.5
+    positions = []
+    for b in range(B):
+        engine = qmc.PoissonDisk(d=2, radius=sampling_radius)
+        pre_positions = engine.random(M)
+        pre_positions[:, 0] = pre_positions[:, 0] * (x_max - x_min) + x_min  # Scale X positions
+        pre_positions[:, 1] = pre_positions[:, 1] * (y_max - y_min) + y_min  # Scale Y positions
+        positions.append(pre_positions)
+    positions = torch.stack(positions) # [B, M, 2]
+
+    with pyro.poutine.mask(mask=objects_mask):
+        x = pyro.sample(f"x", dist.Normal(positions[:, :, 0]/3., llh_uncertainty))*3.
+        y = pyro.sample(f"y", dist.Normal(positions[:, :, 1]/3., llh_uncertainty))*3.
+    
+    # x_b_ = torch.zeros(B, M)
+    # y_b_ = torch.zeros(B, M)
+    # r_b_ = torch.zeros(B, M)
+    # size_b_ = torch.zeros(B, M)
 
     # restart_dic = {}
 
-    for b in range(B):
+    # for b in range(B):
         
-        positions = []
-        all_t = []
-        max_tries = 100
-        t = 0
-        m = 0
-        # restart = 0
-        # restart_dic[b] = dict(
-        #     no_obj=num_objects[b]
-        # )
+    #     positions = []
+    #     all_t = []
+    #     max_tries = 100
+    #     t = 0
+    #     m = 0
+    #     # restart = 0
+    #     # restart_dic[b] = dict(
+    #     #     no_obj=num_objects[b]
+    #     # )
 
-        while m < M:
+    #     while m < M:
         
-            t = 0
-            dists_good = False
-            margins_good = False
-            while not (dists_good and margins_good):
+    #         t = 0
+    #         dists_good = False
+    #         margins_good = False
+    #         while not (dists_good and margins_good):
 
-                # logger.info(f"{b} - {m} - {t}")
+    #             # logger.info(f"{b} - {m} - {t}")
                 
-                with pyro.poutine.block():
-                    x_ = pyro.sample(f"x_{m}_{t}", dist.Uniform(-1., 1.))*3.
-                    y_ = pyro.sample(f"y_{m}_{t}", dist.Uniform(-1., 1.))*3.
+    #             with pyro.poutine.block():
+    #                 x_ = pyro.sample(f"x_{m}_{t}", dist.Uniform(-1., 1.))*3.
+    #                 y_ = pyro.sample(f"y_{m}_{t}", dist.Uniform(-1., 1.))*3.
                     
-                    size_ = pyro.sample(f"size_{m}_{t}", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])))
-                    size_mapping_list = list(get_size_mapping(size_))
-                    size_name, r = size_mapping_list
-                    if obj_name[b][m] == 'Cube': r = r/math.sqrt(2)
-                    t += 1
+    #                 size_ = pyro.sample(f"size_{m}_{t}", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])))
+    #                 size_mapping_list = list(get_size_mapping(size_))
+    #                 size_name, r = size_mapping_list
+    #                 if obj_name[b][m] == 'Cube': r = r/math.sqrt(2)
+    #                 t += 1
 
-                dists_good = True
-                margins_good = True
+    #             dists_good = True
+    #             margins_good = True
 
-                # only check for impossible sampled positions if objects will be rendered in the scene
-                if objects_mask[b, m]: 
-                    for xx, yy, rr in positions:
-                        dx, dy = x_ - xx, y_ - yy
-                        distance = math.sqrt(dx * dx + dy * dy)
-                        if distance - r - rr < min_dist:
-                            dists_good = False
-                        for direction_name in ['left', 'right', 'front', 'behind']:
-                            direction_vec = scene_struct['directions'][direction_name]
-                            assert direction_vec[2] == 0
-                            margin = dx * direction_vec[0] + dy * direction_vec[1]
-                            if 0 < margin < min_margin:
-                                margins_good = False
+    #             # only check for impossible sampled positions if objects will be rendered in the scene
+    #             if objects_mask[b, m]: 
+    #                 for xx, yy, rr in positions:
+    #                     dx, dy = x_ - xx, y_ - yy
+    #                     distance = math.sqrt(dx * dx + dy * dy)
+    #                     if distance - r - rr < min_dist:
+    #                         dists_good = False
+    #                     for direction_name in ['left', 'right', 'front', 'behind']:
+    #                         direction_vec = scene_struct['directions'][direction_name]
+    #                         assert direction_vec[2] == 0
+    #                         margin = dx * direction_vec[0] + dy * direction_vec[1]
+    #                         if 0 < margin < min_margin:
+    #                             margins_good = False
                 
-                if t == max_tries:
-                    #restart += 1
-                    m = 0
-                    dists_good = False
-                    margins_good = False
-                    break
+    #             if t == max_tries:
+    #                 #restart += 1
+    #                 m = 0
+    #                 dists_good = False
+    #                 margins_good = False
+    #                 break
             
-            if dists_good and margins_good:
-                with pyro.poutine.block():
-                    x_b = pyro.sample(f"x_{m}_{b}", dist.Normal(x_/3., 0.001))*3.
-                    y_b = pyro.sample(f"y_{m}_{b}", dist.Normal(y_/3., 0.001))*3.
-                    size_b = pyro.sample(f"size_{m}_{t}", dist.Delta(size_))
-                    size_mapping_list = list(get_size_mapping(size_b))
-                    size_name, r = size_mapping_list
-                    if obj_name[b][m] == 'Cube': r = r/math.sqrt(2)
+    #         if dists_good and margins_good:
+    #             with pyro.poutine.block():
+    #                 x_b = pyro.sample(f"x_{m}_{b}", dist.Normal(x_/3., 0.001))*3.
+    #                 y_b = pyro.sample(f"y_{m}_{b}", dist.Normal(y_/3., 0.001))*3.
+    #                 size_b = pyro.sample(f"size_{m}_{t}", dist.Delta(size_))
+    #                 size_mapping_list = list(get_size_mapping(size_b))
+    #                 size_name, r = size_mapping_list
+    #                 if obj_name[b][m] == 'Cube': r = r/math.sqrt(2)
 
-                    x_b_[b, m], y_b_[b, m] = x_b, y_b
-                    r_b_[b, m] = r
-                    size_b_[b, m] = size_b
+    #                 x_b_[b, m], y_b_[b, m] = x_b, y_b
+    #                 r_b_[b, m] = r
+    #                 size_b_[b, m] = size_b
 
                 
-                positions.append((x_b_[b, m], y_b_[b, m], r_b_[b, m]))
-                all_t.append(t)
+    #             positions.append((x_b_[b, m], y_b_[b, m], r_b_[b, m]))
+    #             all_t.append(t)
 
-                m += 1
+    #             m += 1
         
         #restart_dic[b]['no_restart'] = restart    
     #logger.info(restart_dic)
 
     with pyro.poutine.mask(mask=objects_mask):
         #if params['running_type'] == 'train':
-        x = pyro.sample(f"x", dist.Normal(x_b_/3., llh_uncertainty))*3.
-        y = pyro.sample(f"y", dist.Normal(y_b_/3., llh_uncertainty))*3.
+        # x = pyro.sample(f"x", dist.Normal(x_b_/3., llh_uncertainty))*3.
+        # y = pyro.sample(f"y", dist.Normal(y_b_/3., llh_uncertainty))*3.
+        
+        
+        
         
         if params['running_type'] == 'eval': 
             if x.dim() > 2:
@@ -240,7 +268,7 @@ def sample_clevr_scene(llh_uncertainty):
             # logger.info(x.shape)
             # logger.info(y.shape)
    
-        size = pyro.sample(f"size", dist.Delta(size_b_))
+        #size = pyro.sample(f"size", dist.Delta(size_b_))
         
         if params['running_type'] == 'eval': 
             if size.dim() > 2:
@@ -249,8 +277,8 @@ def sample_clevr_scene(llh_uncertainty):
         
 
 
-        size_mapping_list = {b: list(map(get_size_mapping, size[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
-        size_name, r = {b: [e[0] for e in size_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in size_mapping_list[b]] for b in range(B)} 
+        # size_mapping_list = {b: list(map(get_size_mapping, size[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
+        # size_name, r = {b: [e[0] for e in size_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in size_mapping_list[b]] for b in range(B)} 
 
     # For 'Cube', adjust 'r'
     for b in range(B):
