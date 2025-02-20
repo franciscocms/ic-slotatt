@@ -170,12 +170,23 @@ def sample_clevr_scene(llh_uncertainty):
        
         pre_positions[:, 0] = pre_positions[:, 0] * (x_max - x_min) + x_min  # Scale X positions
         pre_positions[:, 1] = pre_positions[:, 1] * (y_max - y_min) + y_min  # Scale Y positions
+        pre_positions = torch.tensor(pre_positions)
+        
+        all_positions = torch.zeros(M, 2)
+        real_obj_idx = torch.nonzero(objects_mask[b])
+        if real_obj_idx.shape[0] == 0:
+            # no real objects in scene
+            pre_positions = all_positions
+        else:
+            real_obj_idx = real_obj_idx[:, 0]
+            s_idx = 0
+            for idx in real_obj_idx:
+                all_positions[idx] = pre_positions[s_idx]
+                s_idx += 1
+
         
         #logger.info(pre_positions.shape)
-        pre_positions = torch.tensor(pre_positions)
-        pre_positions = torch.cat((pre_positions, torch.zeros(M-num_objects[b], 2)),
-                                   dim = 0
-                                   )
+        
         positions.append(pre_positions)
     positions = torch.stack(positions) # [B, M, 2]
 
