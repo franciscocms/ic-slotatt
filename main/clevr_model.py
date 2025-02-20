@@ -136,7 +136,7 @@ def sample_clevr_scene(llh_uncertainty):
         shape_mapping_list[b] = list(map(get_shape_mapping, shape[b].tolist())) # list of tuples [('name', value)]
         color_mapping_list[b] = list(map(get_color_mapping, color[b].tolist())) # list of tuples [('name', value)]
         mat_mapping_list[b] = list(map(get_mat_mapping, mat[b].tolist()))
-        mat_mapping_list[b] = list(map(get_size_mapping, size[b].tolist()))
+        size_mapping_list[b] = list(map(get_size_mapping, size[b].tolist()))
     
     obj_name = {}
     color_name = {}
