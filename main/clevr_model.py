@@ -103,45 +103,15 @@ def sample_clevr_scene(llh_uncertainty):
 
     B = params['batch_size'] if params["running_type"] == "train" else params['num_inference_samples']
     M = max_objects 
-
-    #logger.info('\nmodel logs!\n')
     
     # Sample the mask to predict real objects
     objects_mask = pyro.sample(f"mask", dist.Bernoulli(0.5).expand([B, M])).to(torch.bool)
-    # if params['running_type'] == 'train': objects_mask = pyro.sample(f"mask", dist.Bernoulli(0.5).expand([B, M]).to_event(1)).to(torch.bool)
-    # else: objects_mask = pyro.sample(f"mask", dist.Bernoulli(0.5).expand([M]).to_event(1)).to(torch.bool)
-    
     if params['running_type'] == 'eval': 
-        if objects_mask.dim() > 2:
-            objects_mask = torch.flatten(objects_mask, 0, 1)
-        #logger.info(objects_mask.shape)
+        if objects_mask.dim() > 2: objects_mask = torch.flatten(objects_mask, 0, 1)
+
     
-    # logger.info(objects_mask)
-    # logger.info(dist.Bernoulli(0.5).expand([M]).to_event(1).batch_shape)
-    # logger.info(dist.Bernoulli(0.5).expand([M]).to_event(1).event_shape)
-    
-    #logger.info(f"\nmask: {objects_mask}")
     num_objects = torch.sum(objects_mask, dim=-1)
-    #logger.info(f"\nnum_objects: {num_objects}")
-
     scenes = []
-
-    # Choose a random size
-    #with pyro.poutine.block():
-    #with pyro.poutine.mask(mask=objects_mask):
-    #    size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])).expand([B, M]))
-    
-    #logger.info(f"{size}")
-            
-    #logger.info(size)
-
-    #size_mapping_list = {b: list(map(get_size_mapping, size[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
-    #logger.info(f"{size_mapping_list}")
-
-    #size_name, r = {b: [e[0] for e in size_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in size_mapping_list[b]] for b in range(B)} 
-    #size_name, r = map(get_size_mapping, size.tolist())
-    # logger.info(size_name)
-    #logger.info(f"{r}")
 
     # Choose random color and shape
     with pyro.poutine.mask(mask=objects_mask):
@@ -210,16 +180,13 @@ def sample_clevr_scene(llh_uncertainty):
                     size_mapping_list = list(get_size_mapping(size_))
                     size_name, r = size_mapping_list
                     if obj_name[b][m] == 'Cube': r = r/math.sqrt(2)
-
                     t += 1
-
 
                 dists_good = True
                 margins_good = True
 
                 # only check for impossible sampled positions if objects will be rendered in the scene
                 if objects_mask[b, m]: 
-
                     for xx, yy, rr in positions:
                         dx, dy = x_ - xx, y_ - yy
                         distance = math.sqrt(dx * dx + dy * dy)
