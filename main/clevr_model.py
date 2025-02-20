@@ -146,69 +146,33 @@ def sample_clevr_scene(llh_uncertainty):
     # Choose random color and shape
     with pyro.poutine.mask(mask=objects_mask):
         shape = pyro.sample(f"shape", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([B, M]))
-        # if params['running_type'] == 'train': shape = pyro.sample(f"shape", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([B, M]).to_event(1))
-        # else: shape = pyro.sample(f"shape", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([M]).to_event(1))
-
-        if params['running_type'] == 'eval':
-            if shape.dim() > 2:
-                shape = torch.flatten(shape, 0, 1)
-            #logger.info(shape.shape)
-
-        # logger.info(shape.shape)
-        # logger.info(dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([M]).to_event(1).batch_shape)
-        # logger.info(dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([M]).to_event(1).event_shape)
-
-    
-    shape_mapping_list = {b: list(map(get_shape_mapping, shape[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
-    obj_name, obj_name_out = {b: [e[0] for e in shape_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in shape_mapping_list[b]]  for b in range(B)}
-    #logger.info(f"\n{obj_name}")
-
-    with pyro.poutine.mask(mask=objects_mask):
         color = pyro.sample(f"color", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])).expand([B, M]))
-        # if params['running_type'] == 'train': color = pyro.sample(f"color", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])).expand([B, M]).to_event(1))
-        # else: color = pyro.sample(f"color", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])).expand([M]).to_event(1))
-        if params['running_type'] == 'eval': 
-            if color.dim() > 2:
-                color = torch.flatten(color, 0, 1)
-            #logger.info(color.shape)
-
-    color_mapping_list = {b: list(map(get_color_mapping, color[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
-    color_name, rgba = {b: [e[0] for e in color_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in color_mapping_list[b]] for b in range(B)}
-    #logger.info(f"\n{color_name}")
-
-    # For cube, adjust the size a bit
-    # for b in range(B):
-    #     for k, name in enumerate(obj_name[b]):
-    #         if name == 'Cube':
-    #             r[b, k] /= math.sqrt(2)
-    
-    # Choose random orientation for the object.
-    with pyro.poutine.mask(mask=objects_mask):
         theta = pyro.sample(f"pose", dist.Uniform(0., 1.).expand([B, M])) * 360. 
-        # if params['running_type'] == 'train': theta = pyro.sample(f"pose", dist.Uniform(0., 1.).expand([B, M]).to_event(1)) * 360. 
-        # else: theta = pyro.sample(f"pose", dist.Uniform(0., 1.).expand([M]).to_event(1)) * 360. 
-        if params['running_type'] == 'eval': 
-            if theta.dim() > 2:
-                theta = torch.flatten(theta, 0, 1)
-            #logger.info(theta.shape)
-    #logger.info(f"{theta}")
-
-    # Attach a random material
-    with pyro.poutine.mask(mask=objects_mask):
-        
-        #logger.info(dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([B, M]).to_event(1).event_shape)
         mat = pyro.sample(f"mat", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([B, M]))
-        # if params['running_type'] == 'train': mat = pyro.sample(f"mat", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([B, M]).to_event(1))
-        # else: mat = pyro.sample(f"mat", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([M]).to_event(1))
         
-        if params['running_type'] == 'eval': 
-            if mat.dim() > 2:
-                mat = torch.flatten(mat, 0, 1)
-            #logger.info(mat.shape)
+        if params['running_type'] == 'eval':
+            if shape.dim() > 2: shape = torch.flatten(shape, 0, 1)
+            if color.dim() > 2: color = torch.flatten(color, 0, 1)
+            if theta.dim() > 2: theta = torch.flatten(theta, 0, 1)
+            if mat.dim() > 2: mat = torch.flatten(mat, 0, 1)
 
-    mat_mapping_list = {b: list(map(get_mat_mapping, mat[b].tolist())) for b in range(B)} # list of tuples [('name', value)]
-    mat_name, mat_name_out = {b: [e[0] for e in mat_mapping_list[b]] for b in range(B)}, {b: [e[1] for e in mat_mapping_list[b]] for b in range(B)}
-    #logger.info(f"\n{mat_name}")
+    shape_mapping_list = {}
+    color_mapping_list = {}
+    mat_mapping_list = {}
+    for b in range(B):
+        shape_mapping_list[b] = list(map(get_shape_mapping, shape[b].tolist())) # list of tuples [('name', value)]
+        color_mapping_list[b] = list(map(get_color_mapping, color[b].tolist())) # list of tuples [('name', value)]
+        mat_mapping_list[b] = list(map(get_mat_mapping, mat[b].tolist()))
+    
+    obj_name = {}
+    color_name = {}
+    rgba = {}
+    mat_name = {}
+    for b in range(B):
+        obj_name[b] = [e[0] for e in shape_mapping_list[b]]
+        color_name[b] = [e[0] for e in color_mapping_list[b]]
+        rgba[b] = [e[1] for e in color_mapping_list[b]]
+        mat_name[b] = [e[0] for e in mat_mapping_list[b]]
 
     x_b_ = torch.zeros(B, M)
     y_b_ = torch.zeros(B, M)
