@@ -30,6 +30,8 @@ class CLEVRDataset(Dataset):
     else:
        self.data_path = data_path
        self.target = properties['scenes']
+
+       logger.info(f'{len(self.target)} total validation examples!')
     
     """
     split the validation dataset according to JOB_SPLIT
