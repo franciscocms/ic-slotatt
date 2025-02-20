@@ -160,20 +160,23 @@ def sample_clevr_scene(llh_uncertainty):
     ncandidates = 100
     for b in range(B):
         engine = qmc.PoissonDisk(d=2, radius=sampling_radius, ncandidates=int(ncandidates))
-        pre_positions = engine.random(M)
+        pre_positions = engine.random(num_objects[b])
 
-        while pre_positions.shape[0] < M:
+        while pre_positions.shape[0] < num_objects[b]:
             ncandidates *= 1.5
             logger.info(f"only sampled {pre_positions.shape[0]} objects, increased ncandidate - now in {ncandidates}")
             engine = qmc.PoissonDisk(d=2, radius=sampling_radius, ncandidates=int(ncandidates))
-            pre_positions = engine.random(M)
+            pre_positions = engine.random(num_objects[b])
        
         pre_positions[:, 0] = pre_positions[:, 0] * (x_max - x_min) + x_min  # Scale X positions
         pre_positions[:, 1] = pre_positions[:, 1] * (y_max - y_min) + y_min  # Scale Y positions
         
         #logger.info(pre_positions.shape)
-
-        positions.append(torch.tensor(pre_positions))
+        pre_positions = torch.tensor(pre_positions)
+        pre_positions = torch.cat((pre_positions, torch.zeros(M-num_objects[b], 2)),
+                                   dim = 0
+                                   )
+        positions.append(pre_positions)
     positions = torch.stack(positions) # [B, M, 2]
 
     with pyro.poutine.mask(mask=objects_mask):
