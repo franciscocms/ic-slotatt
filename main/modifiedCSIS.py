@@ -291,13 +291,13 @@ class CSIS(Importance):
           
           if isinstance(vals['fn'], dist.Normal):
             aux_mean, aux_std = vals['fn'].loc, vals['fn'].scale             
-            aux_logprob = -dist.Normal(aux_mean, aux_std).log_prob(aux_latents) * aux_mask
+            aux_logprob = -dist.Normal(aux_mean, aux_std).log_prob(aux_latents)
           elif isinstance(vals['fn'], dist.Bernoulli):
             aux_probs = vals['fn'].probs
-            aux_logprob = -dist.Bernoulli(aux_probs).log_prob(aux_latents) * aux_mask
+            aux_logprob = -dist.Bernoulli(aux_probs).log_prob(aux_latents)
           elif isinstance(vals['fn'], dist.Categorical):
             aux_probs = vals['fn'].probs
-            aux_logprob = -dist.Categorical(aux_probs).log_prob(aux_latents) * aux_mask
+            aux_logprob = -dist.Categorical(aux_probs).log_prob(aux_latents)
           
           aux_logprob = aux_logprob.unsqueeze(-1) # [B, n_slots, 1]
           pdist = torch.cat((pdist, aux_logprob), dim=-1) # [B, n_slots, n_latents]
