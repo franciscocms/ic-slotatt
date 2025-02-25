@@ -19,7 +19,7 @@ params = {
     "resolution": (128, 128),
     "num_slots": 10,
     "max_objects": 10,
-    "guide_step" : 20500, # !!!!!!!!! 7750 for 2Dobjects - 11050 for clevr6 !!!!!!!!!
+    "guide_step" : 5500, # !!!!!!!!! 7750 for 2Dobjects - 11050 for clevr6 !!!!!!!!!
     "print_distributions": False,
     "print_importance_sampling": False,
     "bernoulli_inf_reduction": 'none',
@@ -31,7 +31,7 @@ params = {
     "prior_stddevs" : 0.05,
     "N_prior_std" : 0.1,
     "pos_from_attn" : "attn-masks", # "attn-masks" if computing locations from slot attention masks (alternative: "dme" from the estimated density maps)
-    "training_from_scratch" : True,
+    "training_from_scratch" : False,
     "training_iters": 20000, # 10k
     "step_size": 50,
     "running_type": "train", # train, debug, eval, inspect

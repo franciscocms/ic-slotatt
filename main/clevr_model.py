@@ -164,7 +164,7 @@ def sample_clevr_scene(llh_uncertainty):
 
         while pre_positions.shape[0] < num_objects[b]:
             ncandidates *= 1.5
-            logger.info(f"only sampled {pre_positions.shape[0]} objects, increased ncandidate - now in {ncandidates}")
+            #logger.info(f"only sampled {pre_positions.shape[0]} objects, increased ncandidate - now in {ncandidates}")
             engine = qmc.PoissonDisk(d=2, radius=sampling_radius, ncandidates=int(ncandidates))
             pre_positions = engine.random(num_objects[b])
        
@@ -601,11 +601,11 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
         if img.split('/')[-1].split('_')[:2] == ["rendered", "scene"]: os.remove(img)
 
     
-    init_time = time.time()
+    #init_time = time.time()
     # Sample a CLEVR-like scene using Pyro
     clevr_scenes = sample_clevr_scene(llh_uncertainty)
-    sample_time = time.time() - init_time
-    logger.info(f"Scene sampling time: {sample_time}")
+    #sample_time = time.time() - init_time
+    #logger.info(f"Scene sampling time: {sample_time}")
 
     B = params['batch_size'] if params["running_type"] == "train" else params['num_inference_samples']
 
@@ -620,11 +620,11 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     # Call Blender to render the scene
     #with mp.Pool(processes=mp.cpu_count()) as pool:
-    init_time = time.time()
+    #init_time = time.time()
     with mp.Pool(processes=5) as pool:
       pool.map(render_scene_in_blender, blender_scripts)
-    batch_time = time.time() - init_time
-    if params["running_type"] == "train": logger.info(f"Batch generation duration: {batch_time} - {batch_time/B} per sample")
+    #batch_time = time.time() - init_time
+    #if params["running_type"] == "train": logger.info(f"Batch generation duration: {batch_time} - {batch_time/B} per sample")
 
     # init_time = time.time()
     # for blender_script in blender_scripts:
