@@ -130,6 +130,7 @@ def main():
 
         logger.info(f'seed {seed}')
         logger.info(GUIDE_PATH)
+        logger.info(f"\nrunning inference with {params['num_inference_samples']} particles\n")
 
         optimiser = pyro.optim.Adam({'lr': 1e-4})
         csis = CSIS(model, guide, optimiser, training_batch_size=256, num_inference_samples=params["num_inference_samples"])
@@ -163,9 +164,9 @@ def main():
                 logger.info(f"\ntarget image index: {img_index} - {n_test_samples}/{len(test_dataset)}")
                 #logger.info(f"# of objects: {len(target_dict['objects'])}")
 
-                plt.imshow(visualize(img.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
-                plt.savefig(os.path.join(plots_dir, f"image_{img_index}.png"))
-                plt.close()                
+                # plt.imshow(visualize(img.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
+                # plt.savefig(os.path.join(plots_dir, f"image_{img_index}.png"))
+                # plt.close()                
 
                 # log_weights, model_trace, guide_trace = vectorized_importance_weights(model, guide, observations={"image": img},
                 #                                                                       num_samples=params['num_inference_samples'],
@@ -183,16 +184,16 @@ def main():
                 #logger.info(f"log weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
                 
                 # logger.info("\n")
-                for name, site in traces.nodes.items():                    
-                    # if site["type"] == "sample":
-                    #     logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
+                # for name, site in traces.nodes.items():                    
+                #     # if site["type"] == "sample":
+                #     #     logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
                     
-                    if name == 'image':
-                        for i in range(site["fn"].mean.shape[0]):
-                            output_image = site["fn"].mean[i]
-                            plt.imshow(visualize(output_image[:3].permute(1, 2, 0).cpu().numpy()))
-                            plt.savefig(os.path.join(plots_dir, f"trace_{img_index}_{i}.png"))
-                            plt.close()
+                #     if name == 'image':
+                #         for i in range(site["fn"].mean.shape[0]):
+                #             output_image = site["fn"].mean[i]
+                #             plt.imshow(visualize(output_image[:3].permute(1, 2, 0).cpu().numpy()))
+                #             plt.savefig(os.path.join(plots_dir, f"trace_{img_index}_{i}.png"))
+                #             plt.close()
 
                 
                 # check which posterior trace maximizes overall (over all distance thresholds) AP
