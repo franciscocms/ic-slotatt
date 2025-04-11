@@ -31,10 +31,10 @@ params = {
     "prior_stddevs" : 0.05,
     "N_prior_std" : 0.1,
     "pos_from_attn" : "attn-masks", # "attn-masks" if computing locations from slot attention masks (alternative: "dme" from the estimated density maps)
-    "training_from_scratch" : False,
+    "training_from_scratch" : True,
     "training_iters": 20000, # 10k
     "step_size": 50,
-    "running_type": "eval", # train, debug, eval, inspect
+    "running_type": "true", # train, debug, eval, inspect
     "ood_eval": False,
     "slot_dim" : 64, # !!!!!!!!! 64 for clevr6 SP results !!!!!!!!!
     "infer_background": False,
@@ -42,7 +42,7 @@ params = {
     "softmax_temperature": 1.0,
     "strided_convs": True,
     "check_attn": True,
-    "jobID": 91, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects
+    "jobID": 94, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects
     "mesh_iters": 4,
     "mesh_lr": 5, # 76: 3, 77: 5
     "logprob_coeff": 1.,
