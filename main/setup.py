@@ -34,7 +34,7 @@ params = {
     "training_from_scratch" : True,
     "training_iters": 20000, # 10k
     "step_size": 50,
-    "running_type": "true", # train, debug, eval, inspect
+    "running_type": "train", # train, debug, eval, inspect
     "ood_eval": False,
     "slot_dim" : 64, # !!!!!!!!! 64 for clevr6 SP results !!!!!!!!!
     "infer_background": False,
