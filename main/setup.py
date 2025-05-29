@@ -19,11 +19,11 @@ params = {
     "resolution": (128, 128),
     "num_slots": 10,
     "max_objects": 10,
-    "guide_step" : 10700, # !!!!!!!!! 7750 for 2Dobjects - 11050 for clevr6 !!!!!!!!!
+    "guide_step" : 11900, # !!!!!!!!! 7750 for 2Dobjects - 11050 for clevr6 !!!!!!!!!
     "print_distributions": False,
     "print_importance_sampling": False,
     "bernoulli_inf_reduction": 'none',
-    "num_inference_samples": 50, # 20 for clevr sp experiments
+    "num_inference_samples": 20, # 20 for clevr sp experiments
     "N_proposal" : "normal", # mixture
     "loc_proposal" : "wo_net",
     "loc_proposal_std": 0.05, 
@@ -34,7 +34,7 @@ params = {
     "training_from_scratch" : False,
     "training_iters": 20000, # 10k
     "step_size": 100,
-    "running_type": "train", # train, debug, eval, inspect
+    "running_type": "eval", # train, debug, eval, inspect
     "ood_eval": False,
     "slot_dim" : 64, # !!!!!!!!! 64 for clevr6 SP results !!!!!!!!!
     "infer_background": False,

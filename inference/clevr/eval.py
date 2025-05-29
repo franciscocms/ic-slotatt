@@ -213,7 +213,8 @@ def main():
                 #logger.info(f"trace that maximizes AP: {max_ap_idx} with {best_overall_ap}")
                 # compute the final AP
                 preds = process_preds(prop_traces, max_ap_idx)
-                for t in threshold: ap[t] += compute_AP(preds, target, t)
+                for t in threshold: 
+                    ap[t] += compute_AP(preds, target, t)
                 n_test_samples += 1
 
                 logger.info(f"current stats:")
