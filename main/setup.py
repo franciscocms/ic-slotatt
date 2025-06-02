@@ -34,7 +34,7 @@ params = {
     "training_from_scratch" : False,
     "training_iters": 20000, # 10k
     "step_size": 100,
-    "running_type": "train", # train, debug, eval, inspect
+    "running_type": "eval", # train, debug, eval, inspect
     "ood_eval": False,
     "slot_dim" : 64, # !!!!!!!!! 64 for clevr6 SP results !!!!!!!!!
     "infer_background": False,
@@ -55,7 +55,7 @@ params = {
 
 # set job split settings for inference
 JOB_SPLIT = {
-            'id': 1,
+            'id': 2,
             'total': 4
             }
 
