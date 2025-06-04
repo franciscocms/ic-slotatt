@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import time
 import glob
 
-from .setup import params, JOB_SPLIT
+from main.setup import params, JOB_SPLIT
 
 import warnings
 warnings.filterwarnings("ignore")
