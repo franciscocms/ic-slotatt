@@ -18,7 +18,6 @@ import matplotlib.pyplot as plt
 import time
 import glob
 
-from utils.distributions import MyBernoulli, MyNormal
 from .setup import params, JOB_SPLIT
 
 import warnings
