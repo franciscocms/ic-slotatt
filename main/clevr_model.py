@@ -368,8 +368,6 @@ render_args.engine = "CYCLES"
 render_args.resolution_x = 320
 render_args.resolution_y = 240
 render_args.resolution_percentage = 100
-render_args.tile_x = 256
-render_args.tile_y = 256
 
 # Some CYCLES-specific stuff
 bpy.data.worlds['World'].cycles.sample_as_light = True
@@ -522,7 +520,7 @@ def _add_object(object_dir):
 
 # Sampled objects from Pyro
 
-#logger.info("adding objects to blender scene...")
+
 """
     script += """
 
