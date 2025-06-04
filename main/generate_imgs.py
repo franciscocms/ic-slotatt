@@ -106,7 +106,7 @@ def sample_clevr_scene(llh_uncertainty):
     scene_struct['directions']['above'] = tuple(plane_up)
     scene_struct['directions']['below'] = tuple(-plane_up)    
 
-    B = params['batch_size'] if params["running_type"] == "train" else params['num_inference_samples']
+    B = 64
     M = max_objects 
     
     # Sample the mask to predict real objects
@@ -517,7 +517,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     clevr_scenes = sample_clevr_scene(llh_uncertainty)
 
-    B = params['batch_size'] 
+    B = 64
 
     gen_samples = 512 
     blender_scripts = [generate_blender_script(scene, idx, imgs_path, gen_samples) for idx, scene in enumerate(clevr_scenes)]
