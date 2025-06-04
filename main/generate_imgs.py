@@ -18,11 +18,8 @@ import matplotlib.pyplot as plt
 import time
 import glob
 
-import sys
-sys.path.append(os.path.abspath(__file__+'/../../../'))
-
 from utils.distributions import MyBernoulli, MyNormal
-from main.setup import params, JOB_SPLIT
+from .setup import params, JOB_SPLIT
 
 import warnings
 warnings.filterwarnings("ignore")
