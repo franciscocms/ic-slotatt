@@ -616,5 +616,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     logger.info(proc_img.shape)
     
     
-    
+if __name__ == "__main__":
+    clevr_gen_model()
+
     
