@@ -331,7 +331,7 @@ class InvSlotAttentionGuide(nn.Module):
   
   def _compute_logvar_loss(self, logvar, prior_logvar=torch.tensor(-2.)):
         prior_var = torch.exp(prior_logvar)
-        kl_div = 0.5 * (logvar - prior_logvar + prior_var / torch.exp(logvar) - 1).mean()
+        kl_div = 0.5 * (logvar - prior_logvar + prior_var/torch.exp(logvar) - 1).mean()
         return kl_div
   
   def infer_step(self, variable, obs=None, proposal_distribution=None): 
@@ -420,7 +420,7 @@ class InvSlotAttentionGuide(nn.Module):
     self.encoder_cnn.step = self.step
     B, C, H, W = self.img.shape
 
-    x = self.encoder_cnn(self.img[:, :3]) # [B, input_dim, C]
+    x = self.encoder_cnn(self.img[:, :3]) # [B, input_dim, C] 
     x = nn.LayerNorm(x.shape[1:]).to(device)(x)
     self.features_to_slots = self.mlp(x)
     n_s = params['num_slots']
@@ -469,9 +469,9 @@ class InvSlotAttentionGuide(nn.Module):
                 # run the proposal for variable var
                 if var.name not in ['x', 'y', 'pose']: _ = self.infer_step(var, self.slots)
                 else: 
-                   mean, logvar = self.infer_step(var, self.slots)
-                   self.logvar_loss = self.logvar_loss + self._compute_logvar_loss(logvar, self.prior_logvar)
-                
+                  mean, logvar = self.infer_step(var, self.slots)
+                  self.logvar_loss = self.logvar_loss + self._compute_logvar_loss(logvar, self.prior_logvar)
+              
       
         del self.slots
         self.current_trace = []

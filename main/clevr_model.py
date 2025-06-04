@@ -157,8 +157,9 @@ def sample_clevr_scene(llh_uncertainty):
     y_min, y_max = -3. + min_margin, 3. - min_margin
     sampling_radius = 0.3
     positions = []
-    ncandidates = 100
     for b in range(B):
+
+        ncandidates = 100
         engine = qmc.PoissonDisk(d=2, radius=sampling_radius, ncandidates=int(ncandidates))
         pre_positions = engine.random(num_objects[b])
 
@@ -367,6 +368,8 @@ render_args.engine = "CYCLES"
 render_args.resolution_x = 320
 render_args.resolution_y = 240
 render_args.resolution_percentage = 100
+render_args.tile_x = 256
+render_args.tile_y = 256
 
 # Some CYCLES-specific stuff
 bpy.data.worlds['World'].cycles.sample_as_light = True
