@@ -36,7 +36,7 @@ params = {
     "step_size": 100,
     "running_type": "eval", # train, debug, eval, inspect
     "ood_eval": False,
-    "slot_dim" : 64, # !!!!!!!!! 64 for clevr6 SP results !!!!!!!!!
+    "slot_dim" : 64, 
     "infer_background": False,
     "slotatt_recurrence": True,
     "softmax_temperature": 1.0,

@@ -249,7 +249,7 @@ def main():
                         overall_ap = np.mean(list(aux_ap.values()))
                         if overall_ap > best_overall_ap:
                             best_overall_ap = overall_ap
-                            max_ap_idx = i
+                            max_ap_idx = p
                     preds = process_preds(prop_traces, max_ap_idx)
                     for t in threshold: 
                         ap[t] += compute_AP(preds, target, t)
