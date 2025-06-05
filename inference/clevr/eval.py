@@ -179,61 +179,83 @@ def main():
                 log_wts = posterior.log_weights[0]
 
                 resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
-                resampling_id = resampling().item()
-
-                logger.info(f"log weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
                 
-                # logger.info("\n")
-                # for name, site in traces.nodes.items():                    
-                #     # if site["type"] == "sample":
-                #     #     logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
+                sample_size = 10
+                if sample_size == 1:
+                    resampling_id = resampling().item()
+                    logger.info(f"log weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
                     
-                #     if name == 'image':
-                #         for i in range(site["fn"].mean.shape[0]):
-                #             output_image = site["fn"].mean[i]
-                #             plt.imshow(visualize(output_image[:3].permute(1, 2, 0).cpu().numpy()))
-                #             plt.savefig(os.path.join(plots_dir, f"trace_{img_index}_{i}.png"))
-                #             plt.close()
+                    # logger.info("\n")
+                    # for name, site in traces.nodes.items():                    
+                    #     # if site["type"] == "sample":
+                    #     #     logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
+                        
+                    #     if name == 'image':
+                    #         for i in range(site["fn"].mean.shape[0]):
+                    #             output_image = site["fn"].mean[i]
+                    #             plt.imshow(visualize(output_image[:3].permute(1, 2, 0).cpu().numpy()))
+                    #             plt.savefig(os.path.join(plots_dir, f"trace_{img_index}_{i}.png"))
+                    #             plt.close()
 
-                
-                using_llh = True
-                
-                if using_llh:
-                    preds = process_preds(prop_traces, resampling_id)
-                    for t in threshold: 
-                        ap[t] = compute_AP(preds, target, t)
-                    n_test_samples += 1
-                
+                    
+                    using_llh = True
+                    
+                    if using_llh:
+                        preds = process_preds(prop_traces, resampling_id)
+                        for t in threshold: 
+                            ap[t] = compute_AP(preds, target, t)
+                        n_test_samples += 1
+                    
+                    else:
+                        # only to analyze the impact of resampling traces based on log-likelihood weights
+                        # when compared with the posterior trace that maximizes AP
+                        # do not compute performance metrics using the below code!
+
+                        max_ap_idx = 0
+                        best_overall_ap = 0.   
+                        for i in range(len(log_wts)):
+                            aux_ap = {k: 0 for k in threshold}
+                            preds = process_preds(prop_traces, i)
+                            for t in threshold: 
+                                aux_ap[t] = compute_AP(preds, target, t)
+                            #logger.info(f"proposal trace {i} - AP values: {list(aux_ap.values())}")
+                            overall_ap = np.mean(list(aux_ap.values()))
+                            if overall_ap > best_overall_ap:
+                                best_overall_ap = overall_ap
+                                max_ap_idx = i
+                        
+                        logger.info(max_ap_idx)
+                        preds = process_preds(prop_traces, max_ap_idx)
+                        for t in threshold: 
+                            ap[t] += compute_AP(preds, target, t)
+                        n_test_samples += 1
+
+                    logger.info(f"current stats:")
+                    aux_mAP = {k: v/n_test_samples for k, v in ap.items()}
+                    logger.info(aux_mAP)
+
                 else:
-                    # only to analyze the impact of resampling traces based on log-likelihood weights
-                    # when compared with the posterior trace that maximizes AP
-                    # do not compute performance metrics using the below code!
+                    resampling_id = resampling(torch.Size((sample_size,)))
+                    logger.info(f"log weights: {[l.item() for l in log_wts]} - resampled traces: {resampling_id}")
 
                     max_ap_idx = 0
-                    best_overall_ap = 0.   
-                    for i in range(len(log_wts)):
+                    best_overall_ap = 0.
+                    for p in resampling_id:
+                        p = int(p)
+                        preds = process_preds(prop_traces, p)
                         aux_ap = {k: 0 for k in threshold}
-                        preds = process_preds(prop_traces, i)
                         for t in threshold: 
                             aux_ap[t] = compute_AP(preds, target, t)
-                        #logger.info(f"proposal trace {i} - AP values: {list(aux_ap.values())}")
                         overall_ap = np.mean(list(aux_ap.values()))
                         if overall_ap > best_overall_ap:
                             best_overall_ap = overall_ap
                             max_ap_idx = i
-                    
-                    logger.info(max_ap_idx)
                     preds = process_preds(prop_traces, max_ap_idx)
                     for t in threshold: 
                         ap[t] += compute_AP(preds, target, t)
+
                     n_test_samples += 1
 
-                logger.info(f"current stats:")
-                aux_mAP = {k: v/n_test_samples for k, v in ap.items()}
-                logger.info(aux_mAP)
-
-                #if n_test_samples == 10: break
-                
         mAP = {k: v/n_test_samples for k, v in ap.items()}
         logger.info(f"distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")
         logger.info(f"mAP values: {mAP[threshold[0]]} - {mAP[threshold[1]]} - {mAP[threshold[2]]} - {mAP[threshold[3]]} - {mAP[threshold[4]]} - {mAP[threshold[5]]}\n")
