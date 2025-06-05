@@ -157,9 +157,8 @@ def sample_clevr_scene(llh_uncertainty):
     y_min, y_max = -3. + min_margin, 3. - min_margin
     sampling_radius = 0.3
     positions = []
+    ncandidates = 100
     for b in range(B):
-
-        ncandidates = 100
         engine = qmc.PoissonDisk(d=2, radius=sampling_radius, ncandidates=int(ncandidates))
         pre_positions = engine.random(num_objects[b])
 
@@ -520,7 +519,7 @@ def _add_object(object_dir):
 
 # Sampled objects from Pyro
 
-
+#logger.info("adding objects to blender scene...")
 """
     script += """
 

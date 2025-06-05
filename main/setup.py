@@ -19,7 +19,7 @@ params = {
     "resolution": (128, 128),
     "num_slots": 10,
     "max_objects": 10,
-    "guide_step" : 11900, # !!!!!!!!! 7750 for 2Dobjects - 11050 for clevr6 !!!!!!!!!
+    "guide_step" : 12300, # !!!!!!!!! 7750 for 2Dobjects - 11050 for clevr6 !!!!!!!!!
     "print_distributions": False,
     "print_importance_sampling": False,
     "bernoulli_inf_reduction": 'none',
@@ -60,8 +60,8 @@ JOB_SPLIT = {
             }
 
 if params["dataset"] == "clevr": 
-    params["batch_size"] = 64 if params["running_type"] == "train" else 1
-    params["lr"] = 4e-4
+    params["batch_size"] = 512 if params["running_type"] == "train" else 1
+    params["lr"] = 1e-3
 elif params["dataset"] == "2Dobjects": 
     params["batch_size"] = 64
     params["lr"] = 1e-3
