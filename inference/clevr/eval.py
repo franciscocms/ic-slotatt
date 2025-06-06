@@ -256,6 +256,10 @@ def main():
 
                     n_test_samples += 1
 
+                    logger.info(f"current stats:")
+                    aux_mAP = {k: v/n_test_samples for k, v in ap.items()}
+                    logger.info(aux_mAP)
+
         mAP = {k: v/n_test_samples for k, v in ap.items()}
         logger.info(f"distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")
         logger.info(f"mAP values: {mAP[threshold[0]]} - {mAP[threshold[1]]} - {mAP[threshold[2]]} - {mAP[threshold[3]]} - {mAP[threshold[4]]} - {mAP[threshold[5]]}\n")
