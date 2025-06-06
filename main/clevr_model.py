@@ -611,7 +611,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     #init_time = time.time()
     # Generate the Blender script for the sampled scene
-    gen_samples = 512 if params["running_type"] == "train" else 512
+    gen_samples = 128 if params["running_type"] == "train" else 512
     blender_scripts = [generate_blender_script(scene, idx, imgs_path, gen_samples) for idx, scene in enumerate(clevr_scenes)]
     #script_time = time.time() - init_time
     #logger.info(f"Scene scripting time: {script_time}")
