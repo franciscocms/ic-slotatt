@@ -201,7 +201,7 @@ def main():
 
                 resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
                 
-                sample_size = 1
+                sample_size = 10
                 if sample_size == 1:
                     if params["num_inference_samples"] > 1:
                         resampling_id = resampling().item()
@@ -278,6 +278,11 @@ def main():
                             best_overall_ap = overall_ap
                             max_ap_idx = p
                     preds = process_preds(prop_traces, max_ap_idx)
+                    
+                    logger.info(f"\npreds: {preds}")
+                    logger.info(f"target: {target}\n")
+
+                    
                     for t in threshold: 
                         ap[t] += compute_AP(preds, target, t)
 
