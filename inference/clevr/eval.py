@@ -203,7 +203,7 @@ def main():
 
                 if params["num_inference_samples"] > 1:
                     #resampling_id = resampling().item()
-                    log_wts = [l.item() for l in log_wts]
+                    log_wts = np.array([l.item() for l in log_wts])
                     logger.info(f"log weights: {log_wts}")
                     norm_log_wts = (log_wts - min(log_wts)) / (max(log_wts) - min(log_wts))
                     logger.info(f"norm log weights: {norm_log_wts}")
