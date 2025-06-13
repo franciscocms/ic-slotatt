@@ -34,7 +34,7 @@ params = {
     "training_from_scratch" : False,
     "training_iters": 20000, # 10k
     "step_size": 100,
-    "running_type": "eval", # train, debug, eval, inspect
+    "running_type": "train", # train, debug, eval, inspect
     "ood_eval": False,
     "slot_dim" : 64, 
     "infer_background": False,
@@ -60,8 +60,8 @@ JOB_SPLIT = {
             }
 
 if params["dataset"] == "clevr": 
-    params["batch_size"] = 512 if params["running_type"] == "train" else 1
-    params["lr"] = 1e-3
+    params["batch_size"] = 64 if params["running_type"] == "train" else 1
+    params["lr"] = 4e-4
 elif params["dataset"] == "2Dobjects": 
     params["batch_size"] = 64
     params["lr"] = 1e-3
