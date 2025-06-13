@@ -4,6 +4,7 @@ import torch
 from torchvision import transforms
 import numpy as np
 import torch.nn.functional as F
+from scipy.special import softmax
 
 import os
 import glob
@@ -205,7 +206,7 @@ def main():
                     #resampling_id = resampling().item()
                     log_wts = np.array([l.item() for l in log_wts])
                     logger.info(f"log weights: {log_wts}")
-                    norm_log_wts = (log_wts - min(log_wts)) / (max(log_wts) - min(log_wts))
+                    norm_log_wts = softmax(log_wts)
                     logger.info(f"norm log weights: {norm_log_wts}")
 
                     for i, w in enumerate(norm_log_wts):
