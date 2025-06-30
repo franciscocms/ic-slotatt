@@ -429,11 +429,11 @@ class CLEVR(Dataset):
             for obj in scene['objects']:
                 coords = ((torch.FloatTensor(obj['3d_coords']) + 3.) / 6.).view(1, 3)
                 #coords = (torch.tensor(obj['3d_coords']) / 3.).view(1, 3)
-                size = F.one_hot(torch.LongTensor([size2id[obj['size']]]), 2)
-                material = F.one_hot(torch.LongTensor([mat2id[obj['material']]]), 2)
-                shape = F.one_hot(torch.LongTensor([shape2id[obj['shape']]]), 3)
-                color = F.one_hot(torch.LongTensor([color2id[obj['color']]]), 8)
-                obj_vec = torch.cat((coords, size, material, shape, color, torch.Tensor([[1.]])), dim=1)[0]
+                size = F.one_hot(torch.LongTensor([size2id[obj['size']]]), 2).to(DEVICE)
+                material = F.one_hot(torch.LongTensor([mat2id[obj['material']]]), 2).to(DEVICE)
+                shape = F.one_hot(torch.LongTensor([shape2id[obj['shape']]]), 3).to(DEVICE)
+                color = F.one_hot(torch.LongTensor([color2id[obj['color']]]), 8).to(DEVICE)
+                obj_vec = torch.cat((coords, size, material, shape, color, torch.Tensor([[1.]], device=DEVICE)), dim=1)[0]
                 target.append(obj_vec)
             while len(target) < self.max_objs:
                 target.append(torch.zeros(19).to(DEVICE))
