@@ -15,7 +15,7 @@ from torch.utils.data import Dataset, DataLoader
 
 # add project path to sys to import relative modules
 import sys
-sys.path.append(os.path.abspath(__file__+'/../../'))
+sys.path.append(os.path.abspath(__file__+'/../../../'))
 
 import logging
 logfile_name = f"log-100.log"
@@ -24,7 +24,7 @@ logger.setLevel(logging.INFO)
 fh = logging.FileHandler(logfile_name, mode='w')
 logger.addHandler(fh)
 
-logger.info(os.path.abspath(__file__+'/../../'))
+logger.info(os.path.abspath(__file__+'/../../../'))
 
 import wandb # type: ignore
 
