@@ -304,7 +304,7 @@ def hungarian_loss(pred, target, loss_fn=F.smooth_l1_loss):
     return total_loss, dict(indices=indices)
 
 class Trainer:
-    def __init__(self, model, dataloaders, params): 
+    def __init__(self, model, dataloaders, params, logger): 
         self.trainloader = dataloaders["train"]
         self.validloader = dataloaders["validation"]
         self.params = params
@@ -314,6 +314,7 @@ class Trainer:
         self.num_epochs = 1000
         self.device = self.params['device']
         self.optimizer = torch.optim.Adam([p for p in list(self.model.parameters()) if p.requires_grad], lr = self.params['lr'])
+        self.logger = logger
     
     def _save_checkpoint(self, epoch):
         if not os.path.isdir(self.params['checkpoint_path']):
@@ -360,7 +361,7 @@ class Trainer:
 
         for epoch in range(self.num_epochs):                  
             self.epoch = epoch
-            if epoch % self.params["epoch_log_rate"] == 0:
+            if epoch % 1 == 0:
                 logger.info("Epoch {}/{}".format(epoch, self.num_epochs - 1))
 
             epoch_train_loss = self._train_epoch()
@@ -371,9 +372,12 @@ class Trainer:
             loss_dic = {"train_loss": train_loss,
                         "valid_loss": valid_loss}
             
-            if epoch % self.params["epoch_log_rate"] == 0 or epoch == self.num_epochs-1:
+            if epoch % 1 == 0 or epoch == self.num_epochs-1:
                 logger.info("... train_loss: {:.3f}" .format(train_loss[-1]))
                 logger.info("... valid_loss: {:.3f}" .format(valid_loss[-1]))
+
+                self.logger.log({"train_loss": train_loss[-1],
+                                 "val_loss": valid_loss[-1]})
         
         time_elapsed = time.time() - since
         logger.info('Training complete in {:.0f}m {:.0f}s'.format(
@@ -579,7 +583,7 @@ val_dataloader = DataLoader(val_data, batch_size = params["batch_size"],
                               shuffle=False, num_workers=4, pin_memory=True)
 
 
-trainer = Trainer(guide, {"train": train_dataloader, "validation": val_dataloader}, params)
+trainer = Trainer(guide, {"train": train_dataloader, "validation": val_dataloader}, params, run)
 trainer.train()
  
 
