@@ -566,12 +566,15 @@ if CHECK_ATTN and TRAINING_FROM_SCRATCH:
 
 
 dataset_path = "/nas-ctm01/datasets/public/CLEVR/CLEVR_v1.0"
-train_images_path = os.path.join(dataset_path, 'images/train')
-train_data = CLEVR(train_images_path, max_objs=10)
+train_data = CLEVR(images_path = os.path.join(dataset_path, 'images/train'),
+                   scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_train_scenes.json'),
+                   max_objs=10)
 train_dataloader = DataLoader(train_data, batch_size = params["batch_size"],
                               shuffle=True, num_workers=4, pin_memory=True)
 val_images_path = os.path.join(dataset_path, 'images/val')
-val_data = CLEVR(val_images_path, max_objs=10)
+val_data = CLEVR(images_path = os.path.join(dataset_path, 'images/val'),
+                   scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json'),
+                   max_objs=10)
 val_dataloader = DataLoader(val_data, batch_size = params["batch_size"],
                               shuffle=False, num_workers=4, pin_memory=True)
 
