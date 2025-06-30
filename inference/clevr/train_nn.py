@@ -436,10 +436,10 @@ class CLEVR(Dataset):
                 obj_vec = torch.cat((coords, size, material, shape, color, torch.Tensor([[1.]])), dim=1)[0]
                 target.append(obj_vec)
             while len(target) < self.max_objs:
-                target.append(torch.zeros(19))
+                target.append(torch.zeros(19, device='cpu'))
 
             logger.info(target)
-            
+
             target = torch.stack(target)
 
             
