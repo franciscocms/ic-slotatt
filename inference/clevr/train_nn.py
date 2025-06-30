@@ -428,7 +428,12 @@ class CLEVR(Dataset):
         target = []
         if self.get_target:
             for obj in scene['objects']:
-                coords = ((torch.tensor(obj['3d_coords']) + 3.) / 6.).view(1, 3)
+                logger.info(obj['3d_coords'])
+
+                coords = (obj['3d_coords'] + 3.) / 6.
+
+                logger.info(coords)
+                
                 #coords = (torch.tensor(obj['3d_coords']) / 3.).view(1, 3)
                 size = F.one_hot(torch.LongTensor([size2id[obj['size']]]), 2)
                 material = F.one_hot(torch.LongTensor([mat2id[obj['material']]]), 2)
