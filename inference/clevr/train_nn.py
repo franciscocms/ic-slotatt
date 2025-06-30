@@ -34,9 +34,6 @@ from utils.guide import minimize_entropy_of_sinkhorn, sinkhorn
 
 
 
-torch.autograd.set_detect_anomaly(True)
-
-
 """
 set image and checkpoints saving paths
 """
@@ -46,8 +43,10 @@ run = wandb.init(project="ICSA-CLEVR",
                   name=f"{params['jobID']}"
                   )
 
-DEVICE = params["device"]
+DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 TRAINING_FROM_SCRATCH = params["training_from_scratch"]
+
+logger.info(DEVICE)
 
 def visualize(x):
    return ((x/2. + 0.5) * 255.).astype(int)
