@@ -32,7 +32,8 @@ from main.setup import params
 
 from utils.guide import minimize_entropy_of_sinkhorn, sinkhorn
 
-
+params["batch_size"] = 512
+params["lr"] = 4e-4
 
 """
 set image and checkpoints saving paths
