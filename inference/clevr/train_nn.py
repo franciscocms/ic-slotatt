@@ -90,7 +90,7 @@ class SlotAttention(nn.Module):
     
     self.eps = torch.tensor(1e-8, device=DEVICE)
 
-    self.step = 0
+    self.epoch = 0
 
   def forward(self, inputs):
     
@@ -189,8 +189,6 @@ class Encoder(nn.Module):
     else: resolution = params['resolution']
     self.encoder_pos = SoftPositionEmbed(64, resolution)
 
-    self.step = 0
-
   def forward(self, x):    
     x = F.relu(self.conv1(x))
     x = F.relu(self.conv2(x))
@@ -221,7 +219,7 @@ class InvSlotAttentionGuide(nn.Module):
     self.stage = stage
     assert self.stage in ["train", "eval"], "stage must be either 'train' or 'eval'"
     self.current_trace = []
-    self.is_train = True if self.stage == "train" else False
+    self.is_train = True
 
     self.encoder_cnn = Encoder(self.resolution, self.slot_dim)
     self.mlp = nn.Sequential(
@@ -241,7 +239,7 @@ class InvSlotAttentionGuide(nn.Module):
     )
 
     self.batch_idx = 0
-    self.step = 0
+    self.epoch = 0
     self.softmax = nn.Softmax(dim=-1)
     self.sigmoid = nn.Sigmoid()
 
@@ -255,20 +253,20 @@ class InvSlotAttentionGuide(nn.Module):
     self.features_to_slots = self.mlp(x)
     self.slots, attn = self.slot_attention(self.features_to_slots)
 
-    if self.is_train and self.step % params['step_size'] == 0:
+    if self.is_train:
         aux_attn = attn.reshape((B, self.num_slots, params['resolution'][0], params['resolution'][1])) if not params["strided_convs"] else attn.reshape((B, self.num_slots, int(params['resolution'][0]/4), int(params['resolution'][1]/4)))
         fig, ax = plt.subplots(ncols=self.num_slots)
         for j in range(self.num_slots):                                       
             im = ax[j].imshow(aux_attn[0, j, :, :].detach().cpu().numpy())
             ax[j].grid(False)
             ax[j].axis('off')        
-        plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/attn.png")
+        plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.epoch}/attn.png")
         plt.close()
 
         plot_img = visualize(np.transpose(x[0].detach().cpu().numpy(), (1, 2, 0)))
         plt.imshow(plot_img)
         plt.axis('off')
-        plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.step}/img.png")
+        plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.epoch}/img.png")
         plt.close()
     
     preds = self.mlp_preds(self.slots)
@@ -354,17 +352,26 @@ class Trainer:
                 num_iters += 1
         return loss/num_iters
 
-    def train(self):
+    def train(self, root_folder):
         since = time.time()  
         train_loss, valid_loss = [], [] 
 
         for epoch in range(self.num_epochs):                  
+            
             self.epoch = epoch
+            self.model.epoch = epoch
+            self.model.is_train = True
+            
             if epoch % 1 == 0:
                 logger.info("Epoch {}/{}".format(epoch, self.num_epochs - 1))
 
+            if not os.path.isdir(f"{root_folder}/attn-step-{epoch}"): os.mkdir(f"{root_folder}/attn-step-{epoch}")  
+                    
             epoch_train_loss = self._train_epoch()
             train_loss.append(epoch_train_loss) 
+            
+            self.model.is_train = False
+            
             epoch_valid_loss = self._valid_epoch()
             valid_loss.append(epoch_valid_loss)      
 
@@ -437,16 +444,7 @@ class CLEVR(Dataset):
                 target.append(obj_vec)
             while len(target) < self.max_objs:
                 target.append(torch.zeros(19, device='cpu'))
-
-            logger.info(target)
-
-            target = torch.stack(target)
-
-            
-            logger.info(torch.amin(img))
-            logger.info(torch.amax(img))
-
-       
+            target = torch.stack(target)       
         return img, target
 
 
@@ -586,7 +584,7 @@ val_dataloader = DataLoader(val_data, batch_size = params["batch_size"],
 
 
 trainer = Trainer(guide, {"train": train_dataloader, "validation": val_dataloader}, params, run)
-trainer.train()
+trainer.train(root_folder)
  
 
 logger.info("\ntraining ended...")
