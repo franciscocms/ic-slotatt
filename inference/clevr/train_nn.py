@@ -428,10 +428,7 @@ class CLEVR(Dataset):
         target = []
         if self.get_target:
             for obj in scene['objects']:
-                logger.info(obj['3d_coords'])
-
-                coords = (obj['3d_coords'] + 3.) / 6.
-
+                coords = ((torch.tensor(obj['3d_coords']) + 3.) / 6.)
                 logger.info(coords)
                 
                 #coords = (torch.tensor(obj['3d_coords']) / 3.).view(1, 3)
