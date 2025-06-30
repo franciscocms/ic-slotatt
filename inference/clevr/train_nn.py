@@ -243,12 +243,12 @@ class InvSlotAttentionGuide(nn.Module):
     self.softmax = nn.Softmax(dim=-1)
     self.sigmoid = nn.Sigmoid()
 
-  def forward(self, x):
+  def forward(self, img):
     
-    x = x.to(DEVICE)
-    B, C, H, W = x.shape
+    img = img.to(DEVICE)
+    B, C, H, W = img.shape
 
-    x = self.encoder_cnn(x) # [B, input_dim, C] 
+    x = self.encoder_cnn(img) # [B, input_dim, C] 
     x = nn.LayerNorm(x.shape[1:]).to(DEVICE)(x)
     self.features_to_slots = self.mlp(x)
     self.slots, attn = self.slot_attention(self.features_to_slots)
@@ -262,11 +262,8 @@ class InvSlotAttentionGuide(nn.Module):
             ax[j].axis('off')        
         plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.epoch}/attn.png")
         plt.close()
-        
-        logger.info(x[0].shape)
-        
 
-        plot_img = visualize(np.transpose(x[0].detach().cpu().numpy(), (1, 2, 0)))
+        plot_img = visualize(np.transpose(img[0].detach().cpu().numpy(), (1, 2, 0)))
         plt.imshow(plot_img)
         plt.axis('off')
         plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.epoch}/img.png")
