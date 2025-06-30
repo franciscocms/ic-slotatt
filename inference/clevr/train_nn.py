@@ -437,6 +437,9 @@ class CLEVR(Dataset):
                 target.append(obj_vec)
             while len(target) < self.max_objs:
                 target.append(torch.zeros(19))
+
+            logger.info(target)
+            
             target = torch.stack(target)
 
             
