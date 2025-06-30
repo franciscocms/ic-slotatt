@@ -427,16 +427,16 @@ class CLEVR(Dataset):
         target = []
         if self.get_target:
             for obj in scene['objects']:
-                coords = ((torch.FloatTensor(obj['3d_coords']) + 3.) / 6.).view(1, 3)
+                coords = ((torch.Tensor(obj['3d_coords']) + 3.) / 6.).view(1, 3)
                 #coords = (torch.tensor(obj['3d_coords']) / 3.).view(1, 3)
-                size = F.one_hot(torch.LongTensor([size2id[obj['size']]]), 2).to(DEVICE)
-                material = F.one_hot(torch.LongTensor([mat2id[obj['material']]]), 2).to(DEVICE)
-                shape = F.one_hot(torch.LongTensor([shape2id[obj['shape']]]), 3).to(DEVICE)
-                color = F.one_hot(torch.LongTensor([color2id[obj['color']]]), 8).to(DEVICE)
-                obj_vec = torch.cat((coords, size, material, shape, color, torch.Tensor([[1.]], device=DEVICE)), dim=1)[0]
+                size = F.one_hot(torch.LongTensor([size2id[obj['size']]]), 2)
+                material = F.one_hot(torch.LongTensor([mat2id[obj['material']]]), 2)
+                shape = F.one_hot(torch.LongTensor([shape2id[obj['shape']]]), 3)
+                color = F.one_hot(torch.LongTensor([color2id[obj['color']]]), 8)
+                obj_vec = torch.cat((coords, size, material, shape, color, torch.Tensor([[1.]])), dim=1)[0]
                 target.append(obj_vec)
             while len(target) < self.max_objs:
-                target.append(torch.zeros(19).to(DEVICE))
+                target.append(torch.zeros(19))
             target = torch.stack(target)
 
             
@@ -573,13 +573,13 @@ train_data = CLEVR(images_path = os.path.join(dataset_path, 'images/train'),
                    scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_train_scenes.json'),
                    max_objs=10)
 train_dataloader = DataLoader(train_data, batch_size = params["batch_size"],
-                              shuffle=True, generator=torch.Generator(device='cuda'))
+                              shuffle=True)
 val_images_path = os.path.join(dataset_path, 'images/val')
 val_data = CLEVR(images_path = os.path.join(dataset_path, 'images/val'),
                    scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json'),
                    max_objs=10)
 val_dataloader = DataLoader(val_data, batch_size = params["batch_size"],
-                              shuffle=False, generator=torch.Generator(device='cuda'))
+                              shuffle=False)
 
 
 trainer = Trainer(guide, {"train": train_dataloader, "validation": val_dataloader}, params, run)
