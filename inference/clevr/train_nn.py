@@ -427,7 +427,7 @@ class CLEVR(Dataset):
         target = []
         if self.get_target:
             for obj in scene['objects']:
-                coords = ((torch.tensor(obj['3d_coords']) + 3.) / 6.).view(1, 3)
+                coords = ((torch.FloatTensor(obj['3d_coords']) + 3.) / 6.).view(1, 3)
                 #coords = (torch.tensor(obj['3d_coords']) / 3.).view(1, 3)
                 size = F.one_hot(torch.LongTensor([size2id[obj['size']]]), 2)
                 material = F.one_hot(torch.LongTensor([mat2id[obj['material']]]), 2)
@@ -573,13 +573,13 @@ train_data = CLEVR(images_path = os.path.join(dataset_path, 'images/train'),
                    scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_train_scenes.json'),
                    max_objs=10)
 train_dataloader = DataLoader(train_data, batch_size = params["batch_size"],
-                              shuffle=True)
+                              shuffle=True, num_workers=4, pin_memory=True, generator=torch.Generator(device='cuda'))
 val_images_path = os.path.join(dataset_path, 'images/val')
 val_data = CLEVR(images_path = os.path.join(dataset_path, 'images/val'),
                    scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json'),
                    max_objs=10)
 val_dataloader = DataLoader(val_data, batch_size = params["batch_size"],
-                              shuffle=False)
+                              shuffle=False, num_workers=4, pin_memory=True, generator=torch.Generator(device='cuda'))
 
 
 trainer = Trainer(guide, {"train": train_dataloader, "validation": val_dataloader}, params, run)
