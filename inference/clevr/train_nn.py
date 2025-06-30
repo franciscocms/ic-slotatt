@@ -262,6 +262,9 @@ class InvSlotAttentionGuide(nn.Module):
             ax[j].axis('off')        
         plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.epoch}/attn.png")
         plt.close()
+        
+        logger.info(x[0].shape)
+        
 
         plot_img = visualize(np.transpose(x[0].detach().cpu().numpy(), (1, 2, 0)))
         plt.imshow(plot_img)
