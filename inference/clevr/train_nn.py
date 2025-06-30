@@ -18,7 +18,7 @@ import sys
 sys.path.append(os.path.abspath(__file__+'/../../'))
 
 import logging
-logfile_name = f"log-{params['jobID']}.log"
+logfile_name = f"log-100.log"
 logger = logging.getLogger("train")
 logger.setLevel(logging.INFO)
 fh = logging.FileHandler(logfile_name, mode='w')
