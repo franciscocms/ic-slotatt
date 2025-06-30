@@ -17,10 +17,6 @@ from torch.utils.data import Dataset, DataLoader
 import sys
 sys.path.append(os.path.abspath(__file__+'/../../'))
 
-from main.setup import params
-import wandb # type: ignore
-from utils.guide import minimize_entropy_of_sinkhorn, sinkhorn
-
 import logging
 logfile_name = f"log-{params['jobID']}.log"
 logger = logging.getLogger("train")
@@ -28,7 +24,15 @@ logger.setLevel(logging.INFO)
 fh = logging.FileHandler(logfile_name, mode='w')
 logger.addHandler(fh)
 
-main_dir = os.path.abspath(__file__+'/../../')
+logger.info(os.path.abspath(__file__+'/../../'))
+
+import wandb # type: ignore
+
+from main.setup import params
+
+from utils.guide import minimize_entropy_of_sinkhorn, sinkhorn
+
+
 
 torch.autograd.set_detect_anomaly(True)
 
@@ -44,10 +48,6 @@ run = wandb.init(project="ICSA-CLEVR",
 
 DEVICE = params["device"]
 TRAINING_FROM_SCRATCH = params["training_from_scratch"]
-GUIDE_PATH = f"{main_dir}/checkpoint-{params['jobID']}"
-for p in [GUIDE_PATH]: 
-  if not os.path.isdir(p): os.mkdir(p)
-logger.info(f"\n... saving model checkpoints in {GUIDE_PATH}")
 
 def visualize(x):
    return ((x/2. + 0.5) * 255.).astype(int)
