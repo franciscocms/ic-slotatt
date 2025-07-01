@@ -245,7 +245,7 @@ class InvSlotAttentionGuide(nn.Module):
     self.sigmoid = nn.Sigmoid()
     self.tanh = nn.Tanh()
 
-  def forward(self, img, save_masks):
+  def forward(self, img, save_masks=False):
     
     img = img.to(DEVICE)
     B, C, H, W = img.shape
