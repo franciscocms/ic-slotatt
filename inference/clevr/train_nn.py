@@ -245,7 +245,7 @@ class InvSlotAttentionGuide(nn.Module):
     self.sigmoid = nn.Sigmoid()
     self.tanh = nn.Tanh()
 
-  def forward(self, img):
+  def forward(self, img, save_masks):
     
     img = img.to(DEVICE)
     B, C, H, W = img.shape
@@ -255,7 +255,7 @@ class InvSlotAttentionGuide(nn.Module):
     self.features_to_slots = self.mlp(x)
     self.slots, attn = self.slot_attention(self.features_to_slots)
 
-    if self.is_train:
+    if save_masks:
         aux_attn = attn.reshape((B, self.num_slots, params['resolution'][0], params['resolution'][1])) if not params["strided_convs"] else attn.reshape((B, self.num_slots, int(params['resolution'][0]/4), int(params['resolution'][1]/4)))
         fig, ax = plt.subplots(ncols=self.num_slots)
         for j in range(self.num_slots):                                       
@@ -324,13 +324,13 @@ class Trainer:
             path = self.params['checkpoint_path']
             torch.save(self.model.state_dict(), path + '/model_epoch_' + str(epoch) + '.pth')
 
-    def _train_epoch(self):
+    def _train_epoch(self, save_masks):
         loss = 0.
         num_iters = 0
         self.model.train() 
         for img, target in self.trainloader:
             img, target = img.to(self.device), target.to(self.device)
-            preds = self.model(img)
+            preds = self.model(img, save_masks)
             batch_loss, _ = hungarian_loss(preds, target)
 
             self.optimizer.zero_grad()
@@ -339,6 +339,9 @@ class Trainer:
             
             loss += batch_loss.item()
             num_iters += 1
+
+            save_masks = False
+
         return loss/num_iters
     
     def _valid_epoch(self):
@@ -376,13 +379,15 @@ class Trainer:
             self.epoch = epoch
             self.model.epoch = epoch
             self.model.is_train = True
+            save_masks = False
             
             if epoch % self.log_rate == 0:
                 logger.info("Epoch {}/{}".format(epoch, self.num_epochs - 1))
                 if not os.path.isdir(f"{root_folder}/attn-step-{epoch}"): 
-                    os.mkdir(f"{root_folder}/attn-step-{epoch}")  
+                    os.mkdir(f"{root_folder}/attn-step-{epoch}") 
+                save_masks = True 
                     
-            epoch_train_loss = self._train_epoch()
+            epoch_train_loss = self._train_epoch(save_masks)
             
             if epoch % self.log_rate == 0 or epoch == self.num_epochs-1:
                 self.model.is_train = False
