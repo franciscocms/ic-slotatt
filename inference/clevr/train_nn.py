@@ -17,20 +17,20 @@ from torch.utils.data import Dataset, DataLoader
 import sys
 sys.path.append(os.path.abspath(__file__+'/../../../'))
 
-import logging
-logfile_name = f"log-100.log"
-logger = logging.getLogger("train")
-logger.setLevel(logging.INFO)
-fh = logging.FileHandler(logfile_name, mode='w')
-logger.addHandler(fh)
 
-logger.info(os.path.abspath(__file__+'/../../../'))
 
 import wandb # type: ignore
 
 from main.setup import params
 
 from utils.guide import minimize_entropy_of_sinkhorn, sinkhorn
+
+import logging
+logfile_name = f"log-{params['jobID']}.log"
+logger = logging.getLogger("train")
+logger.setLevel(logging.INFO)
+fh = logging.FileHandler(logfile_name, mode='w')
+logger.addHandler(fh)
 
 params["batch_size"] = 512
 params["lr"] = 4e-4
