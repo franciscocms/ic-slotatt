@@ -243,6 +243,7 @@ class InvSlotAttentionGuide(nn.Module):
     self.epoch = 0
     self.softmax = nn.Softmax(dim=-1)
     self.sigmoid = nn.Sigmoid()
+    self.tanh = nn.Tanh()
 
   def forward(self, img):
     
@@ -271,7 +272,7 @@ class InvSlotAttentionGuide(nn.Module):
         plt.close()
     
     preds = self.mlp_preds(self.slots)
-    preds[:, :, 0:3] = self.sigmoid(preds[:, :, 0:3].clone())       # coords
+    preds[:, :, 0:3] = self.tanh(preds[:, :, 0:3].clone())          # coords
     preds[:, :, 3:5] = self.softmax(preds[:, :, 3:4].clone())       # size
     preds[:, :, 5:7] = self.softmax(preds[:, :, 5:7].clone())       # material
     preds[:, :, 7:10] = self.softmax(preds[:, :, 7:10].clone())     # shape
@@ -302,7 +303,7 @@ def hungarian_loss(pred, target, loss_fn=F.smooth_l1_loss):
     return total_loss, dict(indices=indices)
 
 class Trainer:
-    def __init__(self, model, dataloaders, params, logger): 
+    def __init__(self, model, dataloaders, params, logger, log_rate): 
         self.trainloader = dataloaders["train"]
         self.validloader = dataloaders["validation"]
         self.params = params
@@ -311,8 +312,9 @@ class Trainer:
         self.epoch = 0
         self.num_epochs = 1000
         self.device = self.params['device']
-        self.optimizer = torch.optim.Adam([p for p in list(self.model.parameters()) if p.requires_grad], lr = self.params['lr'])
+        self.optimizer = torch.optim.Adam([p for p in list(self.model.parameters()) if p.requires_grad], lr = 4e-4)
         self.logger = logger
+        self.log_rate = log_rate
     
     def _save_checkpoint(self, epoch):
         if not os.path.isdir(self.params['checkpoint_path']):
@@ -342,20 +344,30 @@ class Trainer:
     def _valid_epoch(self):
         loss = 0.
         num_iters = 0
+        metrics = {}
+        threshold = [-1., 1., 0.5, 0.25, 0.125, 0.0625]
+        ap = {k: 0 for k in threshold}
+
         self.model.eval()
         with torch.no_grad(): 
             for img, target in self.validloader:
                 img, target = img.to(self.device), target.to(self.device)
                 preds = self.model(img)
                 batch_loss, _ = hungarian_loss(preds, target)
+
+                for t in threshold: 
+                    ap[t] += compute_AP(preds, target, t)
                 
                 loss += batch_loss.item()
                 num_iters += 1
-        return loss/num_iters
+        
+        mAP = {k: v/num_iters for k, v in ap.items()}
+        metrics['mAP'] = mAP
+        
+        return loss/num_iters, metrics
 
     def train(self, root_folder):
         since = time.time()  
-        train_loss, valid_loss = [], [] 
 
         for epoch in range(self.num_epochs):                  
             
@@ -363,28 +375,24 @@ class Trainer:
             self.model.epoch = epoch
             self.model.is_train = True
             
-            if epoch % 1 == 0:
+            if epoch % self.log_rate == 0:
                 logger.info("Epoch {}/{}".format(epoch, self.num_epochs - 1))
-
-            if not os.path.isdir(f"{root_folder}/attn-step-{epoch}"): os.mkdir(f"{root_folder}/attn-step-{epoch}")  
+                if not os.path.isdir(f"{root_folder}/attn-step-{epoch}"): 
+                    os.mkdir(f"{root_folder}/attn-step-{epoch}")  
                     
             epoch_train_loss = self._train_epoch()
-            train_loss.append(epoch_train_loss) 
             
-            self.model.is_train = False
-            
-            epoch_valid_loss = self._valid_epoch()
-            valid_loss.append(epoch_valid_loss)      
+            if epoch % self.log_rate == 0 or epoch == self.num_epochs-1:
+                self.model.is_train = False
+                epoch_valid_loss, valid_metrics = self._valid_epoch() 
+                logger.info("... train_loss: {:.3f}" .format(epoch_train_loss))
+                logger.info("... valid_loss: {:.3f}" .format(epoch_valid_loss))
+                logger.info(f"... valid mAP: {valid_metrics['mAP'].items()}")
 
-            loss_dic = {"train_loss": train_loss,
-                        "valid_loss": valid_loss}
-            
-            if epoch % 1 == 0 or epoch == self.num_epochs-1:
-                logger.info("... train_loss: {:.3f}" .format(train_loss[-1]))
-                logger.info("... valid_loss: {:.3f}" .format(valid_loss[-1]))
 
-                self.logger.log({"train_loss": train_loss[-1],
-                                 "val_loss": valid_loss[-1]})
+                self.logger.log({"train_loss": epoch_train_loss,
+                                 "val_loss": epoch_valid_loss,
+                                 "val_mAP_inf": valid_metrics['mAP'][-1]})
         
         time_elapsed = time.time() - since
         logger.info('Training complete in {:.0f}m {:.0f}s'.format(
@@ -435,7 +443,7 @@ class CLEVR(Dataset):
         target = []
         if self.get_target:
             for obj in scene['objects']:
-                coords = ((torch.Tensor(obj['3d_coords']) + 3.) / 6.).view(1, 3)
+                coords = ((torch.Tensor(obj['3d_coords'])) / 3.).view(1, 3)
                 #coords = (torch.tensor(obj['3d_coords']) / 3.).view(1, 3)
                 size = F.one_hot(torch.LongTensor([size2id[obj['size']]]), 2)
                 material = F.one_hot(torch.LongTensor([mat2id[obj['material']]]), 2)
@@ -452,16 +460,19 @@ class CLEVR(Dataset):
 def process_preds(preds):
     # preds must have shape (max_objects, n_features)
     assert len(preds.shape) == 2
+    coords = preds[:, :3]*3.
+    size = torch.argmax(preds[:, 3:5], dim=-1)
+    mat = torch.argmax(preds[:, 5:7], dim=-1)
+    shape = torch.argmax(preds[:, 7:10], dim=-1)
+    color = torch.argmax(preds[:, 10:18], dim=-1)
+    real_obj = preds[:, 18]
+    return shape, size, color, mat, coords, real_obj
 
-    shape = torch.argmax(preds[:, :2], dim=-1)
-    size = torch.argmax(preds[:, 2:5], dim=-1)
-    color = torch.argmax(preds[:, 5:8], dim=-1)
-    locx, locy = preds[:, 8], preds[:, 9]
-    real_obj = preds[:, 10]
-    return shape, size, color, locx, locy, real_obj
-
-def distance(loc1, loc2):
-    return torch.sqrt(torch.square(loc1[0]-loc2[0]) + torch.square(loc1[1]-loc2[1]))
+def distance(coords, target_coords):
+    sqr_term = 0.
+    for i in range(len(coords)):
+       sqr_term += torch.square(coords[i] - target_coords[i])
+    return torch.sqrt(sqr_term)
 
 def compute_AP(preds, targets, threshold_dist):
 
@@ -472,8 +483,8 @@ def compute_AP(preds, targets, threshold_dist):
     # preds have shape (max_objects, n_features)
     # targets have shape (max_objects, n_features)
 
-    shape, size, color, locx, locy, pred_real_obj = process_preds(preds)
-    target_shape, target_size, target_color, target_locx, target_locy, target_real_obj = process_preds(targets)
+    shape, size, color, mat, coords, pred_real_obj = process_preds(preds)
+    target_shape, target_size, target_color, target_mat, target_coords, target_real_obj = process_preds(targets)
 
     max_objects = shape.shape[0]
     
@@ -491,7 +502,7 @@ def compute_AP(preds, targets, threshold_dist):
             for j in range(max_objects):
                 if target_real_obj[j]:
                     if [shape[o], size[o], color[o]] == [target_shape[j], target_size[j], target_color[j]]: 
-                        dist = distance((locx[o], locy[o]), (target_locx[j], target_locy[j]))
+                        dist = distance((coords[o], target_coords[j]))
                         if dist < best_distance and j not in found_objects:
                             #logger.info(f'found at best distance {dist}')
                             found = True
@@ -499,7 +510,7 @@ def compute_AP(preds, targets, threshold_dist):
                             found_idx = j # stores the best match between an object and all possible targets
             
             if found:
-                if distance((locx[o], locy[o]), (target_locx[found_idx], target_locy[found_idx])) <= threshold_dist or threshold_dist == -1:
+                if distance(coords[o], target_coords[found_idx]) <= threshold_dist or threshold_dist == -1:
                     found_objects.append(found_idx)
                     #logger.info('found match below distance threshold!')
                     tp += 1
@@ -574,17 +585,17 @@ dataset_path = "/nas-ctm01/datasets/public/CLEVR/CLEVR_v1.0"
 train_data = CLEVR(images_path = os.path.join(dataset_path, 'images/train'),
                    scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_train_scenes.json'),
                    max_objs=10)
-train_dataloader = DataLoader(train_data, batch_size = params["batch_size"],
+train_dataloader = DataLoader(train_data, batch_size = 512,
                               shuffle=True, num_workers=4, generator=torch.Generator(device='cuda'))
 val_images_path = os.path.join(dataset_path, 'images/val')
 val_data = CLEVR(images_path = os.path.join(dataset_path, 'images/val'),
                    scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json'),
                    max_objs=10)
-val_dataloader = DataLoader(val_data, batch_size = params["batch_size"],
+val_dataloader = DataLoader(val_data, batch_size = 512,
                               shuffle=False, num_workers=4, generator=torch.Generator(device='cuda'))
 
 
-trainer = Trainer(guide, {"train": train_dataloader, "validation": val_dataloader}, params, run)
+trainer = Trainer(guide, {"train": train_dataloader, "validation": val_dataloader}, params, run, log_rate=10)
 trainer.train(root_folder)
  
 
