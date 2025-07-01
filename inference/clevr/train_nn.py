@@ -272,7 +272,7 @@ class InvSlotAttentionGuide(nn.Module):
         plt.close()
     
     preds = self.mlp_preds(self.slots)
-    preds[:, :, 0:3] = self.tanh(preds[:, :, 0:3].clone())          # coords
+    preds[:, :, 0:3] = self.sigmoid(preds[:, :, 0:3].clone())          # coords
     preds[:, :, 3:5] = self.softmax(preds[:, :, 3:4].clone())       # size
     preds[:, :, 5:7] = self.softmax(preds[:, :, 5:7].clone())       # material
     preds[:, :, 7:10] = self.softmax(preds[:, :, 7:10].clone())     # shape
@@ -356,7 +356,9 @@ class Trainer:
                 batch_loss, _ = hungarian_loss(preds, target)
 
                 for t in threshold: 
-                    ap[t] += compute_AP(preds, target, t)
+                    ap[t] += average_precision_clevr(preds.detach().cpu().numpy(), 
+                                                     target.detach().cpu().numpy(), 
+                                                     t)
                 
                 loss += batch_loss.item()
                 num_iters += 1
@@ -443,7 +445,7 @@ class CLEVR(Dataset):
         target = []
         if self.get_target:
             for obj in scene['objects']:
-                coords = ((torch.Tensor(obj['3d_coords'])) / 3.).view(1, 3)
+                coords = ((torch.Tensor(obj['3d_coords']) + 3.) / 6.).view(1, 3)
                 #coords = (torch.tensor(obj['3d_coords']) / 3.).view(1, 3)
                 size = F.one_hot(torch.LongTensor([size2id[obj['size']]]), 2)
                 material = F.one_hot(torch.LongTensor([mat2id[obj['material']]]), 2)
@@ -457,73 +459,131 @@ class CLEVR(Dataset):
         return img, target
 
 
-def process_preds(preds):
-    # preds must have shape (max_objects, n_features)
-    assert len(preds.shape) == 2
-    coords = preds[:, :3]*3.
-    size = torch.argmax(preds[:, 3:5], dim=-1)
-    mat = torch.argmax(preds[:, 5:7], dim=-1)
-    shape = torch.argmax(preds[:, 7:10], dim=-1)
-    color = torch.argmax(preds[:, 10:18], dim=-1)
-    real_obj = preds[:, 18]
-    return shape, size, color, mat, coords, real_obj
+def average_precision_clevr(pred, attributes, distance_threshold):
+  """Computes the average precision for CLEVR.
+  This function computes the average precision of the predictions specifically
+  for the CLEVR dataset. First, we sort the predictions of the model by
+  confidence (highest confidence first). Then, for each prediction we check
+  whether there was a corresponding object in the input image. A prediction is
+  considered a true positive if the discrete features are predicted correctly
+  and the predicted position is within a certain distance from the ground truth
+  object.
+  Args:
+    pred: Tensor of shape [batch_size, num_elements, dimension] containing
+      predictions. The last dimension is expected to be the confidence of the
+      prediction.
+    attributes: Tensor of shape [batch_size, num_elements, dimension] containing
+      ground-truth object properties.
+    distance_threshold: Threshold to accept match. -1 indicates no threshold.
+  Returns:
+    Average precision of the predictions.
+  """
 
-def distance(coords, target_coords):
-    sqr_term = 0.
-    for i in range(len(coords)):
-       sqr_term += torch.square(coords[i] - target_coords[i])
-    return torch.sqrt(sqr_term)
+  # pred[:, :, :3] = (pred[:, :, :3] + 1) / 2
+  # attributes[:, :, :3] = (attributes[:, :, :3] + 1) / 2
 
-def compute_AP(preds, targets, threshold_dist):
+  [batch_size, _, element_size] = attributes.shape
+  [_, predicted_elements, _] = pred.shape
 
-    """
-    adapted from 'https://github.com/google-research/google-research/blob/master/slot_attention/utils.py'
-    """
+  def unsorted_id_to_image(detection_id, predicted_elements):
+    """Find the index of the image from the unsorted detection index."""
+    return int(detection_id // predicted_elements)
 
-    # preds have shape (max_objects, n_features)
-    # targets have shape (max_objects, n_features)
+  flat_size = batch_size * predicted_elements
+  flat_pred = np.reshape(pred, [flat_size, element_size])
+  sort_idx = np.argsort(flat_pred[:, -1], axis=0)[::-1]  # Reverse order.
 
-    shape, size, color, mat, coords, pred_real_obj = process_preds(preds)
-    target_shape, target_size, target_color, target_mat, target_coords, target_real_obj = process_preds(targets)
+  sorted_predictions = np.take_along_axis(
+      flat_pred, np.expand_dims(sort_idx, axis=1), axis=0)
+  idx_sorted_to_unsorted = np.take_along_axis(
+      np.arange(flat_size), sort_idx, axis=0)
 
-    max_objects = shape.shape[0]
-    
-    tp = np.zeros(1)
-    fp = np.zeros(1)
-    
-    found_objects = []
-    for o in range(max_objects):
-        if torch.round(pred_real_obj[o]):
+  def process_targets(target):
+    """Unpacks the target into the CLEVR properties."""
+    coords = target[:3]
+    object_size = np.argmax(target[3:5])
+    material = np.argmax(target[5:7])
+    shape = np.argmax(target[7:10])
+    color = np.argmax(target[10:18])
+    real_obj = target[18]
+    return coords, object_size, material, shape, color, real_obj
 
-            found = False
-            found_idx = -1 
-            best_distance = 1000
-            
-            for j in range(max_objects):
-                if target_real_obj[j]:
-                    if [shape[o], size[o], color[o]] == [target_shape[j], target_size[j], target_color[j]]: 
-                        dist = distance((coords[o], target_coords[j]))
-                        if dist < best_distance and j not in found_objects:
-                            #logger.info(f'found at best distance {dist}')
-                            found = True
-                            best_distance = dist
-                            found_idx = j # stores the best match between an object and all possible targets
-            
-            if found:
-                if distance(coords[o], target_coords[found_idx]) <= threshold_dist or threshold_dist == -1:
-                    found_objects.append(found_idx)
-                    #logger.info('found match below distance threshold!')
-                    tp += 1
-            else: fp += 1
+  true_positives = np.zeros(sorted_predictions.shape[0])
+  false_positives = np.zeros(sorted_predictions.shape[0])
 
-            #logger.info(found_objects)
-    
-    precision = tp / (tp+fp)
-    recall = tp / np.sum(np.asarray(target_real_obj.cpu()))
+  detection_set = set()
 
-    #logger.info(f'precision: {precision}')
-    #logger.info(f'recall: {recall}')
+  for detection_id in range(sorted_predictions.shape[0]):
+    # Extract the current prediction.
+    current_pred = sorted_predictions[detection_id, :]
+    # Find which image the prediction belongs to. Get the unsorted index from
+    # the sorted one and then apply to unsorted_id_to_image function that undoes
+    # the reshape.
+    original_image_idx = unsorted_id_to_image(
+        idx_sorted_to_unsorted[detection_id], predicted_elements)
+    # Get the ground truth image.
+    gt_image = attributes[original_image_idx, :, :]
 
+    # Initialize the maximum distance and the id of the groud-truth object that
+    # was found.
+    best_distance = 10000
+    best_id = None
+
+    # Unpack the prediction by taking the argmax on the discrete attributes.
+    (pred_coords, pred_object_size, pred_material, pred_shape, pred_color,
+     _) = process_targets(current_pred)
+
+    # Loop through all objects in the ground-truth image to check for hits.
+    for target_object_id in range(gt_image.shape[0]):
+      target_object = gt_image[target_object_id, :]
+      # Unpack the targets taking the argmax on the discrete attributes.
+      (target_coords, target_object_size, target_material, target_shape,
+       target_color, target_real_obj) = process_targets(target_object)
+      # Only consider real objects as matches.
+      if target_real_obj:
+        # For the match to be valid all attributes need to be correctly
+        # predicted.
+        pred_attr = [pred_object_size, pred_material, pred_shape, pred_color]
+        target_attr = [
+            target_object_size, target_material, target_shape, target_color]
+        match = pred_attr == target_attr
+        if match:
+          # If a match was found, we check if the distance is below the
+          # specified threshold. Recall that we have rescaled the coordinates
+          # in the dataset from [-3, 3] to [0, 1], both for `target_coords` and
+          # `pred_coords`. To compare in the original scale, we thus need to
+          # multiply the distance values by 6 before applying the norm.
+          distance = np.linalg.norm((target_coords - pred_coords) * 3.)
+
+          # If this is the best match we've found so far we remember it.
+          if distance < best_distance:
+            best_distance = distance
+            best_id = target_object_id
+    if best_distance < distance_threshold or distance_threshold == -1:
+      # We have detected an object correctly within the distance confidence.
+      # If this object was not detected before it's a true positive.
+      if best_id is not None:
+        if (original_image_idx, best_id) not in detection_set:
+          true_positives[detection_id] = 1
+          detection_set.add((original_image_idx, best_id))
+        else:
+          false_positives[detection_id] = 1
+      else:
+        false_positives[detection_id] = 1
+    else:
+      false_positives[detection_id] = 1
+  accumulated_fp = np.cumsum(false_positives)
+  accumulated_tp = np.cumsum(true_positives)
+  recall_array = accumulated_tp / np.sum(attributes[:, :, -1])
+  precision_array = np.divide(accumulated_tp, (accumulated_fp + accumulated_tp))
+
+  return compute_average_precision(
+        np.array(precision_array, dtype=np.float32),
+        np.array(recall_array, dtype=np.float32))
+
+
+def compute_average_precision(precision, recall):
+    """Computation of the average precision from precision and recall arrays."""
     recall = recall.tolist()
     precision = precision.tolist()
     recall = [0] + recall + [1]
@@ -539,8 +599,6 @@ def compute_AP(preds, targets, threshold_dist):
     average_precision = 0.
     for i in indices_recall:
         average_precision += precision[i + 1] * (recall[i + 1] - recall[i])
-
-    #logger.info(f'ap: {average_precision}')
     return average_precision
 
 
