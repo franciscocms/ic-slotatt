@@ -310,8 +310,8 @@ def hungarian_loss_inclusive_KL(pred, target, loss_fn=F.smooth_l1_loss):
     k_vars = {"size": 2, "material": 2, "shape": 3, "color": 8}
 
     pdist_coords = loss_fn(
-        pred[:, :, -1].unsqueeze(1).expand(-1, target.size(1), -1, -1), 
-        target[:, :, -1].unsqueeze(2).expand(-1, -1, pred.size(1), -1),
+        pred[:, :, :3].unsqueeze(1).expand(-1, target.size(1), -1, -1), 
+        target[:, :, :3].unsqueeze(2).expand(-1, -1, pred.size(1), -1),
         reduction='none').mean(3)
     pdist_real_obj = loss_fn(
         pred[:, :, -1].unsqueeze(-1).unsqueeze(1).expand(-1, target.size(1), -1, -1), 
@@ -326,6 +326,9 @@ def hungarian_loss_inclusive_KL(pred, target, loss_fn=F.smooth_l1_loss):
         i = 0
         log_prob = 0.
         for var, k in k_vars.items():
+            
+            logger.info(f"var {var} - log_prob using pred with shape {pred[:, :, i:k].shape} for {i} to {k}")
+            
             aux_dist = torch.distributions.Categorical(pred[:, :, i:k])
             log_prob += -aux_dist.log_prob(torch.argmax(target[:, o, i:k], dim=-1).unsqueeze(-1).expand(-1, pred.size(1)))                             
             i += k
