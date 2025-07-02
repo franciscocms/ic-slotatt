@@ -302,6 +302,49 @@ def hungarian_loss(pred, target, loss_fn=F.smooth_l1_loss):
 
     return total_loss, dict(indices=indices)
 
+def hungarian_loss_inclusive_KL(pred, target, loss_fn=F.smooth_l1_loss):
+    
+    # pred is [B, N, 19]
+    # target is [B, N, 19]   
+
+    k_vars = {"size": 2, "material": 2, "shape": 3, "color": 8}
+
+    pdist_coords = loss_fn(
+        pred[:, :, -1].unsqueeze(1).expand(-1, target.size(1), -1, -1), 
+        target[:, :, -1].unsqueeze(2).expand(-1, -1, pred.size(1), -1),
+        reduction='none').mean(3)
+    pdist_real_obj = loss_fn(
+        pred[:, :, -1].unsqueeze(-1).unsqueeze(1).expand(-1, target.size(1), -1, -1), 
+        target[:, :, -1].unsqueeze(-1).unsqueeze(2).expand(-1, -1, pred.size(1), -1),
+        reduction='none').mean(3)
+    
+    pred = pred[:, :, 3:]
+    target = target[:, :, 3:]
+
+    pdist = torch.tensor([])
+    for o in range(pred.size(1)):
+        i = 0
+        log_prob = 0.
+        for var, k in k_vars.items():
+            aux_dist = torch.distributions.Categorical(pred[:, :, i:k])
+            log_prob += -aux_dist.log_prob(torch.argmax(target[:, o, i:k], dim=-1).unsqueeze(-1).expand(-1, pred.size(1)))                             
+            i += k
+
+        log_prob = log_prob.unsqueeze(-1)
+        pdist = torch.cat((pdist, log_prob), dim=-1)
+    
+    pdist = pdist + pdist_coords + pdist_real_obj
+
+    pdist_ = pdist.detach().cpu().numpy()
+    indices = np.array([linear_sum_assignment(p) for p in pdist_])
+    indices_ = indices.shape[2] * indices[:, 0] + indices[:, 1]
+    losses = torch.gather(pdist.flatten(1,2), 1, torch.from_numpy(indices_).to(device=pdist.device))
+    total_loss = torch.mean(losses.sum(1))
+
+    return total_loss, dict(indices=indices)
+
+        
+
 class Trainer:
     def __init__(self, model, dataloaders, params, logger, log_rate): 
         self.trainloader = dataloaders["train"]
@@ -336,7 +379,8 @@ class Trainer:
                logger.info(f"preds: {preds[0]}")
                logger.info(f"target: {target[0]}")
             
-            batch_loss, _ = hungarian_loss(preds, target)
+            #batch_loss, _ = hungarian_loss(preds, target)
+            batch_loss, _ = hungarian_loss_inclusive_KL(preds, target)
 
             self.optimizer.zero_grad()
             batch_loss.backward()
@@ -361,7 +405,8 @@ class Trainer:
             for img, target in self.validloader:
                 img, target = img.to(self.device), target.to(self.device)
                 preds = self.model(img)
-                batch_loss, _ = hungarian_loss(preds, target)
+                #batch_loss, _ = hungarian_loss(preds, target)
+                batch_loss, _ = hungarian_loss_inclusive_KL(preds, target)
 
                 for t in threshold: 
                     ap[t] += average_precision_clevr(preds.detach().cpu().numpy(), 
