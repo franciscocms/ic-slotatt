@@ -265,7 +265,7 @@ class InvSlotAttentionGuide(nn.Module):
         plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.epoch}/attn.png")
         plt.close()
 
-        plot_img = visualize(np.transpose(img[0].detach().cpu().numpy(), (1, 2, 0)))
+        plot_img = np.transpose(img[0].detach().cpu().numpy(), (1, 2, 0))
         plt.imshow(plot_img)
         plt.axis('off')
         plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.epoch}/img.png")
@@ -331,6 +331,11 @@ class Trainer:
         for img, target in self.trainloader:
             img, target = img.to(self.device), target.to(self.device)
             preds = self.model(img, save_masks)
+            
+            if save_masks:
+               logger.info(f"preds: {preds}")
+               logger.info(f"target: {target}")
+            
             batch_loss, _ = hungarian_loss(preds, target)
 
             self.optimizer.zero_grad()
@@ -461,7 +466,7 @@ class CLEVR(Dataset):
             while len(target) < self.max_objs:
                 target.append(torch.zeros(19, device='cpu'))
             target = torch.stack(target)       
-        return img, target
+        return img*2 - 1, target
 
 
 def average_precision_clevr(pred, attributes, distance_threshold):
@@ -607,9 +612,6 @@ def compute_average_precision(precision, recall):
     return average_precision
 
 
-
-
-
 guide = InvSlotAttentionGuide(resolution = params['resolution'],
                               num_slots = 10,
                               num_iterations = 3,
@@ -649,13 +651,13 @@ train_data = CLEVR(images_path = os.path.join(dataset_path, 'images/train'),
                    scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_train_scenes.json'),
                    max_objs=10)
 train_dataloader = DataLoader(train_data, batch_size = 512,
-                              shuffle=True, num_workers=4, generator=torch.Generator(device='cuda'))
+                              shuffle=True, num_workers=8, generator=torch.Generator(device='cuda'))
 val_images_path = os.path.join(dataset_path, 'images/val')
 val_data = CLEVR(images_path = os.path.join(dataset_path, 'images/val'),
                    scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json'),
                    max_objs=10)
 val_dataloader = DataLoader(val_data, batch_size = 512,
-                              shuffle=False, num_workers=4, generator=torch.Generator(device='cuda'))
+                              shuffle=False, num_workers=8, generator=torch.Generator(device='cuda'))
 
 
 trainer = Trainer(guide, {"train": train_dataloader, "validation": val_dataloader}, params, run, log_rate=10)
