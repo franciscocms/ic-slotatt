@@ -327,7 +327,7 @@ def hungarian_loss_inclusive_KL(pred, target, loss_fn=F.smooth_l1_loss):
         log_prob = 0.
         for var, k in k_vars.items():
             
-            logger.info(f"var {var} - log_prob using pred with shape {pred[:, :, i:k].shape} for {i} to {k}")
+            #logger.info(f"var {var} - log_prob using pred with shape {pred[:, :, i:k].shape} for {i} to {k}")
             
             aux_dist = torch.distributions.Categorical(pred[:, :, i:k])
             log_prob += -aux_dist.log_prob(torch.argmax(target[:, o, i:k], dim=-1).unsqueeze(-1).expand(-1, pred.size(1)))                             
