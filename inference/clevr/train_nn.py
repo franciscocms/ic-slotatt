@@ -333,8 +333,8 @@ class Trainer:
             preds = self.model(img, save_masks)
             
             if save_masks:
-               logger.info(f"preds: {preds}")
-               logger.info(f"target: {target}")
+               logger.info(f"preds: {preds[0]}")
+               logger.info(f"target: {target[0]}")
             
             batch_loss, _ = hungarian_loss(preds, target)
 
