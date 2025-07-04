@@ -386,7 +386,8 @@ class Trainer:
                logger.info(f"target: {target[0]}")
             
             #batch_loss, _ = hungarian_loss(preds, target)
-            batch_loss, _ = hungarian_loss_inclusive_KL(preds, target)
+            #batch_loss, _ = hungarian_loss_inclusive_KL(preds, target)
+            batch_loss = 0.5*hungarian_loss_inclusive_KL(preds, target)[0] + 0.5*hungarian_loss(preds, target)[0]
 
             self.optimizer.zero_grad()
             batch_loss.backward()
@@ -412,7 +413,8 @@ class Trainer:
                 img, target = img.to(self.device), target.to(self.device)
                 preds = self.model(img)
                 #batch_loss, _ = hungarian_loss(preds, target)
-                batch_loss, _ = hungarian_loss_inclusive_KL(preds, target)
+                #batch_loss, _ = hungarian_loss_inclusive_KL(preds, target)
+                batch_loss = 0.5*hungarian_loss_inclusive_KL(preds, target)[0] + 0.5*hungarian_loss(preds, target)[0]
 
                 for t in threshold: 
                     ap[t] += average_precision_clevr(preds.detach().cpu().numpy(), 
