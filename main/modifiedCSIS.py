@@ -365,7 +365,7 @@ class CSIS(Importance):
           
           # for each scenes, assign the true latents as if object 'i' was the overall ground-truth
           if name == "coords":
-            aux_latents = true_latents[name][:, i].unsqueeze(-1).expand(-1, -1, M) 
+            aux_latents = true_latents[name][:, i].unsqueeze(-2).expand(-1, M, -1) 
           else: 
             aux_latents = true_latents[name][:, i].unsqueeze(-1).expand(-1, M) 
           
