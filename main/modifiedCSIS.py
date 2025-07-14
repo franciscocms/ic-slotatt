@@ -364,10 +364,10 @@ class CSIS(Importance):
         if vals["type"] == "sample": # only consider object-wise properties
           
           # for each scenes, assign the true latents as if object 'i' was the overall ground-truth
-          aux_latents = true_latents[name][:, i].unsqueeze(-1).expand(-1, M) 
-
-          # only account for real objects (rows of 1's or 0's according to object 'm' being real or not)
-          aux_mask = true_latents["mask"][:, i].unsqueeze(-1).expand(-1, M)
+          if name == "coords":
+            aux_latents = true_latents[name][:, i].unsqueeze(-1).expand(-1, -1, M) 
+          else: 
+            aux_latents = true_latents[name][:, i].unsqueeze(-1).expand(-1, M) 
           
           if isinstance(vals['fn'], dist.Normal):
             aux_mean, aux_std = vals['fn'].loc, vals['fn'].scale             
