@@ -23,7 +23,7 @@ params = {
     "print_distributions": False,
     "print_importance_sampling": False,
     "bernoulli_inf_reduction": 'none',
-    "num_inference_samples": 10, # 20 for clevr sp experiments
+    "num_inference_samples": 1, # 20 for clevr sp experiments
     "N_proposal" : "normal", # mixture
     "loc_proposal" : "wo_net",
     "loc_proposal_std": 0.05, 
