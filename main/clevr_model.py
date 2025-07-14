@@ -197,7 +197,7 @@ def sample_clevr_scene(llh_uncertainty):
             0: 0.70,
             1: 0.35
         }
-        z = torch.stack([size_to_z[s] for s in size.flatten()]).view(B, M)
+        z = torch.stack([size_to_z[s.item()] for s in size.flatten()]).view(B, M)
         coords = pyro.sample(f"coords", dist.Normal(torch.tensor([x, y, z]), llh_uncertainty*0.1))
 
     with pyro.poutine.mask(mask=objects_mask):
