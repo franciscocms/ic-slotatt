@@ -382,8 +382,6 @@ class CSIS(Importance):
           if name != "coords":
             aux_logprob = aux_logprob.unsqueeze(-1) # [B, n_slots, 1]
 
-          logger.info(f"{name} - {aux_logprob.shape}")
-
           pdist = torch.cat((pdist, aux_logprob), dim=-1) # [B, n_slots, n_latents]
       
       pdist = pdist.unsqueeze(1) # [B, 1, n_slots, n_latents]
