@@ -309,17 +309,12 @@ class InvSlotAttentionGuide(nn.Module):
 
     if params["pos_from_attn"] == "attn-masks": input_dim = 1 if var.address in ["locX", "locY"] else self.hid_dim
     
-    if var.name in ['x', 'y']:
-       proposal_net = GaussianNet(input_dim, self.hid_dim, out_dim, activ = nn.Tanh())
-    
-    elif var.name in ['pose']:
-       proposal_net = GaussianNet(input_dim, self.hid_dim, out_dim, activ = nn.Sigmoid())
+    if var.name in ['coords']:
+      proposal_net = GaussianNet(input_dim, self.hid_dim, out_dim, activ = nn.Tanh())
     
     else:
         proposal_net = nn.Sequential(
-        nn.Linear(input_dim, self.hid_dim), nn.ReLU(),
-        #nn.Linear(self.hid_dim, self.hid_dim), nn.ReLU(),
-        nn.Linear(self.hid_dim, out_dim), last_activ
+        nn.Linear(input_dim, out_dim), last_activ
         )
         
     #logger.info(proposal_net)
@@ -401,7 +396,7 @@ class InvSlotAttentionGuide(nn.Module):
           logger.info(f"\n{variable_name} proposed values {proposal[0]}")
 
 
-    if variable_name not in ['x', 'y', 'pose']: return out
+    if variable_name not in ['coords']: return out
     else: return mean, logvar
 
   def forward(self, 
@@ -467,7 +462,7 @@ class InvSlotAttentionGuide(nn.Module):
             if var.name not in hidden_vars:
 
                 # run the proposal for variable var
-                if var.name not in ['x', 'y', 'pose']: _ = self.infer_step(var, self.slots)
+                if var.name not in ['coords']: _ = self.infer_step(var, self.slots)
                 else: 
                   mean, logvar = self.infer_step(var, self.slots)
                   self.logvar_loss = self.logvar_loss + self._compute_logvar_loss(logvar, self.prior_logvar)

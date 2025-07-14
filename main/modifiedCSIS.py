@@ -205,7 +205,7 @@ class CSIS(Importance):
         elif isinstance(vals["fn"], dist.Normal): 
           prior_distribution = "normal"
           proposal_distribution = "normal"
-          out_dim = 1
+          out_dim = 3
         
         var = Variable(name=name,
                       value=vals["value"],
@@ -231,9 +231,10 @@ class CSIS(Importance):
     
     #self.guide.batch_idx += 1
 
-    particle_loss = self._differentiable_loss_particle(guide_trace)
-    # if p['dataset'] == 'clevr':
-    #   particle_loss += self.guide.logvar_loss
+    #particle_loss = self._differentiable_loss_particle(guide_trace)
+    particle_loss = self._differentiable_loss_particle_inclusive_KL(guide_trace)
+    if p['dataset'] == 'clevr':
+      particle_loss += self.guide.logvar_loss
     
 
     #logging.info(particle_loss)
