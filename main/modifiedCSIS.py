@@ -371,13 +371,6 @@ class CSIS(Importance):
           
           if isinstance(vals['fn'], dist.Normal):
             aux_mean, aux_std = vals['fn'].loc, vals['fn'].scale    
-
-            logger.info(aux_mean.shape)
-            logger.info(aux_std.shape)
-            logger.info(aux_latents.shape)
-
-
-
             aux_logprob = -dist.Normal(aux_mean, aux_std).log_prob(aux_latents)
           elif isinstance(vals['fn'], dist.Bernoulli):
             aux_probs = vals['fn'].probs
@@ -386,7 +379,11 @@ class CSIS(Importance):
             aux_probs = vals['fn'].probs
             aux_logprob = -dist.Categorical(aux_probs).log_prob(aux_latents)
           
-          aux_logprob = aux_logprob.unsqueeze(-1) # [B, n_slots, 1]
+          if name != "coords":
+            aux_logprob = aux_logprob.unsqueeze(-1) # [B, n_slots, 1]
+
+          logger.info(f"{name} - {aux_logprob.shape}")
+
           pdist = torch.cat((pdist, aux_logprob), dim=-1) # [B, n_slots, n_latents]
       
       pdist = pdist.unsqueeze(1) # [B, 1, n_slots, n_latents]
