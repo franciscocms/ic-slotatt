@@ -19,7 +19,7 @@ from utils.var import Variable
 from main.setup import params
 from utils.guide import get_pretrained_wts, load_trained_guide_clevr
 from main.clevr_model import clevr_gen_model, min_objects, max_objects
-from train_nn import CLEVR, Trainer, average_precision_clevr
+from train_nn import CLEVR, average_precision_clevr
 
 import wandb # type: ignore
 
