@@ -28,6 +28,27 @@ logger = logging.getLogger("train")
 
 device = p["device"]
 
+def hungarian_loss(pred, target, loss_fn=F.smooth_l1_loss):
+    
+  """
+  adapted from 'https://github.com/davzha/MESH/blob/main/losses.py'
+  """
+  
+  pdist = loss_fn(
+      pred.unsqueeze(1).expand(-1, target.size(1), -1, -1), 
+      target.unsqueeze(2).expand(-1, -1, pred.size(1), -1),
+      reduction='none').mean(3)
+
+  pdist_ = pdist.detach().cpu().numpy()
+
+  indices = np.array([linear_sum_assignment(p) for p in pdist_])
+
+  indices_ = indices.shape[2] * indices[:, 0] + indices[:, 1]
+  losses = torch.gather(pdist.flatten(1,2), 1, torch.from_numpy(indices_).to(device=pdist.device))
+  total_loss = torch.mean(losses.sum(1))
+
+  return total_loss, dict(indices=indices)
+
 class CSIS(Importance):
   """
   Compiled Sequential Importance Sampling, allowing compilation of a guide
@@ -211,8 +232,8 @@ class CSIS(Importance):
     #self.guide.batch_idx += 1
 
     particle_loss = self._differentiable_loss_particle(guide_trace)
-    if p['dataset'] == 'clevr':
-      particle_loss += self.guide.logvar_loss
+    # if p['dataset'] == 'clevr':
+    #   particle_loss += self.guide.logvar_loss
     
 
     #logging.info(particle_loss)
@@ -253,6 +274,64 @@ class CSIS(Importance):
     return loss
 
   def _differentiable_loss_particle(self, guide_trace):
+    
+    B = self.batch_size
+    M = p['num_slots']
+    
+    true_latents = {}
+    preds = torch.tensor([], requires_grad=self.guide.is_train)
+
+    # var order: [mask, shape, color, pose, mat, size, x, y]
+
+    for name, vals in guide_trace.nodes.items():
+      if vals["type"] == "sample": # only consider object-wise properties
+        true_latents[name] = vals['value'] # [B, M]
+
+        # fetch preds
+        if isinstance(vals['fn'], dist.Normal):
+          preds = torch.cat((preds, vals['fn'].loc.unsqueeze(-1)), dim=-1)
+        elif isinstance(vals['fn'], dist.Bernoulli):
+          preds = torch.cat((preds, vals['fn'].probs.unsqueeze(-1)), dim=-1)
+        elif isinstance(vals['fn'], dist.Categorical):
+          preds = torch.cat((preds, vals['fn'].probs), dim=-1)
+        
+        #logger.info(name)
+        
+    # logger.info(f"preds: {preds.shape}") # [B, N, 12]
+
+    # pad true latents if params["num_slots"] != params["max_objects"]
+    if p["num_slots"] != p["max_objects"]:
+      assert p["num_slots"] > p["max_objects"]
+
+      for k, _ in true_latents.items():
+        true_latents[k] = torch.cat(
+          (true_latents[k], torch.zeros(B, p["num_slots"]-p["max_objects"])),
+          dim=-1
+        )
+    
+    sizes = ['small', 'large']
+    materials = ['rubber', 'metal']
+    shapes = ['cube', 'sphere', 'cylinder']
+    colors = ['gray', 'blue', 'brown', 'yellow', 'red', 'green', 'purple', 'cyan']
+    
+    target = torch.cat((true_latents["mask"].unsqueeze(-1),
+                        F.one_hot(true_latents["shape"], len(shapes)),
+                        F.one_hot(true_latents["color"], len(colors)),
+                        F.one_hot(true_latents["mat"], len(materials)),
+                        F.one_hot(true_latents["size"], len(sizes)),
+                        
+                        # CHANGE FROM X AND Y TO COORDS
+                        true_latents["x"].unsqueeze(-1),
+                        true_latents["y"].unsqueeze(-1)), dim = -1)
+
+    # logger.info(f"preds: {preds[0]}")
+    # logger.info(f"target: {target[0]}")
+
+    loss, _ = hungarian_loss(preds, target)
+    return loss
+
+  
+  def _differentiable_loss_particle_inclusive_KL(self, guide_trace):
     
     B = self.batch_size
     M = p['num_slots']
