@@ -64,6 +64,10 @@ def to_int(value: Tensor):
     return int(torch.round(value))
 
 def preprocess_clevr(image, resolution=params['resolution']):
+    
+    logger.info(torch.amin(image))
+    logger.info(torch.amax(image))
+
     image = ((image / 255.0) - 0.5) * 2.0  # Rescale to [-1, 1].
     image = F.interpolate(input=image, size=resolution, mode='bilinear', antialias=True)
     image = torch.clamp(image, -1., 1.)
@@ -554,7 +558,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     #logger.info("Scene rendered and saved...")
     img_batch = torch.stack(
-        [torch.from_numpy(np.asarray(Image.open(os.path.join(imgs_path, f"rendered_scene_{idx}.png")))).permute(2, 0, 1) for idx in range(B)]
+        [torch.from_numpy(np.asarray(Image.open(os.path.join(imgs_path, f"rendered_scene_{idx}.png")).convert('RGB'))).permute(2, 0, 1) for idx in range(B)]
     )
 
     proc_img = preprocess_clevr(img_batch) # proc_img shape is (1, 4, 128, 128)

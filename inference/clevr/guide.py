@@ -415,7 +415,7 @@ class InvSlotAttentionGuide(nn.Module):
     self.encoder_cnn.step = self.step
     B, C, H, W = self.img.shape
 
-    x = self.encoder_cnn(self.img[:, :3]) # [B, input_dim, C] 
+    x = self.encoder_cnn(self.img) # [B, input_dim, C] 
     x = nn.LayerNorm(x.shape[1:]).to(device)(x)
     self.features_to_slots = self.mlp(x)
     n_s = params['num_slots']
