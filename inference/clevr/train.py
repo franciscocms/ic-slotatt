@@ -19,7 +19,7 @@ from utils.var import Variable
 from main.setup import params
 from utils.guide import get_pretrained_wts, load_trained_guide_clevr
 from main.clevr_model import clevr_gen_model, min_objects, max_objects
-from train_nn import CLEVR, average_precision_clevr
+#from train_nn import CLEVR, average_precision_clevr
 
 import wandb # type: ignore
 
@@ -136,47 +136,47 @@ if CHECK_ATTN and TRAINING_FROM_SCRATCH:
 step_size = params["step_size"]
 
 # build the dependencies for computing CLEVR validation mAP
-dataset_path = "/nas-ctm01/datasets/public/CLEVR/CLEVR_v1.0"
-train_data = CLEVR(images_path = os.path.join(dataset_path, 'images/train'),
-                   scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_train_scenes.json'),
-                   max_objs=10)
-train_dataloader = DataLoader(train_data, batch_size = 512,
-                              shuffle=True, num_workers=8, generator=torch.Generator(device='cuda'))
-val_images_path = os.path.join(dataset_path, 'images/val')
-val_data = CLEVR(images_path = os.path.join(dataset_path, 'images/val'),
-                   scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json'),
-                   max_objs=10)
-val_dataloader = DataLoader(val_data, batch_size = 512,
-                              shuffle=False, num_workers=8, generator=torch.Generator(device='cuda'))
+# dataset_path = "/nas-ctm01/datasets/public/CLEVR/CLEVR_v1.0"
+# train_data = CLEVR(images_path = os.path.join(dataset_path, 'images/train'),
+#                    scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_train_scenes.json'),
+#                    max_objs=10)
+# train_dataloader = DataLoader(train_data, batch_size = 512,
+#                               shuffle=True, num_workers=8, generator=torch.Generator(device='cuda'))
+# val_images_path = os.path.join(dataset_path, 'images/val')
+# val_data = CLEVR(images_path = os.path.join(dataset_path, 'images/val'),
+#                    scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json'),
+#                    max_objs=10)
+# val_dataloader = DataLoader(val_data, batch_size = 512,
+#                               shuffle=False, num_workers=8, generator=torch.Generator(device='cuda'))
 
 
-def compute_validation_mAP(model, dataloader):
-  loss = 0.
-  num_iters = 0
-  metrics = {}
-  threshold = [-1., 1., 0.5, 0.25, 0.125, 0.0625]
-  ap = {k: 0 for k in threshold}
+# def compute_validation_mAP(model, dataloader):
+#   loss = 0.
+#   num_iters = 0
+#   metrics = {}
+#   threshold = [-1., 1., 0.5, 0.25, 0.125, 0.0625]
+#   ap = {k: 0 for k in threshold}
 
-  model.eval()
-  with torch.no_grad(): 
-      for img, target in dataloader:
-          img, target = img.to(DEVICE), target.to(DEVICE)
-          preds = model(img)
-
-
-          # missing 'preds' treatment
+#   model.eval()
+#   with torch.no_grad(): 
+#       for img, target in dataloader:
+#           img, target = img.to(DEVICE), target.to(DEVICE)
+#           preds = model(img)
 
 
+#           # missing 'preds' treatment
 
-          for t in threshold: 
-              ap[t] += average_precision_clevr(preds.detach().cpu().numpy(),
-                                               target.detach().cpu().numpy(), 
-                                               t)
+
+
+#           for t in threshold: 
+#               ap[t] += average_precision_clevr(preds.detach().cpu().numpy(),
+#                                                target.detach().cpu().numpy(), 
+#                                                t)
   
-  mAP = {k: v/num_iters for k, v in ap.items()}
-  metrics['mAP'] = mAP
+#   mAP = {k: v/num_iters for k, v in ap.items()}
+#   metrics['mAP'] = mAP
   
-  return metrics
+#   return metrics
 
 
 

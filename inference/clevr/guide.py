@@ -423,22 +423,6 @@ class InvSlotAttentionGuide(nn.Module):
     if self.stage == "train":        
         self.slots, attn = self.slot_attention(self.features_to_slots, num_slots=n_s, is_train=self.is_train)
 
-        # for b in range(B):
-        #     plot_img = np.transpose(self.img[b].detach().cpu().numpy(), (1, 2, 0))
-        #     plt.imshow(plot_img)
-        #     plt.axis('off')
-        #     plt.savefig(f"{params['check_attn_folder']}/img_{b}.png")
-        #     plt.close()
-        #     logger.info(f"saved input image {b}...")
-        
-        # for b in range(B):
-        #     plot_img = np.transpose(self.img[b, :3].detach().cpu().numpy(), (1, 2, 0))
-        #     plt.imshow(plot_img)
-        #     plt.axis('off')
-        #     plt.savefig(f"{params['check_attn_folder']}/img3_{b}.png")
-        #     plt.close()
-        #     logger.info(f"saved input image {b}...")
-
         if self.is_train and self.step % params['step_size'] == 0:
             aux_attn = attn.reshape((B, n_s, params['resolution'][0], params['resolution'][1])) if not params["strided_convs"] else attn.reshape((B, n_s, int(params['resolution'][0]/4), int(params['resolution'][1]/4)))
             fig, ax = plt.subplots(ncols=n_s)
