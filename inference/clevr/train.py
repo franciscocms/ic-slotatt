@@ -6,6 +6,7 @@ import pyro.infer
 import pyro.optim
 import pickle as pkl
 import json
+from torch.utils.data import DataLoader
 
 # add project path to sys to import relative modules
 import sys
@@ -18,6 +19,7 @@ from utils.var import Variable
 from main.setup import params
 from utils.guide import get_pretrained_wts, load_trained_guide_clevr
 from main.clevr_model import clevr_gen_model, min_objects, max_objects
+from train_nn import CLEVR, Trainer
 
 import wandb # type: ignore
 
@@ -132,6 +134,28 @@ if CHECK_ATTN and TRAINING_FROM_SCRATCH:
     logger.info("Folders for all steps deleted...")
 
 step_size = params["step_size"]
+
+# build the dependencies for computing CLEVR validation mAP
+dataset_path = "/nas-ctm01/datasets/public/CLEVR/CLEVR_v1.0"
+train_data = CLEVR(images_path = os.path.join(dataset_path, 'images/train'),
+                   scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_train_scenes.json'),
+                   max_objs=10)
+train_dataloader = DataLoader(train_data, batch_size = 512,
+                              shuffle=True, num_workers=8, generator=torch.Generator(device='cuda'))
+val_images_path = os.path.join(dataset_path, 'images/val')
+val_data = CLEVR(images_path = os.path.join(dataset_path, 'images/val'),
+                   scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json'),
+                   max_objs=10)
+val_dataloader = DataLoader(val_data, batch_size = 512,
+                              shuffle=False, num_workers=8, generator=torch.Generator(device='cuda'))
+
+
+trainer = Trainer(guide, {"train": train_dataloader, "validation": val_dataloader}, params, run, log_rate=10)
+trainer.train(root_folder)
+
+
+
+
 
 for s in range(resume_step, resume_step + nsteps):     
   

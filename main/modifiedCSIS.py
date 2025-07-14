@@ -370,7 +370,14 @@ class CSIS(Importance):
             aux_latents = true_latents[name][:, i].unsqueeze(-1).expand(-1, M) 
           
           if isinstance(vals['fn'], dist.Normal):
-            aux_mean, aux_std = vals['fn'].loc, vals['fn'].scale             
+            aux_mean, aux_std = vals['fn'].loc, vals['fn'].scale    
+
+            logger.info(aux_mean.shape)
+            logger.info(aux_std.shape)
+            logger.info(aux_latents.shape)
+
+
+
             aux_logprob = -dist.Normal(aux_mean, aux_std).log_prob(aux_latents)
           elif isinstance(vals['fn'], dist.Bernoulli):
             aux_probs = vals['fn'].probs
