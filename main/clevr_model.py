@@ -191,23 +191,14 @@ def sample_clevr_scene(llh_uncertainty):
 
     
     """ sample the '3d_coords' tensor according to x, y and size """
-    
-    logger.info(size)
-    logger.info(size.shape)
 
     with pyro.poutine.mask(mask=objects_mask):
         size_to_z = {
-            "small": 0.35,
-            "large": 0.70
+            0: 0.70,
+            1: 0.35
         }
-        z = torch.tensor([size_to_z[s] for s in size])
-        coords = pyro.sample(f"coords", dist.Normal(torch.tensor([x, y, z]), llh_uncertainty))
-
-
-
-
-    
-    
+        z = torch.stack([size_to_z[s] for s in size.flatten()]).view(B, M)
+        coords = pyro.sample(f"coords", dist.Normal(torch.tensor([x, y, z]), llh_uncertainty*0.1))
 
     with pyro.poutine.mask(mask=objects_mask):
         
