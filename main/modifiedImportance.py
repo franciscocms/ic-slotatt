@@ -20,7 +20,7 @@ from sys import stdout
 from .setup import params
 
 import logging
-logger = logging.getLogger("eval")
+logger = logging.getLogger(params["running_type"])
 
 
 class Importance(TracePosterior):
