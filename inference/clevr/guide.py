@@ -310,7 +310,7 @@ class InvSlotAttentionGuide(nn.Module):
     if params["pos_from_attn"] == "attn-masks": input_dim = 1 if var.address in ["locX", "locY"] else self.hid_dim
     
     if var.name in ['coords']:
-      proposal_net = GaussianNet(input_dim, self.hid_dim, out_dim, activ = nn.Tanh())
+      proposal_net = GaussianNet(input_dim, self.hid_dim, out_dim, activ = nn.Sigmoid())
     
     else:
         proposal_net = nn.Sequential(

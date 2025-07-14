@@ -14,6 +14,8 @@ sys.path.append(os.path.abspath(__file__+'/../../'))
 
 from main.setup import params
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 logger = logging.getLogger(params["running_type"])
 
 sizes = ['small', 'large']
@@ -249,7 +251,7 @@ def compute_validation_mAP(model, dataloader):
 
   with torch.no_grad(): 
       for img, target in dataloader:
-          img, target = img.to(model.device), target.to(model.device)
+          img, target = img.to(device), target.to(device)
           
           posterior = model.run(observations={"image": img})
           prop_traces = posterior.prop_traces[0]
