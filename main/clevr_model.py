@@ -71,6 +71,10 @@ def preprocess_clevr(image, resolution=params['resolution']):
     image = ((image / 255.0) - 0.5) * 2.0  # Rescale to [-1, 1].
     image = F.interpolate(input=image, size=resolution, mode='bilinear', antialias=True)
     image = torch.clamp(image, -1., 1.)
+
+    logger.info(torch.amin(image))
+    logger.info(torch.amax(image))
+    
     return image
 
 def get_size_mapping(size):

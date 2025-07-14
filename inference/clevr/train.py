@@ -144,32 +144,26 @@ val_data = CLEVR(images_path = os.path.join(dataset_path, 'images/val'),
 val_dataloader = DataLoader(val_data, batch_size = 1,
                               shuffle=False, generator=torch.Generator(device='cuda'))
 
-
-
-
-
-
 for s in range(resume_step, resume_step + nsteps):     
+  if CHECK_ATTN and s % step_size == 0: 
+      if not os.path.isdir(f"{root_folder}/attn-step-{s}"): os.mkdir(f"{root_folder}/attn-step-{s}")  
+
+  csis.nstep = s
+  loss = csis.step()
   
-    if CHECK_ATTN and s % step_size == 0: 
-        if not os.path.isdir(f"{root_folder}/attn-step-{s}"): os.mkdir(f"{root_folder}/attn-step-{s}")  
-
-    csis.nstep = s
-    loss = csis.step()
+  if True:
+  #if s % step_size == 0 or s == nsteps-1: 
+    val_loss = csis.validation_loss()
+    csis.guide.eval()
+    val_metrics = compute_validation_mAP(csis, val_dataloader)
     
-    if s % step_size == 0 or s == nsteps-1: 
-        
-        val_loss = csis.validation_loss()
-        csis.guide.eval()
-        val_metrics = compute_validation_mAP(csis, val_dataloader)
-        
-        logger.info(f"step {s}/{resume_step + nsteps-1} - train_loss: {loss} - val_loss: {val_loss}")
-        dict_to_log = {'train_loss': loss,
-                       'val_loss': val_loss,
-                       'val_mAP': val_metrics['mAP']}
-        run.log(dict_to_log)
+    logger.info(f"step {s}/{resume_step + nsteps-1} - train_loss: {loss} - val_loss: {val_loss}")
+    dict_to_log = {'train_loss': loss,
+                    'val_loss': val_loss,
+                    'val_mAP': val_metrics['mAP']}
+    run.log(dict_to_log)
 
-        torch.save(csis.guide.state_dict(), GUIDE_PATH+'/guide_'+str(s)+'.pth')    
+    torch.save(csis.guide.state_dict(), GUIDE_PATH+'/guide_'+str(s)+'.pth')    
 
 logger.info("\ntraining ended...")
 wandb.finish()
