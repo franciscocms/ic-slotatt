@@ -141,8 +141,8 @@ val_images_path = os.path.join(dataset_path, 'images/val')
 val_data = CLEVR(images_path = os.path.join(dataset_path, 'images/val'),
                    scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json'),
                    max_objs=10)
-val_dataloader = DataLoader(val_data, batch_size = 512,
-                              shuffle=False, num_workers=8, generator=torch.Generator(device='cuda'))
+val_dataloader = DataLoader(val_data, batch_size = 1,
+                              shuffle=False, generator=torch.Generator(device='cuda'))
 
 
 
