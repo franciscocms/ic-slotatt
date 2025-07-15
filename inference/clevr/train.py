@@ -154,13 +154,14 @@ for s in range(resume_step, resume_step + nsteps):
   if True:
   #if s % step_size == 0 or s == nsteps-1: 
     val_loss = csis.validation_loss()
-    csis.guide.eval()
-    val_metrics = compute_validation_mAP(csis, val_dataloader)
+    #csis.guide.eval()
+    #val_metrics = compute_validation_mAP(csis, val_dataloader)
     
     logger.info(f"step {s}/{resume_step + nsteps-1} - train_loss: {loss} - val_loss: {val_loss}")
     dict_to_log = {'train_loss': loss,
                     'val_loss': val_loss,
-                    'val_mAP': val_metrics['mAP']}
+                    #'val_mAP': val_metrics['mAP']
+                    }
     run.log(dict_to_log)
 
     torch.save(csis.guide.state_dict(), GUIDE_PATH+'/guide_'+str(s)+'.pth')    
