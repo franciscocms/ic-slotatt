@@ -151,8 +151,8 @@ for s in range(resume_step, resume_step + nsteps):
   csis.nstep = s
   loss = csis.step()
   
-  if True:
-  #if s % step_size == 0 or s == nsteps-1: 
+  #if True:
+  if s % step_size == 0 or s == nsteps-1: 
     val_loss = csis.validation_loss()
     #csis.guide.eval()
     #val_metrics = compute_validation_mAP(csis, val_dataloader)
