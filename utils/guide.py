@@ -187,9 +187,9 @@ def load_trained_guide_clevr(guide, GUIDE_PATH, mappings):
             elif name in ['shape', 'color', 'mat', 'size']:
                 proposal_distribution = "categorical"
                 out_dim = len(mappings[f"{name}_map"])
-            elif name in ['pose', 'x', 'y']:
+            elif name in ['coords']:
                 proposal_distribution = "normal"
-                out_dim = 1
+                out_dim = 3
 
             # for now, instance will be set on 0!
             var = Variable(name=name,
