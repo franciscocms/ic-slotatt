@@ -345,8 +345,6 @@ class InvSlotAttentionGuide(nn.Module):
       variable_proposal_distribution = variable.proposal_distribution
     
     proposal = self.prop_nets[variable_name](obs)    
-
-    logger.info(f"proposal shape: {proposal.shape}")
     
     if variable_proposal_distribution == "normal":
         mean, logvar = proposal[0].squeeze(-1), proposal[1].squeeze(-1)
@@ -387,7 +385,16 @@ class InvSlotAttentionGuide(nn.Module):
 
     else: raise ValueError(f"Unknown variable address: {variable_name}")      
     
-    if self.stage == 'train':
+    if self.stage == "eval":
+      if params["num_inference_samples"] > 1:
+        if variable_name not in ['coords']: return out
+        else: return mean, logvar
+      else:
+        return proposal
+       
+    
+    
+    elif self.stage == 'train':
       if self.is_train and self.step % params['step_size'] == 0:
         if variable_name in ['coords']:
           logger.info(f"\n{variable_name} target values {variable.value[0]}")
@@ -398,8 +405,8 @@ class InvSlotAttentionGuide(nn.Module):
           logger.info(f"\n{variable_name} proposed values {proposal[0]}")
 
 
-    if variable_name not in ['coords']: return out
-    else: return mean, logvar
+      if variable_name not in ['coords']: return out
+      else: return mean, logvar
 
   def forward(self, 
               observations={"image": torch.zeros((1, 3, params['resolution'][0], params['resolution'][1]))}
@@ -469,7 +476,7 @@ class InvSlotAttentionGuide(nn.Module):
         # then, let's try with some ordering scheme better than euclidean distance
 
         latents = ["mask", "shape", "color", "mat", "size", "coords"]
-        preds = []
+        preds = torch.tensor([])
         for var in latents:
           if var in ["mask"]: 
              proposal_distribution = "bernoulli"
@@ -483,10 +490,11 @@ class InvSlotAttentionGuide(nn.Module):
           
           out = self.infer_step(var, self.slots, proposal_distribution)
 
-          if isinstance(out, tuple):
-            logger.info(f"{var} - {out[0].shape} - {out[1].shape}")
-          else:
-            logger.info(f"{var} - {out.shape}")
+          if params["num_inference_samples"] == 1:
+            if var == "coords":
+              preds = torch.cat((preds, out[0]), dim=-1)
+            else:
+              preds = torch.cat((preds, out), dim=-1)
 
           new_var = Variable(name=var,
                                 value=out,
@@ -498,9 +506,11 @@ class InvSlotAttentionGuide(nn.Module):
 
         self.current_trace = []
         
+        logger.info(f"preds: {preds.shape}")
+        
         if params["num_inference_samples"] > 1:
           return 
         else:
-          return 
+          return preds
    
     else: raise ValueError(f"Unknown stage: {self.stage}")
