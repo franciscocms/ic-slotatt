@@ -466,7 +466,8 @@ class InvSlotAttentionGuide(nn.Module):
         # first, without ordering to evaluate with IS
         # then, let's try with some ordering scheme better than euclidean distance
 
-        latents = ["mask", "shape", "color", "pose", "mat", "size", "x", "y"]
+        latents = ["mask", "shape", "color", "mat", "size", "coords"]
+        preds = []
         for var in latents:
           if var in ["mask"]: 
              proposal_distribution = "bernoulli"
@@ -474,11 +475,16 @@ class InvSlotAttentionGuide(nn.Module):
           elif var in ["shape", "color", "mat", "size"]: 
              proposal_distribution = "categorical"
              prior_distribution = "categorical"
-          elif var in ["x", "y", "pose"]: 
+          elif var in ["coords"]: 
              proposal_distribution = "normal"
              prior_distribution = "uniform"
           
           out = self.infer_step(var, self.slots, proposal_distribution)
+
+          if isinstance(out, tuple):
+            logger.info(f"{var} - {out[0].shape} - {out[1].shape}")
+          else:
+            logger.info(f"{var} - {out.shape}")
 
           new_var = Variable(name=var,
                                 value=out,
@@ -489,6 +495,10 @@ class InvSlotAttentionGuide(nn.Module):
           self.current_trace.append(new_var)
 
         self.current_trace = []
-        return 
+        
+        if params["num_inference_samples"] > 1:
+          return 
+        else:
+          return 
    
     else: raise ValueError(f"Unknown stage: {self.stage}")

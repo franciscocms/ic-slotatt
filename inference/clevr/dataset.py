@@ -53,7 +53,7 @@ class CLEVRDataset(Dataset):
     img_filename = target['image_filename']
     img = torch.from_numpy(np.asarray((Image.open(os.path.join(
        self.data_path, img_filename
-    ))))).permute(2, 0, 1) # [C, W, H]
+    )).convert('RGB')))).permute(2, 0, 1) # [C, W, H]
     
     # plots_dir = os.path.abspath("set_prediction_plots")
     # plt.imshow(img.permute(1, 2, 0).cpu().numpy())

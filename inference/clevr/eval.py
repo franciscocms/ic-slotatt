@@ -170,7 +170,8 @@ def main():
         images_path = os.path.join(dataset_path, 'images/val')
         properties = json.load(open(os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json')))
         test_dataset = CLEVRDataset(images_path, properties, JOB_SPLIT)
-        testloader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False, generator=torch.Generator(device='cuda'))
+        b_s = 1 if params["num_inference_samples"] > 1 else 512
+        testloader = torch.utils.data.DataLoader(test_dataset, batch_size=b_s, shuffle=False, generator=torch.Generator(device='cuda'))
 
         logger.info(f"subset length: {len(test_dataset)}")
         
@@ -195,14 +196,31 @@ def main():
                 #                                                                       max_plate_nesting=0,
                 #                                                                       normalized=False)                
                 
-                posterior = csis.run(observations={"image": img})
-                prop_traces = posterior.prop_traces[0]
-                traces = posterior.exec_traces[0]
-                log_wts = posterior.log_weights[0]
+                
 
                 #resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
 
-                if params["num_inference_samples"] > 1:
+                if params["num_inference_samples"] == 1:
+
+                    """
+                    in this case, we don't have to run the generative model to compute log_wts
+                    """
+
+                    preds = guide(img)
+                    
+
+
+
+                
+                
+                elif params["num_inference_samples"] > 1:
+                    
+                    posterior = csis.run(observations={"image": img})
+                    prop_traces = posterior.prop_traces[0]
+                    traces = posterior.exec_traces[0]
+                    log_wts = posterior.log_weights[0]
+                    
+                    
                     #resampling_id = resampling().item()
                     log_wts = np.array([l.item() for l in log_wts])
                     logger.info(f"log weights: {log_wts}")
