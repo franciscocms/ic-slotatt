@@ -11,6 +11,21 @@ import json
 import logging
 logger = logging.getLogger("eval")
 
+sizes = ['small', 'large']
+materials = ['rubber', 'metal']
+shapes = ['cube', 'sphere', 'cylinder']
+colors = ['gray', 'blue', 'brown', 'yellow', 'red', 'green', 'purple', 'cyan']
+
+
+def list2dict(inpt_list):
+    return {inpt_list[i]: i for i in range(len(inpt_list))}
+
+
+size2id = list2dict(sizes)
+mat2id = list2dict(materials)
+shape2id = list2dict(shapes)
+color2id = list2dict(colors)
+
 class CLEVRDataset(Dataset):
 
   def __init__(self, images_path, scenes_path, max_objs=6, get_target=True):
@@ -51,4 +66,4 @@ class CLEVRDataset(Dataset):
     return img*2 - 1, target
   
   def __len__(self):
-    return len(self.target)
+    return len(self.scenes)
