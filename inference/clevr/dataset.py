@@ -1,74 +1,54 @@
 import torch
+import torch.nn.functional as F
 from torch.utils.data import Dataset
 from torchvision import transforms
-import numpy as np
 
 import os
 from PIL import Image
-import matplotlib.pyplot as plt
 
-from main.clevr_model import preprocess_clevr
-from main.setup import params
+import json
 
 import logging
 logger = logging.getLogger("eval")
 
 class CLEVRDataset(Dataset):
-  def __init__(self, data_path, properties, JOB_SPLIT):
+
+  def __init__(self, images_path, scenes_path, max_objs=6, get_target=True):
+    self.max_objs = max_objs
+    self.get_target = get_target
+    self.images_path = images_path
     
-    if params['max_objects'] == 6:
-        self.data_path = data_path
-        self.all_target = properties
-        self.target = []     # REMOVE WHEN USING ALL SCENES
-
-        # for now use only images with up to 6 objects (this might need exploring the whole json file, which might take a while...)
-        for idx, scene in enumerate(self.all_target['scenes']):
-            if len(scene['objects']) <= 6:
-                self.target.append(scene)
-        
-        logger.info(f'{len(self.target)} examples with 6 or - objects!')
-    else:
-       self.data_path = data_path
-       self.target = properties['scenes']
-
-       logger.info(f'{len(self.target)} total validation examples!')
+    with open(scenes_path, 'r') as f:
+        self.scenes = json.load(f)['scenes']
+    self.scenes = [x for x in self.scenes if len(x['objects']) <= max_objs]
     
-    """
-    split the validation dataset according to JOB_SPLIT
-    """
-
-    total_len = len(self.target)
-    split_len = int(total_len/JOB_SPLIT['total'])
-    if total_len % JOB_SPLIT['total'] != 0 and JOB_SPLIT['id'] == JOB_SPLIT['total']:
-        final_idx = split_len*(JOB_SPLIT['id']) + total_len % JOB_SPLIT['total']
-    else:
-        final_idx = split_len*(JOB_SPLIT['id'])
-    self.target = self.target[split_len*(JOB_SPLIT['id']-1) : final_idx]
-
-    logger.info(f"SPLIT {JOB_SPLIT['id']}: evaluating samples from {split_len*(JOB_SPLIT['id']-1)} to {final_idx}...\n")
+    transform = [transforms.CenterCrop((256, 256))] if not get_target else []
+    self.transform = transforms.Compose(
+        transform + [
+            transforms.Resize((128, 128)),
+            transforms.ToTensor()
+            ]
+    )
   
-  def __getitem__(self, index):    
-    #target = self.target['scenes'][index]    ------> when using all scenes!
-    target = self.target[index]
-    img_filename = target['image_filename']
-    img = torch.from_numpy(np.asarray((Image.open(os.path.join(
-       self.data_path, img_filename
-    )).convert('RGB'))))#.permute(2, 0, 1) # [C, W, H]
-
-
-    
-    # plots_dir = os.path.abspath("set_prediction_plots")
-    # plt.imshow(img.permute(1, 2, 0).cpu().numpy())
-    # plt.savefig(os.path.join(plots_dir, f"image_before_processing.png"))
-    # plt.close()
-    
-    logger.info(img.shape)
-    img = preprocess_clevr(img.unsqueeze(0)).squeeze(0)
-    #logger.info(img.shape)
-
-    
-    
-    return img, target
+  def __getitem__(self, idx):
+    scene = self.scenes[idx]
+    img = Image.open(os.path.join(self.images_path, scene['image_filename'])).convert('RGB')
+    img = self.transform(img)
+    target = []
+    if self.get_target:
+        for obj in scene['objects']:
+            coords = ((torch.Tensor(obj['3d_coords']) + 3.) / 6.).view(1, 3)
+            #coords = (torch.tensor(obj['3d_coords']) / 3.).view(1, 3)
+            size = F.one_hot(torch.LongTensor([size2id[obj['size']]]), 2)
+            material = F.one_hot(torch.LongTensor([mat2id[obj['material']]]), 2)
+            shape = F.one_hot(torch.LongTensor([shape2id[obj['shape']]]), 3)
+            color = F.one_hot(torch.LongTensor([color2id[obj['color']]]), 8)
+            obj_vec = torch.cat((coords, size, material, shape, color, torch.Tensor([[1.]])), dim=1)[0]
+            target.append(obj_vec)
+        while len(target) < self.max_objs:
+            target.append(torch.zeros(19, device='cpu'))
+        target = torch.stack(target)       
+    return img*2 - 1, target
   
   def __len__(self):
     return len(self.target)

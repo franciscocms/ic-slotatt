@@ -168,43 +168,29 @@ def main():
 
         # define dataset
         images_path = os.path.join(dataset_path, 'images/val')
-        properties = json.load(open(os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json')))
-        test_dataset = CLEVRDataset(images_path, properties, JOB_SPLIT)
+        scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json')
+        test_dataset = CLEVRDataset(images_path, scenes_path, max_objs=params["max_objects"])
         b_s = 1 if params["num_inference_samples"] > 1 else 512
         testloader = torch.utils.data.DataLoader(test_dataset, batch_size=b_s, shuffle=False, generator=torch.Generator(device='cuda'))
 
-        logger.info(f"subset length: {len(test_dataset)}")
+        # total_len = len(self.target)
+        # split_len = int(total_len/JOB_SPLIT['total'])
+        # if total_len % JOB_SPLIT['total'] != 0 and JOB_SPLIT['id'] == JOB_SPLIT['total']:
+        #     final_idx = split_len*(JOB_SPLIT['id']) + total_len % JOB_SPLIT['total']
+        # else:
+        #     final_idx = split_len*(JOB_SPLIT['id'])
+        # self.target = self.target[split_len*(JOB_SPLIT['id']-1) : final_idx]
         
         n_test_samples = 0
 
         guide.eval()
         with torch.no_grad():
-            for idx, (img, target_dict) in enumerate(testloader):
-                img = img.to(device)
-                target = process_targets(target_dict)
-                img_index = target_dict['image_index'].item()
-
-                logger.info(f"\ntarget image index: {img_index} - {n_test_samples}/{len(test_dataset)}")
-                #logger.info(f"# of objects: {len(target_dict['objects'])}")
-
-                # plt.imshow(visualize(img.squeeze(dim=0)[:3].permute(1, 2, 0).cpu().numpy()))
-                # plt.savefig(os.path.join(plots_dir, f"image_{img_index}.png"))
-                # plt.close()                
-
-                # log_weights, model_trace, guide_trace = vectorized_importance_weights(model, guide, observations={"image": img},
-                #                                                                       num_samples=params['num_inference_samples'],
-                #                                                                       max_plate_nesting=0,
-                #                                                                       normalized=False)                
-                
-                
+            for img, target in testloader:
+                img = img.to(device)        
 
                 #resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
 
                 if params["num_inference_samples"] == 1:
-
-                    """
-                    in this case, we don't have to run the generative model to compute log_wts
-                    """
 
                     preds = guide(img)
                     
