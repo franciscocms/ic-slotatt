@@ -345,11 +345,13 @@ class InvSlotAttentionGuide(nn.Module):
       variable_proposal_distribution = variable.proposal_distribution
     
     proposal = self.prop_nets[variable_name](obs)    
+
+    logger.info(f"proposal shape: {proposal.shape}")
     
     if variable_proposal_distribution == "normal":
         mean, logvar = proposal[0].squeeze(-1), proposal[1].squeeze(-1)
         
-        if self.stage == 'eval':
+        if self.stage == 'eval' and params['num_inference_samples'] > 1:
           mean, logvar = mean.expand(params['num_inference_samples'], -1), logvar.expand(params['num_inference_samples'], -1)
           
           # logger.info(f"{variable} - mean: {mean.shape} - logvar: {logvar.shape}")
@@ -363,7 +365,7 @@ class InvSlotAttentionGuide(nn.Module):
 
     elif variable_proposal_distribution == "categorical":  
        
-      if self.stage == 'eval': 
+      if self.stage == 'eval' and params['num_inference_samples'] > 1: 
         proposal = proposal.expand(params['num_inference_samples'], -1, -1)
         # logger.info(f"{variable} - proposal: {proposal.shape}")     
 
@@ -375,7 +377,7 @@ class InvSlotAttentionGuide(nn.Module):
 
     elif variable_proposal_distribution == "bernoulli": 
        
-      if self.stage == 'eval': 
+      if self.stage == 'eval' and params['num_inference_samples'] > 1: 
         proposal = proposal.expand(params['num_inference_samples'], -1, -1)
         # logger.info(f"{variable} - proposal: {proposal.shape}") 
 
