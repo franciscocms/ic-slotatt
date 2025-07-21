@@ -192,7 +192,7 @@ def main():
 
                 if params["num_inference_samples"] == 1:
 
-                    preds = guide(img)
+                    preds = guide(observations={"image": img})
                     
 
 
