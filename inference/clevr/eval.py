@@ -29,6 +29,7 @@ from eval_utils import compute_AP, transform_coords
 from utils.guide import load_trained_guide_clevr
 from main.setup import params, JOB_SPLIT
 from dataset import CLEVRDataset
+from train_nn import average_precision_clevr, compute_average_precision
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -193,10 +194,11 @@ def main():
                 if params["num_inference_samples"] == 1:
 
                     preds = guide(observations={"image": img})
-                    
-
-
-
+                    for t in threshold: 
+                        ap[t] += average_precision_clevr(preds.detach().cpu().numpy(), 
+                                                         target.detach().cpu().numpy(), 
+                                                         t)
+                    num_iters += 1                 
                 
                 
                 elif params["num_inference_samples"] > 1:
@@ -309,7 +311,7 @@ def main():
                 #     aux_mAP = {k: v/n_test_samples for k, v in ap.items()}
                 #     logger.info(aux_mAP)
 
-        mAP = {k: v/n_test_samples for k, v in ap.items()}
+        mAP = {k: v/num_iters for k, v in ap.items()}
         logger.info(f"distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")
         logger.info(f"mAP values: {mAP[threshold[0]]} - {mAP[threshold[1]]} - {mAP[threshold[2]]} - {mAP[threshold[3]]} - {mAP[threshold[4]]} - {mAP[threshold[5]]}\n")
 

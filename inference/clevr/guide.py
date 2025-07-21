@@ -475,7 +475,7 @@ class InvSlotAttentionGuide(nn.Module):
         # first, without ordering to evaluate with IS
         # then, let's try with some ordering scheme better than euclidean distance
 
-        latents = ["mask", "shape", "color", "mat", "size", "coords"]
+        latents = ["coords", "size", "mat", "shape", "color", "mask"]
         preds = torch.tensor([])
         for var in latents:
           if var in ["mask"]: 
