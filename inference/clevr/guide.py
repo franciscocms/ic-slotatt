@@ -494,6 +494,8 @@ class InvSlotAttentionGuide(nn.Module):
             if var == "coords":
               preds = torch.cat((preds, out[0]), dim=-1)
             else:
+              if var == "mask":
+                out = out.unsqueeze(-1)
               preds = torch.cat((preds, out), dim=-1)
 
           new_var = Variable(name=var,
