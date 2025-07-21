@@ -53,14 +53,16 @@ class CLEVRDataset(Dataset):
     img_filename = target['image_filename']
     img = torch.from_numpy(np.asarray((Image.open(os.path.join(
        self.data_path, img_filename
-    )).convert('RGB')))).permute(2, 0, 1) # [C, W, H]
+    )).convert('RGB'))))#.permute(2, 0, 1) # [C, W, H]
+
+
     
     # plots_dir = os.path.abspath("set_prediction_plots")
     # plt.imshow(img.permute(1, 2, 0).cpu().numpy())
     # plt.savefig(os.path.join(plots_dir, f"image_before_processing.png"))
     # plt.close()
     
-    #logger.info(img.shape)
+    logger.info(img.shape)
     img = preprocess_clevr(img.unsqueeze(0)).squeeze(0)
     #logger.info(img.shape)
 
