@@ -494,12 +494,12 @@ class InvSlotAttentionGuide(nn.Module):
 
           logger.info(f"{var} - {out.shape}")
 
-          if params["num_inference_samples"] == 1:
+          # if params["num_inference_samples"] == 1:
             
-            if var in ["shape", "color", "mat", "size"]:
-              out = F.one_hot(out, n_c)
+          #   if var in ["shape", "color", "mat", "size"]:
+          #     out = F.one_hot(out, n_c)
 
-              preds = torch.cat((preds, out), dim=-1)
+          #     preds = torch.cat((preds, out), dim=-1)
 
         #   new_var = Variable(name=var,
         #                         value=out,
