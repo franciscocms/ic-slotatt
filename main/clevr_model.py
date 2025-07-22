@@ -64,9 +64,10 @@ def sample_loc(i):
 def to_int(value: Tensor):
     return int(torch.round(value))
 
-transform = transforms.Compose(
+transform = transforms.Compose([
             transforms.Resize((128, 128)),
             transforms.ToTensor()
+    ]
     )
 
 
