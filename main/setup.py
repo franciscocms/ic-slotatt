@@ -60,7 +60,7 @@ JOB_SPLIT = {
             }
 
 if params["dataset"] == "clevr": 
-    params["batch_size"] = 512 if params["running_type"] == "train" else 1
+    params["batch_size"] = 64 if params["running_type"] == "train" else 1
     params["lr"] = 4e-4
 elif params["dataset"] == "2Dobjects": 
     params["batch_size"] = 64

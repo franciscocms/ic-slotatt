@@ -17,6 +17,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import time
 import glob
+from torchvision import transforms
 
 from utils.distributions import MyBernoulli, MyNormal
 from .setup import params, JOB_SPLIT
@@ -62,6 +63,12 @@ def sample_loc(i):
 
 def to_int(value: Tensor):
     return int(torch.round(value))
+
+transform = transforms.Compose(
+            transforms.Resize((128, 128)),
+            transforms.ToTensor()
+    )
+
 
 def preprocess_clevr(image, resolution=params['resolution']):
     
@@ -497,6 +504,8 @@ def render_scene_in_blender(blender_script):
     with open(debug_log, "w") as log_file:
         subprocess.call(cmd, stdout=log_file, stderr=log_file)
 
+
+
 def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     if params['running_type'] == 'train': llh_uncertainty = 0.001
@@ -527,20 +536,20 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
         if img.split('/')[-1].split('_')[:2] == ["rendered", "scene"]: os.remove(img)
 
     
-    #init_time = time.time()
+    init_time = time.time()
     # Sample a CLEVR-like scene using Pyro
     clevr_scenes = sample_clevr_scene(llh_uncertainty)
-    #sample_time = time.time() - init_time
-    #logger.info(f"Scene sampling time: {sample_time}")
+    sample_time = time.time() - init_time
+    if params["running_type"] == "train": logger.info(f"Scene sampling time: {sample_time}")
 
     B = params['batch_size'] if params["running_type"] == "train" else params['num_inference_samples']
 
-    #init_time = time.time()
+    init_time = time.time()
     # Generate the Blender script for the sampled scene
     gen_samples = 512 if params["running_type"] == "train" else 512
     blender_scripts = [generate_blender_script(scene, idx, imgs_path, gen_samples) for idx, scene in enumerate(clevr_scenes)]
-    #script_time = time.time() - init_time
-    #logger.info(f"Scene scripting time: {script_time}")
+    script_time = time.time() - init_time
+    if params["running_type"] == "train": logger.info(f"Scene scripting time: {script_time}")
     
     #logger.info(os.listdir(imgs_path))
 
@@ -561,11 +570,16 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     #logger.info(os.listdir(imgs_path))
 
     #logger.info("Scene rendered and saved...")
-    img_batch = torch.stack(
-        [torch.from_numpy(np.asarray(Image.open(os.path.join(imgs_path, f"rendered_scene_{idx}.png")).convert('RGB'))).permute(2, 0, 1) for idx in range(B)]
-    )
+    # img_batch = torch.stack(
+    #     [torch.from_numpy(np.asarray(Image.open(os.path.join(imgs_path, f"rendered_scene_{idx}.png")).convert('RGB'))).permute(2, 0, 1) for idx in range(B)]
+    # )
+    img_batch = torch.stack([transform(Image.open(os.path.join(imgs_path, f"rendered_scene_{idx}.png")).convert('RGB')) for idx in range(B)])
 
-    proc_img = preprocess_clevr(img_batch) # proc_img shape is (1, 4, 128, 128)
+    logger.info(img_batch.shape)
+
+    img_batch = img_batch*2 - 1
+
+    #proc_img = preprocess_clevr(img_batch) # proc_img shape is (1, 4, 128, 128)
 
     #logger.info(f"gen image shape: {proc_img.shape}")
 
@@ -575,7 +589,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
         # stddev = 0.01  in jobID 78
         # stddev = 0.001 in jobID 79
     
-    likelihood_fn = MyNormal(proc_img, torch.tensor(llh_uncertainty)).get_dist() 
+    likelihood_fn = MyNormal(img_batch, torch.tensor(llh_uncertainty)).get_dist() 
     pyro.sample("image", likelihood_fn.to_event(3), obs=observations["image"])
     
     
