@@ -151,13 +151,15 @@ for s in range(resume_step, resume_step + nsteps):
       if not os.path.isdir(f"{root_folder}/attn-step-{s}"): os.mkdir(f"{root_folder}/attn-step-{s}")  
 
   csis.nstep = s
-  loss = csis.step()
+  loss = csis.step(s)
   
   #if True:
   if s % step_size == 0 or s == nsteps-1: 
     val_loss = csis.validation_loss()
     guide.eval()
     guide.stage = "eval"
+
+    logger.info(f"computing validation mAP...")
     val_metrics = compute_validation_mAP(guide, val_dataloader)
     
     logger.info(f"step {s}/{resume_step + nsteps-1} - train_loss: {loss} - val_loss: {val_loss}")

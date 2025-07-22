@@ -94,9 +94,9 @@ class CSIS(Importance):
 
     Arguments are passed directly to model.
     """
-    self.validation_batch = self._sample_from_joint(*args, **kwargs)
+    self.validation_batch = self._sample_from_joint(self.nstep, *args, **kwargs)
 
-  def step(self, *args, **kwargs):
+  def step(self, step, *args, **kwargs):
     """
     :returns: estimate of the loss
     :rtype: float
@@ -151,7 +151,7 @@ class CSIS(Importance):
       
       #logger.info("\ngenerating another batch for training")
 
-      model_trace = self._sample_from_joint(*args, **kwargs)
+      model_trace = self._sample_from_joint(self.nstep, *args, **kwargs)
 
       # for name, vals in model_trace.nodes.items():
       #   logger.info(f"{name} - {vals['type']}")
@@ -493,7 +493,7 @@ class CSIS(Importance):
 
     return guide_trace
 
-  def _sample_from_joint(self, *args, **kwargs):
+  def _sample_from_joint(self, step, *args, **kwargs):
     """
     :returns: a sample from the joint distribution over unobserved and
         observed variables
@@ -505,4 +505,4 @@ class CSIS(Importance):
     """
     unconditioned_model = pyro.poutine.uncondition(self.model)
     
-    return poutine.trace(unconditioned_model).get_trace(*args, **kwargs)
+    return poutine.trace(unconditioned_model).get_trace(step, *args, **kwargs)

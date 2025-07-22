@@ -507,7 +507,7 @@ def render_scene_in_blender(blender_script):
 
 
 
-def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
+def clevr_gen_model(step=0, observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     if params['running_type'] == 'train': llh_uncertainty = 0.001
     elif params['running_type'] == 'eval': llh_uncertainty = 0.05
@@ -547,7 +547,10 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     #init_time = time.time()
     # Generate the Blender script for the sampled scene
-    gen_samples = 512 if params["running_type"] == "train" else 512
+    if params["running_type"] == "train":
+        gen_samples = 128 if torch.distributions.Bernoulli(0.8).sample() else 512
+    else:
+        gen_samples = 512 
     blender_scripts = [generate_blender_script(scene, idx, imgs_path, gen_samples) for idx, scene in enumerate(clevr_scenes)]
     #script_time = time.time() - init_time
     #if params["running_type"] == "train": logger.info(f"Scene scripting time: {script_time}")
@@ -556,11 +559,11 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
     # Call Blender to render the scene
     #with mp.Pool(processes=mp.cpu_count()) as pool:
-    #init_time = time.time()
+    init_time = time.time()
     with mp.Pool(processes=10) as pool:
       pool.map(render_scene_in_blender, blender_scripts)
-    #batch_time = time.time() - init_time
-    #if params["running_type"] == "train": logger.info(f"Batch generation duration: {batch_time} - {batch_time/B} per sample")
+    batch_time = time.time() - init_time
+    if params["running_type"] == "train" and step % params["step_size"]: logger.info(f"Batch generation duration: {batch_time} - {batch_time/B} per sample")
 
     # init_time = time.time()
     # for blender_script in blender_scripts:
