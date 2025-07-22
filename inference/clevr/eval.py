@@ -325,6 +325,7 @@ def main():
         # self.target = self.target[split_len*(JOB_SPLIT['id']-1) : final_idx]
         
         n_test_samples = 0
+        num_iters = 0
 
         guide.eval()
         with torch.no_grad():
