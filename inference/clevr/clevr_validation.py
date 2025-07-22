@@ -249,18 +249,19 @@ def compute_validation_mAP(model, dataloader):
   threshold = [-1., 1., 0.5, 0.25, 0.125, 0.0625]
   ap = {k: 0 for k in threshold}
 
+  assert model.stage == "eval"
+
   with torch.no_grad(): 
       for img, target in dataloader:
           img, target = img.to(device), target.to(device)
           
-          posterior = model.run(observations={"image": img})
-          prop_traces = posterior.prop_traces[0]
-          preds = process_preds(prop_traces, 0)
+          preds = model(observations={"image": img})
 
           for t in threshold: 
               ap[t] += average_precision_clevr(preds.detach().cpu().numpy(),
                                                target.detach().cpu().numpy(), 
                                                t)
+          num_iters += 1
   
   mAP = {k: v/num_iters for k, v in ap.items()}
   metrics['mAP'] = mAP
