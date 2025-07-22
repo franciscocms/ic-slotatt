@@ -537,30 +537,30 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
         if img.split('/')[-1].split('_')[:2] == ["rendered", "scene"]: os.remove(img)
 
     
-    init_time = time.time()
+    #init_time = time.time()
     # Sample a CLEVR-like scene using Pyro
     clevr_scenes = sample_clevr_scene(llh_uncertainty)
-    sample_time = time.time() - init_time
-    if params["running_type"] == "train": logger.info(f"Scene sampling time: {sample_time}")
+    #sample_time = time.time() - init_time
+    #if params["running_type"] == "train": logger.info(f"Scene sampling time: {sample_time}")
 
     B = params['batch_size'] if params["running_type"] == "train" else params['num_inference_samples']
 
-    init_time = time.time()
+    #init_time = time.time()
     # Generate the Blender script for the sampled scene
     gen_samples = 512 if params["running_type"] == "train" else 512
     blender_scripts = [generate_blender_script(scene, idx, imgs_path, gen_samples) for idx, scene in enumerate(clevr_scenes)]
-    script_time = time.time() - init_time
-    if params["running_type"] == "train": logger.info(f"Scene scripting time: {script_time}")
+    #script_time = time.time() - init_time
+    #if params["running_type"] == "train": logger.info(f"Scene scripting time: {script_time}")
     
     #logger.info(os.listdir(imgs_path))
 
     # Call Blender to render the scene
     #with mp.Pool(processes=mp.cpu_count()) as pool:
-    init_time = time.time()
+    #init_time = time.time()
     with mp.Pool(processes=10) as pool:
       pool.map(render_scene_in_blender, blender_scripts)
-    batch_time = time.time() - init_time
-    if params["running_type"] == "train": logger.info(f"Batch generation duration: {batch_time} - {batch_time/B} per sample")
+    #batch_time = time.time() - init_time
+    #if params["running_type"] == "train": logger.info(f"Batch generation duration: {batch_time} - {batch_time/B} per sample")
 
     # init_time = time.time()
     # for blender_script in blender_scripts:
@@ -576,7 +576,7 @@ def clevr_gen_model(observations={"image": torch.zeros((1, 3, 128, 128))}):
     # )
     img_batch = torch.stack([transform(Image.open(os.path.join(imgs_path, f"rendered_scene_{idx}.png")).convert('RGB')) for idx in range(B)])
 
-    logger.info(img_batch.shape)
+    #logger.info(img_batch.shape)
 
     img_batch = img_batch*2 - 1
 
