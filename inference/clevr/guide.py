@@ -492,14 +492,16 @@ class InvSlotAttentionGuide(nn.Module):
           
           out = self.infer_step(var, self.slots, proposal_distribution)
 
-          logger.info(f"{var} - {out.shape}")
+          #logger.info(f"{var} - {out.shape}")
 
-          # if params["num_inference_samples"] == 1:
+          if params["num_inference_samples"] == 1:
             
-          #   if var in ["shape", "color", "mat", "size"]:
-          #     out = F.one_hot(out, n_c)
+            if var in ["shape", "color", "mat", "size"]:
+              out = F.one_hot(out, n_c)
+            elif var == "mask":
+              out = out.unsqueeze(-1)
 
-          #     preds = torch.cat((preds, out), dim=-1)
+            preds = torch.cat((preds, out), dim=-1)
 
         #   new_var = Variable(name=var,
         #                         value=out,
