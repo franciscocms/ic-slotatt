@@ -65,9 +65,6 @@ class CLEVRDataset(Dataset):
     img = Image.open(os.path.join(self.images_path, scene['image_filename'])).convert('RGB')
     #img = self.transform(img)
     img = torch.from_numpy(np.asarray(img)).permute(2, 0, 1)
-
-    logger.info(img.shape)
-
     img = preprocess_clevr(img.unsqueeze(0)).squeeze(0)
 
     target = []

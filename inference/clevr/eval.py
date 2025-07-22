@@ -337,6 +337,12 @@ def main():
                 if params["num_inference_samples"] == 1:
 
                     preds = guide(observations={"image": img})
+                    
+                    logger.info(f"\npreds: {preds[0]}")
+                    logger.info(f"\ntarget: {target[0]}")
+
+
+                    
                     for t in threshold: 
                         ap[t] += average_precision_clevr(preds.detach().cpu().numpy(), 
                                                          target.detach().cpu().numpy(), 
