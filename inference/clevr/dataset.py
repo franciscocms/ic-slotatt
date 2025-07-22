@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 from torchvision import transforms
+import numpy as np
 
 import os
 from PIL import Image
@@ -10,6 +11,20 @@ import json
 
 import logging
 logger = logging.getLogger("eval")
+
+def preprocess_clevr(image):
+    
+    # logger.info(torch.amin(image))
+    # logger.info(torch.amax(image))
+
+    image = ((image / 255.0) - 0.5) * 2.0  # Rescale to [-1, 1].
+    image = F.interpolate(input=image, size=(128, 128), mode='bilinear', antialias=True)
+    image = torch.clamp(image, -1., 1.)
+
+    # logger.info(torch.amin(image))
+    # logger.info(torch.amax(image))
+    
+    return image
 
 sizes = ['small', 'large']
 materials = ['rubber', 'metal']
@@ -48,7 +63,9 @@ class CLEVRDataset(Dataset):
   def __getitem__(self, idx):
     scene = self.scenes[idx]
     img = Image.open(os.path.join(self.images_path, scene['image_filename'])).convert('RGB')
-    img = self.transform(img)
+    #img = self.transform(img)
+    img = preprocess_clevr(torch.from_numpy(np.asarray(img)).permute(2, 0, 1))
+
     target = []
     if self.get_target:
         for obj in scene['objects']:
