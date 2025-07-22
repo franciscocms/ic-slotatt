@@ -386,14 +386,8 @@ class InvSlotAttentionGuide(nn.Module):
     else: raise ValueError(f"Unknown variable address: {variable_name}")      
     
     if self.stage == "eval":
-      if params["num_inference_samples"] > 1:
-        if variable_name not in ['coords']: return out
-        else: return mean, logvar
-      else:
-        return proposal
+      return out
        
-    
-    
     elif self.stage == 'train':
       if self.is_train and self.step % params['step_size'] == 0:
         if variable_name in ['coords']:
@@ -475,27 +469,36 @@ class InvSlotAttentionGuide(nn.Module):
         # first, without ordering to evaluate with IS
         # then, let's try with some ordering scheme better than euclidean distance
 
+        vars = {"size": ['small', 'large'],
+                "mat": ['rubber', 'metal'],
+                "shape": ['cube', 'sphere', 'cylinder'],
+                "color": ['gray', 'blue', 'brown', 'yellow', 'red', 'green', 'purple', 'cyan']
+                }
+        
         latents = ["coords", "size", "mat", "shape", "color", "mask"]
         preds = torch.tensor([])
         for var in latents:
           if var in ["mask"]: 
-             proposal_distribution = "bernoulli"
-             prior_distribution = "bernoulli"
+            proposal_distribution = "bernoulli"
+            prior_distribution = "bernoulli"          
           elif var in ["shape", "color", "mat", "size"]: 
-             proposal_distribution = "categorical"
-             prior_distribution = "categorical"
+            proposal_distribution = "categorical"
+            prior_distribution = "categorical"
+            n_c = len(vars[var])
+
           elif var in ["coords"]: 
-             proposal_distribution = "normal"
-             prior_distribution = "uniform"
+            proposal_distribution = "normal"
+            prior_distribution = "uniform"
           
           out = self.infer_step(var, self.slots, proposal_distribution)
 
+          logger.info(f"{var} - {out.shape}")
+
           if params["num_inference_samples"] == 1:
-            if var == "coords":
-              preds = torch.cat((preds, out[0]), dim=-1)
-            else:
-              if var == "mask":
-                out = out.unsqueeze(-1)
+            
+            if var in ["shape", "color", "mat", "size"]:
+              out = F.one_hot(out, n_c)
+
               preds = torch.cat((preds, out), dim=-1)
 
         #   new_var = Variable(name=var,
