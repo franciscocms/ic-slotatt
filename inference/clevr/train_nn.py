@@ -272,7 +272,7 @@ class InvSlotAttentionGuide(nn.Module):
         plt.close()
     
     preds = self.mlp_preds(self.slots)
-    preds[:, :, 0:3] = self.sigmoid(preds[:, :, 0:3].clone())          # coords
+    preds[:, :, 0:3] = self.sigmoid(preds[:, :, 0:3].clone())       # coords
     preds[:, :, 3:5] = self.softmax(preds[:, :, 3:5].clone())       # size
     preds[:, :, 5:7] = self.softmax(preds[:, :, 5:7].clone())       # material
     preds[:, :, 7:10] = self.softmax(preds[:, :, 7:10].clone())     # shape
