@@ -137,9 +137,9 @@ def average_precision_clevr(pred, attributes, distance_threshold):
       if target_real_obj:
         # For the match to be valid all attributes need to be correctly
         # predicted.
-        pred_attr = [pred_object_size, pred_material, pred_shape, pred_color]
+        pred_attr = [pred_object_size, pred_material, pred_shape]
         target_attr = [
-            target_object_size, target_material, target_shape, target_color]
+            target_object_size, target_material, target_shape]
         match = pred_attr == target_attr
         if match:
           # If a match was found, we check if the distance is below the
@@ -338,10 +338,8 @@ def main():
 
                     preds = guide(observations={"image": img})
                     
-                    logger.info(f"\npreds: {preds[0]}")
-                    logger.info(f"\ntarget: {target[0]}")
-
-
+                    # logger.info(f"\npreds: {preds[0]}")
+                    # logger.info(f"\ntarget: {target[0]}")
                     
                     for t in threshold: 
                         ap[t] += average_precision_clevr(preds.detach().cpu().numpy(), 
