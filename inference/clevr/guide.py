@@ -466,7 +466,7 @@ class InvSlotAttentionGuide(nn.Module):
     
     elif self.stage == "eval":
       with torch.no_grad():
-        assert self.current_trace == [], "current_trace list is not empty in the begining of evaluation!"
+        # assert self.current_trace == [], "current_trace list is not empty in the begining of evaluation!"
 
         self.slots, attn = self.slot_attention(self.features_to_slots, num_slots=n_s, is_train=self.is_train)         
         
@@ -498,15 +498,15 @@ class InvSlotAttentionGuide(nn.Module):
                 out = out.unsqueeze(-1)
               preds = torch.cat((preds, out), dim=-1)
 
-          new_var = Variable(name=var,
-                                value=out,
-                                prior_distribution=prior_distribution,
-                                proposal_distribution=proposal_distribution,
-                                address=var
-                                )
-          self.current_trace.append(new_var)
+        #   new_var = Variable(name=var,
+        #                         value=out,
+        #                         prior_distribution=prior_distribution,
+        #                         proposal_distribution=proposal_distribution,
+        #                         address=var
+        #                         )
+        #   self.current_trace.append(new_var)
 
-        self.current_trace = []
+        # self.current_trace = []
         
         logger.info(f"preds: {preds.shape}")
         

@@ -172,7 +172,7 @@ def main():
         scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json')
         test_dataset = CLEVRDataset(images_path, scenes_path, max_objs=params["max_objects"])
         b_s = 1 if params["num_inference_samples"] > 1 else 512
-        testloader = torch.utils.data.DataLoader(test_dataset, batch_size=b_s, shuffle=False, generator=torch.Generator(device='cuda'))
+        testloader = torch.utils.data.DataLoader(test_dataset, batch_size=b_s, shuffle=False, num_workers=8, generator=torch.Generator(device='cuda'))
 
         # total_len = len(self.target)
         # split_len = int(total_len/JOB_SPLIT['total'])
