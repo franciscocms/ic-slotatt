@@ -513,7 +513,7 @@ class InvSlotAttentionGuide(nn.Module):
 
         # self.current_trace = []
         
-        logger.info(f"preds: {preds.shape}")
+        #logger.info(f"preds: {preds.shape}")
         
         if params["num_inference_samples"] > 1:
           return 
