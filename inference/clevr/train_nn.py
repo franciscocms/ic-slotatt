@@ -752,7 +752,7 @@ elif params["running_type"] == "eval":
                                 ).to(DEVICE)
   
   checkpoint_path = os.path.join(main_dir, "inference", f"checkpoint-{params['jobID']}")
-  epoch_to_load = 190
+  epoch_to_load = 400
   guide.load_state_dict(torch.load(os.path.join(checkpoint_path, f"guide_{epoch_to_load}.pth")))
 
   optimiser = pyro.optim.Adam({'lr': 1e-4})
