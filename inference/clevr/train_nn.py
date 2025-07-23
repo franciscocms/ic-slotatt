@@ -795,7 +795,9 @@ elif params["running_type"] == "eval":
         preds = process_preds(prop_traces, resampling_id)
         if len(preds.shape) == 2: preds = preds.unsqueeze(0)
         for t in threshold: 
-          ap[t] += average_precision_clevr(preds, target, t)
+          ap[t] += average_precision_clevr(preds.detach().cpu().numpy(),
+                                           target.detach().cpu().numpy(),
+                                           t)
             
         n_test_samples += 1
 
