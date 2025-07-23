@@ -23,7 +23,7 @@ params = {
     "print_distributions": False,
     "print_importance_sampling": False,
     "bernoulli_inf_reduction": 'none',
-    "num_inference_samples": 1, # 20 for clevr sp experiments
+    "num_inference_samples": 2, # 20 for clevr sp experiments
     "N_proposal" : "normal", # mixture
     "loc_proposal" : "wo_net",
     "loc_proposal_std": 0.05, 
@@ -34,7 +34,7 @@ params = {
     "training_from_scratch" : True,
     "training_iters": 20000, # 10k
     "step_size": 100,
-    "running_type": "train", # train, debug, eval, inspect
+    "running_type": "eval", # train, debug, eval, inspect
     "ood_eval": False,
     "slot_dim" : 64, 
     "infer_background": False,
@@ -42,13 +42,13 @@ params = {
     "softmax_temperature": 1.0,
     "strided_convs": True,
     "check_attn": True,
-    "jobID": 103, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects (95 for 10 slots/objects)
+    "jobID": 101, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects (95 for 10 slots/objects)
     "mesh_iters": 4,
     "mesh_lr": 5, # 76: 3, 77: 5
     "logprob_coeff": 1.,
     "slot_pos_learned_init": False,
     "perm_inv_loss": True,
-    "inference_method": "importance_sampling_only", # score_resample, rejuvenation_ft, importance_sampling_only, neural_baseline
+    "inference_method": "importance_sampling_only", # score_resample, rejuvenation_ft, importance_sampling_only, neural
     "proposals": "data_driven", # "data_driven", "prior"
     "plots_dir": f'{main_dir}/plots'
 }

@@ -224,22 +224,6 @@ def sample_clevr_scene(llh_uncertainty):
 
     # Store each scene's attributes
     scenes = []
-    for b in range(B):
-        objects = []
-        # Append the object attributes to the scene list
-        for k in range(M):
-            if objects_mask[b, k]:
-                objects.append({
-                    "shape": obj_name[b][k],
-                    "color": color_name[b][k],
-                    "rgba": rgba[b][k],
-                    "size": r[b][k],
-                    "material": mat_name[b][k],
-                    "pose": theta[b, k].item(),
-                    "position": (x[b, k].item(), y[b, k].item())
-                })
-        
-        scenes.append(objects)
     
     """ sample the '3d_coords' tensor according to x, y and size """
 
@@ -255,6 +239,23 @@ def sample_clevr_scene(llh_uncertainty):
         z = (z + 3.)/6.
         coords = pyro.sample(f"coords", dist.Normal(torch.cat((x.unsqueeze(-1), y.unsqueeze(-1), z.unsqueeze(-1)), dim=-1),
                                                     llh_uncertainty*0.1))
+    
+    for b in range(B):
+        objects = []
+        # Append the object attributes to the scene list
+        for k in range(M):
+            if objects_mask[b, k]:
+                objects.append({
+                    "shape": obj_name[b][k],
+                    "color": color_name[b][k],
+                    "rgba": rgba[b][k],
+                    "size": r[b][k],
+                    "material": mat_name[b][k],
+                    "pose": theta[b, k].item(),
+                    "position": (coords[b, k, 0].item(), coords[b, k, 1].item())
+                })
+        
+        scenes.append(objects)
 
     return scenes
 

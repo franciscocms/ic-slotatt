@@ -2,6 +2,7 @@ import os
 import shutil
 import torch
 import pyro
+import pyro.distributions as dist
 import torch.nn as nn
 import json
 import numpy as np
@@ -28,17 +29,18 @@ from main.modifiedCSIS import CSIS
 from utils.distributions import Empirical
 from utils.guide import minimize_entropy_of_sinkhorn, sinkhorn
 
-import logging
-logfile_name = f"log-{params['jobID']}.log"
-logger = logging.getLogger("train")
-logger.setLevel(logging.INFO)
-fh = logging.FileHandler(logfile_name, mode='w')
-logger.addHandler(fh)
-
 main_dir = os.path.abspath(__file__+'/../../../')
 
 params["batch_size"] = 512
 params["lr"] = 4e-4
+
+import logging
+if params["running_type"] == "train": logfile_name = f"log-{params['jobID']}.log"
+elif params["running_type"] == "eval": logfile_name = f"eval-{params['jobID']}.log"
+logger = logging.getLogger(params["running_type"])
+logger.setLevel(logging.INFO)
+fh = logging.FileHandler(logfile_name, mode='w')
+logger.addHandler(fh)
 
 """
 set image and checkpoints saving paths
@@ -283,6 +285,14 @@ class InvSlotAttentionGuide(nn.Module):
     preds[:, :, 7:10] = self.softmax(preds[:, :, 7:10].clone())     # shape
     preds[:, :, 10:18] = self.softmax(preds[:, :, 10:18].clone())   # color
     preds[:, :, 18] = self.sigmoid(preds[:, :, 18].clone())         # real object
+
+    if params["running_type"] == "eval":
+      pyro.sample("mask", dist.Bernoulli(preds[:, :, 18]))
+      pyro.sample("size", dist.Categorical(probs=preds[:, :, 3:5]))
+      pyro.sample("mat", dist.Categorical(probs=preds[:, :, 5:7]))
+      pyro.sample("shape", dist.Categorical(probs=preds[:, :, 7:10]))
+      pyro.sample("color", dist.Categorical(probs=preds[:, :, 10:18]))
+      pyro.sample("coords", dist.Normal(preds[:, :, :3] * 3, torch.tensor(0.1)))
     return preds
 
 
@@ -739,7 +749,7 @@ elif params["running_type"] == "eval":
                         ).to(DEVICE)
   
   checkpoint_path = os.path.join(main_dir, "inference", f"checkpoint-{params['jobID']}")
-  epoch_to_load = 999
+  epoch_to_load = 190
   guide.load_state_dict(torch.load(os.path.join(checkpoint_path, f"guide_{epoch_to_load}.pth")))
 
   optimiser = pyro.optim.Adam({'lr': 1e-4})
@@ -748,9 +758,20 @@ elif params["running_type"] == "eval":
   threshold = [-1., 1., 0.5, 0.25, 0.125, 0.0625]
   ap = {k: 0 for k in threshold}
 
-  def process_preds():
-    pass
-  
+  def process_preds(trace, id):
+    max_obj = max(params['max_objects'], params['num_slots'])
+    
+    features_dim = 19
+    preds = torch.zeros(max_obj, features_dim)
+    for name, site in trace.nodes.items():
+        if site['type'] == 'sample':
+            if name == 'shape': preds[:, 7:10] = F.one_hot(site['value'][id], len(shapes))
+            if name == 'color': preds[:, 10:18] = F.one_hot(site['value'][id], len(colors))
+            if name == 'size': preds[:, 3:5] = F.one_hot(site['value'][id], len(sizes))
+            if name == 'mat': preds[:, 5:7] = F.one_hot(site['value'][id], len(materials))
+            if name == 'coords': preds[:, :3] = site['value'][id] # [-3., 3.]
+            if name == 'mask': preds[:, 18] = site['value'][id]
+    return preds
 
   with torch.no_grad():
     for img, target in val_dataloader:
