@@ -294,7 +294,7 @@ class InvSlotAttentionGuide(nn.Module):
       pyro.sample("mat", dist.Categorical(probs=preds[:, :, 5:7].expand([params["num_inference_samples"], -1, -1])))
       pyro.sample("shape", dist.Categorical(probs=preds[:, :, 7:10].expand([params["num_inference_samples"], -1, -1])))
       pyro.sample("color", dist.Categorical(probs=preds[:, :, 10:18].expand([params["num_inference_samples"], -1, -1])))
-      pyro.sample("coords", dist.Normal(preds[:, :, :3].expand([params["num_inference_samples"], -1, -1]) * 3, torch.tensor(0.1)))
+      pyro.sample("coords", dist.Normal(preds[:, :, :3].expand([params["num_inference_samples"], -1, -1]), torch.tensor(0.1)))
     return preds
 
 
@@ -755,6 +755,8 @@ elif params["running_type"] == "eval":
   epoch_to_load = 400
   guide.load_state_dict(torch.load(os.path.join(checkpoint_path, f"guide_{epoch_to_load}.pth")))
 
+  logger.info(f"\Inference network from epoch {epoch_to_load} successfully loaded...")
+
   optimiser = pyro.optim.Adam({'lr': 1e-4})
   csis = CSIS(model, guide, optimiser, training_batch_size=256, num_inference_samples=params["num_inference_samples"])
 
@@ -779,6 +781,9 @@ elif params["running_type"] == "eval":
   val_dataloader = DataLoader(val_data, batch_size = 1,
                               shuffle=False, num_workers=8, generator=torch.Generator(device='cuda'))
 
+  
+  logger.info(f"\nStarting inference with {params['num_inference_samples']} particles...\n")
+  
   n_test_samples = 0
   with torch.no_grad():
     for img, target in val_dataloader:
