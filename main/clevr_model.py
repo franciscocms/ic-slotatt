@@ -518,6 +518,7 @@ def clevr_gen_model(step=0, observations={"image": torch.zeros((1, 3, 128, 128))
         if not os.path.isdir(os.path.join(dir_path, str(params['jobID']), "train")): os.mkdir(os.path.join(dir_path, str(params['jobID']), "train"))
         imgs_path = os.path.join(dir_path, str(params['jobID']), "train")
     elif params['running_type'] == "eval":
+        if not os.path.isdir(os.path.join(dir_path, str(params['jobID']))): os.mkdir(os.path.join(dir_path, str(params['jobID'])))
         assert os.path.isdir(os.path.join(dir_path, str(params['jobID'])))
                 
         if not os.path.isdir(os.path.join(dir_path, str(params['jobID']), "eval")): os.mkdir(os.path.join(dir_path, str(params['jobID']), "eval"))
