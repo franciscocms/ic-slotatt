@@ -464,7 +464,7 @@ class Trainer:
                                  "val_loss": epoch_valid_loss,
                                  "val_mAP": valid_metrics['mAP']})
 
-                self._save_checkpoint(epoch, self.checkpoint_path)
+                self._save_checkpoint(epoch)
         
         time_elapsed = time.time() - since
         logger.info('Training complete in {:.0f}m {:.0f}s'.format(
