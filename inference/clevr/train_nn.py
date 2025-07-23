@@ -774,6 +774,9 @@ elif params["running_type"] == "eval":
             if name == 'coords': preds[:, :3] = site['value'][id] # [-3., 3.]
             if name == 'mask': preds[:, 18] = site['value'][id]
     return preds
+  
+  val_dataloader = DataLoader(val_data, batch_size = 1,
+                              shuffle=False, num_workers=8, generator=torch.Generator(device='cuda'))
 
   with torch.no_grad():
     for img, target in val_dataloader:
@@ -789,6 +792,7 @@ elif params["running_type"] == "eval":
         resampling_id = resampling().item()
 
         preds = process_preds(prop_traces, resampling_id)
+        if len(preds.shape) == 2: preds = preds.unsqueeze(0)
         for t in threshold: 
           ap[t] += average_precision_clevr(preds, target, t)
             
