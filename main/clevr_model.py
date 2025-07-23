@@ -247,9 +247,9 @@ def sample_clevr_scene(llh_uncertainty):
         coords = pyro.sample(f"coords", dist.Normal(torch.cat((x.unsqueeze(-1), y.unsqueeze(-1), z.unsqueeze(-1)), dim=-1),
                                                     llh_uncertainty*0.1))
         if params["running_type"] == "eval":
-            logger.info(f"pre coords: {coords}")
+            #logger.info(f"pre coords: {coords}")
             coords = coords * 6 - 3.
-            logger.info(f"post coords: {coords}")
+            #logger.info(f"post coords: {coords}")
     
     for b in range(B):
         objects = []
