@@ -242,7 +242,7 @@ def sample_clevr_scene(llh_uncertainty):
             z = (z + 3.)/6.
         else:
             with pyro.poutine.block():
-                z = pyro.sample("z", dist.Uniform(-3., 3.))
+                z = pyro.sample("z", dist.Uniform(-3., 3.)).expand([B, M])
         
         coords = pyro.sample(f"coords", dist.Normal(torch.cat((x.unsqueeze(-1), y.unsqueeze(-1), z.unsqueeze(-1)), dim=-1),
                                                     llh_uncertainty*0.1))
