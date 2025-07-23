@@ -779,6 +779,7 @@ elif params["running_type"] == "eval":
   val_dataloader = DataLoader(val_data, batch_size = 1,
                               shuffle=False, num_workers=8, generator=torch.Generator(device='cuda'))
 
+  n_test_samples = 0
   with torch.no_grad():
     for img, target in val_dataloader:
         img = img.to(DEVICE)        
