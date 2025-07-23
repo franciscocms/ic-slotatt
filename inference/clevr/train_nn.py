@@ -802,9 +802,11 @@ elif params["running_type"] == "eval":
             
         n_test_samples += 1
 
-        logger.info(f"current stats:")
-        aux_mAP = {k: v/n_test_samples for k, v in ap.items()}
-        logger.info(aux_mAP)
+        if n_test_samples % 100 == 0:
+          logger.info(f"{n_test_samples} evaluated...")
+          logger.info(f"current stats:")
+          aux_mAP = {k: v/n_test_samples for k, v in ap.items()}
+          logger.info(aux_mAP)
 
 
 if params["running_type"] == "train": wandb.finish()

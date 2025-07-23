@@ -283,10 +283,8 @@ class Importance(TracePosterior):
             else:
                 if site['type'] == 'sample' and name == 'image':
                     
-                    logger.info(site['value'].shape)
-                    logger.info(site['fn'].mean.shape)
-
-
+                    #logger.info(site['value'].shape)
+                    #logger.info(site['fn'].mean.shape)
 
                     log_p = site['fn'].log_prob(site['value'])
                     img_dim = site['fn'].mean.shape[-1]
