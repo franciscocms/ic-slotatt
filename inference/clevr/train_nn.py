@@ -1,6 +1,7 @@
 import os
 import shutil
 import torch
+import pyro
 import torch.nn as nn
 import json
 import numpy as np
@@ -21,8 +22,10 @@ sys.path.append(os.path.abspath(__file__+'/../../../'))
 
 import wandb # type: ignore
 
+from main.clevr_model import clevr_gen_model
 from main.setup import params
-
+from main.modifiedCSIS import CSIS
+from utils.distributions import Empirical
 from utils.guide import minimize_entropy_of_sinkhorn, sinkhorn
 
 import logging
@@ -31,6 +34,8 @@ logger = logging.getLogger("train")
 logger.setLevel(logging.INFO)
 fh = logging.FileHandler(logfile_name, mode='w')
 logger.addHandler(fh)
+
+main_dir = os.path.abspath(__file__+'/../../../')
 
 params["batch_size"] = 512
 params["lr"] = 4e-4
@@ -350,7 +355,6 @@ def hungarian_loss_inclusive_KL(pred, target, loss_fn=F.smooth_l1_loss):
     return total_loss, dict(indices=indices)
 
         
-
 class Trainer:
     def __init__(self, model, dataloaders, params, logger, log_rate): 
         self.trainloader = dataloaders["train"]
@@ -364,14 +368,15 @@ class Trainer:
         self.optimizer = torch.optim.Adam([p for p in list(self.model.parameters()) if p.requires_grad], lr = 4e-4)
         self.logger = logger
         self.log_rate = log_rate
+
+        self.checkpoint_path = os.path.join(main_dir, "inference", f"checkpoint-{params['jobID']}")
     
     def _save_checkpoint(self, epoch):
-        if not os.path.isdir(self.params['checkpoint_path']):
-            try: os.mkdir(self.params['checkpoint_path'])
+        if not os.path.isdir(self.checkpoint_path):
+            try: os.mkdir(self.checkpoint_path)
             except: logger.info('unable to create directory to save training checkpoints!')
         else:
-            path = self.params['checkpoint_path']
-            torch.save(self.model.state_dict(), path + '/model_epoch_' + str(epoch) + '.pth')
+            torch.save(self.model.state_dict(), os.path.join(self.checkpoint_path, f"guide_{epoch}.pth"))
 
     def _train_epoch(self, save_masks):
         loss = 0.
@@ -385,9 +390,9 @@ class Trainer:
                logger.info(f"preds: {preds[0]}")
                logger.info(f"target: {target[0]}")
             
-            #batch_loss, _ = hungarian_loss(preds, target)
+            batch_loss, _ = hungarian_loss(preds, target)
             #batch_loss, _ = hungarian_loss_inclusive_KL(preds, target)
-            batch_loss = 0.5*hungarian_loss_inclusive_KL(preds, target)[0] + 0.5*hungarian_loss(preds, target)[0]
+            #batch_loss = 0.5*hungarian_loss_inclusive_KL(preds, target)[0] + 0.5*hungarian_loss(preds, target)[0]
 
             self.optimizer.zero_grad()
             batch_loss.backward()
@@ -412,9 +417,9 @@ class Trainer:
             for img, target in self.validloader:
                 img, target = img.to(self.device), target.to(self.device)
                 preds = self.model(img)
-                #batch_loss, _ = hungarian_loss(preds, target)
+                batch_loss, _ = hungarian_loss(preds, target)
                 #batch_loss, _ = hungarian_loss_inclusive_KL(preds, target)
-                batch_loss = 0.5*hungarian_loss_inclusive_KL(preds, target)[0] + 0.5*hungarian_loss(preds, target)[0]
+                #batch_loss = 0.5*hungarian_loss_inclusive_KL(preds, target)[0] + 0.5*hungarian_loss(preds, target)[0]
 
                 for t in threshold: 
                     ap[t] += average_precision_clevr(preds.detach().cpu().numpy(), 
@@ -458,6 +463,8 @@ class Trainer:
                 self.logger.log({"train_loss": epoch_train_loss,
                                  "val_loss": epoch_valid_loss,
                                  "val_mAP_inf": valid_metrics['mAP'][-1]})
+
+                self._save_checkpoint(epoch, self.checkpoint_path)
         
         time_elapsed = time.time() - since
         logger.info('Training complete in {:.0f}m {:.0f}s'.format(
@@ -713,9 +720,60 @@ val_dataloader = DataLoader(val_data, batch_size = 512,
                               shuffle=False, num_workers=8, generator=torch.Generator(device='cuda'))
 
 
-trainer = Trainer(guide, {"train": train_dataloader, "validation": val_dataloader}, params, run, log_rate=10)
-trainer.train(root_folder)
- 
+if params["running_type"] == "train":
+  trainer = Trainer(guide, {"train": train_dataloader, "validation": val_dataloader}, params, run, log_rate=10)
+  trainer.train(root_folder)
+  logger.info("\ntraining ended...")
 
-logger.info("\ntraining ended...")
+elif params["running_type"] == "eval":
+
+  """ 
+  eval mode in case of choosing importance sampling as inference using the trained inference network for proposals
+  """
+
+  model = clevr_gen_model
+  guide = InvSlotAttentionGuide(resolution = params['resolution'],
+                        num_iterations = 3,
+                        hid_dim = params["slot_dim"],
+                        stage="eval"
+                        ).to(DEVICE)
+  
+  checkpoint_path = os.path.join(main_dir, "inference", f"checkpoint-{params['jobID']}")
+  epoch_to_load = 999
+  guide.load_state_dict(torch.load(os.path.join(checkpoint_path, f"guide_{epoch_to_load}.pth")))
+
+  optimiser = pyro.optim.Adam({'lr': 1e-4})
+  csis = CSIS(model, guide, optimiser, training_batch_size=256, num_inference_samples=params["num_inference_samples"])
+
+  threshold = [-1., 1., 0.5, 0.25, 0.125, 0.0625]
+  ap = {k: 0 for k in threshold}
+
+  def process_preds():
+    pass
+  
+
+  with torch.no_grad():
+    for img, target in val_dataloader:
+        img = img.to(DEVICE)        
+
+        assert params["num_inference_samples"] > 1
+            
+        posterior = csis.run(observations={"image": img})
+        prop_traces = posterior.prop_traces[0]
+        traces = posterior.exec_traces[0]
+        log_wts = posterior.log_weights[0]
+        resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
+        resampling_id = resampling().item()
+
+        preds = process_preds(prop_traces, resampling_id)
+        for t in threshold: 
+          ap[t] += average_precision_clevr(preds, target, t)
+            
+        n_test_samples += 1
+
+        logger.info(f"current stats:")
+        aux_mAP = {k: v/n_test_samples for k, v in ap.items()}
+        logger.info(aux_mAP)
+
+
 wandb.finish()
