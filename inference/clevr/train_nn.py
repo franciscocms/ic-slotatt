@@ -386,9 +386,9 @@ class Trainer:
             img, target = img.to(self.device), target.to(self.device)
             preds = self.model(img, save_masks)
             
-            if save_masks:
-               logger.info(f"preds: {preds[0]}")
-               logger.info(f"target: {target[0]}")
+            # if save_masks:
+            #    logger.info(f"preds: {preds[0]}")
+            #    logger.info(f"target: {target[0]}")
             
             batch_loss, _ = hungarian_loss(preds, target)
             #batch_loss, _ = hungarian_loss_inclusive_KL(preds, target)
@@ -462,7 +462,7 @@ class Trainer:
 
                 self.logger.log({"train_loss": epoch_train_loss,
                                  "val_loss": epoch_valid_loss,
-                                 "val_mAP_inf": valid_metrics['mAP'][-1]})
+                                 "val_mAP": valid_metrics['mAP']})
 
                 self._save_checkpoint(epoch, self.checkpoint_path)
         
