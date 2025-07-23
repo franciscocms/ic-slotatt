@@ -690,7 +690,7 @@ guide = InvSlotAttentionGuide(resolution = params['resolution'],
                               stage="train"
                               ).to(DEVICE)
 
-run.watch(guide)
+if params["running_type"] == "train": run.watch(guide)
 
 """
 build CSIS class with model & guide
