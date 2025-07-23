@@ -288,12 +288,12 @@ class InvSlotAttentionGuide(nn.Module):
     preds[:, :, 18] = self.sigmoid(preds[:, :, 18].clone())         # real object
 
     if params["running_type"] == "eval":
-      pyro.sample("mask", dist.Bernoulli(preds[:, :, 18]))
-      pyro.sample("size", dist.Categorical(probs=preds[:, :, 3:5]))
-      pyro.sample("mat", dist.Categorical(probs=preds[:, :, 5:7]))
-      pyro.sample("shape", dist.Categorical(probs=preds[:, :, 7:10]))
-      pyro.sample("color", dist.Categorical(probs=preds[:, :, 10:18]))
-      pyro.sample("coords", dist.Normal(preds[:, :, :3] * 3, torch.tensor(0.1)))
+      pyro.sample("mask", dist.Bernoulli(preds[:, :, 18])).expand([params["num_inference_samples"], -1])
+      pyro.sample("size", dist.Categorical(probs=preds[:, :, 3:5])).expand([params["num_inference_samples"], -1])
+      pyro.sample("mat", dist.Categorical(probs=preds[:, :, 5:7])).expand([params["num_inference_samples"], -1])
+      pyro.sample("shape", dist.Categorical(probs=preds[:, :, 7:10])).expand([params["num_inference_samples"], -1])
+      pyro.sample("color", dist.Categorical(probs=preds[:, :, 10:18])).expand([params["num_inference_samples"], -1])
+      pyro.sample("coords", dist.Normal(preds[:, :, :3] * 3, torch.tensor(0.1))).expand([params["num_inference_samples"], -1])
     return preds
 
 
