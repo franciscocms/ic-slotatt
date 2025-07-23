@@ -253,8 +253,9 @@ class InvSlotAttentionGuide(nn.Module):
     self.sigmoid = nn.Sigmoid()
     self.tanh = nn.Tanh()
 
-  def forward(self, img, save_masks=False):
+  def forward(self, observations={"img": torch.zeros(1, 3, 128, 128)}, save_masks=False):
     
+    img = observations["img"]
     img = img.to(DEVICE)
     B, C, H, W = img.shape
 
@@ -784,7 +785,7 @@ elif params["running_type"] == "eval":
 
         assert params["num_inference_samples"] > 1
             
-        posterior = csis.run(img)
+        posterior = csis.run(observations={"img": img})
         prop_traces = posterior.prop_traces[0]
         traces = posterior.exec_traces[0]
         log_wts = posterior.log_weights[0]
