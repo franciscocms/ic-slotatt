@@ -781,7 +781,7 @@ elif params["running_type"] == "eval":
 
         assert params["num_inference_samples"] > 1
             
-        posterior = csis.run(observations={"image": img})
+        posterior = csis.run(img)
         prop_traces = posterior.prop_traces[0]
         traces = posterior.exec_traces[0]
         log_wts = posterior.log_weights[0]
