@@ -386,9 +386,9 @@ class Trainer:
             img, target = img.to(self.device), target.to(self.device)
             preds = self.model(img, save_masks)
             
-            # if save_masks:
-            #    logger.info(f"preds: {preds[0]}")
-            #    logger.info(f"target: {target[0]}")
+            if save_masks:
+              logger.info(f"preds: {preds[0]}")
+              logger.info(f"target: {target[0]}")
             
             #batch_loss, _ = hungarian_loss(preds, target)
             batch_loss, _ = hungarian_loss_inclusive_KL(preds, target)
