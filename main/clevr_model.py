@@ -138,6 +138,11 @@ def sample_clevr_scene(llh_uncertainty):
             theta = pyro.sample(f"pose", dist.Uniform(0., 1.).expand([B, M])) * 360. 
         mat = pyro.sample(f"mat", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([B, M]))
         size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])).expand([B, M]))
+
+        
+        logger.info(shape.shape)
+        logger.info(color.shape)
+        logger.info(mat.shape)
         
         if params['running_type'] == 'eval':
             if shape.dim() > 2: shape = torch.flatten(shape, 0, 1)
@@ -145,6 +150,10 @@ def sample_clevr_scene(llh_uncertainty):
             if theta.dim() > 2: theta = torch.flatten(theta, 0, 1)
             if mat.dim() > 2: mat = torch.flatten(mat, 0, 1)
     
+        logger.info(shape.shape)
+        logger.info(color.shape)
+        logger.info(mat.shape)
+
     shape_mapping_list = {}
     color_mapping_list = {}
     mat_mapping_list = {}
