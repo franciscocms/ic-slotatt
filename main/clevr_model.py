@@ -227,16 +227,20 @@ def sample_clevr_scene(llh_uncertainty):
     
     """ sample the '3d_coords' tensor according to x, y and size """
 
-    x = (x + 3.)/6.
-    y = (y + 3.)/6.
+    if params["running_type"] == "train":
+        x = (x + 3.)/6.
+        y = (y + 3.)/6.
    
     with pyro.poutine.mask(mask=objects_mask):
-        size_to_z = {
-            0: torch.tensor(0.70),
-            1: torch.tensor(0.35)
-        }
-        z = torch.stack([size_to_z[s.item()] for s in size.flatten()]).view(B, M)
-        z = (z + 3.)/6.
+        
+        if params["running_type"] == "train":
+            size_to_z = {
+                0: torch.tensor(0.70),
+                1: torch.tensor(0.35)
+            }
+            z = torch.stack([size_to_z[s.item()] for s in size.flatten()]).view(B, M)
+            z = (z + 3.)/6.
+        
         coords = pyro.sample(f"coords", dist.Normal(torch.cat((x.unsqueeze(-1), y.unsqueeze(-1), z.unsqueeze(-1)), dim=-1),
                                                     llh_uncertainty*0.1))
     
