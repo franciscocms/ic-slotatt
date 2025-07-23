@@ -47,9 +47,10 @@ set image and checkpoints saving paths
 """
 
 # start a new wandb run to track this script
-run = wandb.init(project="ICSA-CLEVR",
-                  name=f"{params['jobID']}"
-                  )
+if params["running_type"] == "train":
+  run = wandb.init(project="ICSA-CLEVR",
+                    name=f"{params['jobID']}"
+                    )
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 TRAINING_FROM_SCRATCH = params["training_from_scratch"]
@@ -743,10 +744,11 @@ elif params["running_type"] == "eval":
 
   model = clevr_gen_model
   guide = InvSlotAttentionGuide(resolution = params['resolution'],
-                        num_iterations = 3,
-                        hid_dim = params["slot_dim"],
-                        stage="eval"
-                        ).to(DEVICE)
+                                num_slots = 10,
+                                num_iterations = 3,
+                                slot_dim = params["slot_dim"],
+                                stage="eval"
+                                ).to(DEVICE)
   
   checkpoint_path = os.path.join(main_dir, "inference", f"checkpoint-{params['jobID']}")
   epoch_to_load = 190
@@ -797,4 +799,4 @@ elif params["running_type"] == "eval":
         logger.info(aux_mAP)
 
 
-wandb.finish()
+if params["running_type"] == "train": wandb.finish()
