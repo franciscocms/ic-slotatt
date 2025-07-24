@@ -402,8 +402,8 @@ class Trainer:
               logger.info(f"preds: {preds[0]}")
               logger.info(f"target: {target[0]}")
             
-            #batch_loss, _ = hungarian_loss(preds, target)
-            batch_loss, _ = hungarian_loss_inclusive_KL(preds, target)
+            batch_loss, _ = hungarian_loss(preds, target)
+            #batch_loss, _ = hungarian_loss_inclusive_KL(preds, target)
             #batch_loss = 0.5*hungarian_loss_inclusive_KL(preds, target)[0] + 0.5*hungarian_loss(preds, target)[0]
 
             self.optimizer.zero_grad()
@@ -429,8 +429,8 @@ class Trainer:
             for img, target in self.validloader:
                 img, target = img.to(self.device), target.to(self.device)
                 preds = self.model(img)
-                #batch_loss, _ = hungarian_loss(preds, target)
-                batch_loss, _ = hungarian_loss_inclusive_KL(preds, target)
+                batch_loss, _ = hungarian_loss(preds, target)
+                #batch_loss, _ = hungarian_loss_inclusive_KL(preds, target)
                 #batch_loss = 0.5*hungarian_loss_inclusive_KL(preds, target)[0] + 0.5*hungarian_loss(preds, target)[0]
 
                 for t in threshold: 
@@ -732,7 +732,7 @@ val_dataloader = DataLoader(val_data, batch_size = 512,
                               shuffle=False, num_workers=8, generator=torch.Generator(device='cuda'))
 
 
-if params["running_type"] == "train":
+if params["running_type"] == "train":  
   trainer = Trainer(guide, {"train": train_dataloader, "validation": val_dataloader}, params, run, log_rate=10)
   trainer.train(root_folder)
   logger.info("\ntraining ended...")
@@ -807,7 +807,7 @@ elif params["running_type"] == "eval":
             
         n_test_samples += 1
 
-        if n_test_samples % 100 == 0:
+        if n_test_samples == 1 or n_test_samples % 100 == 0:
           logger.info(f"{n_test_samples} evaluated...")
           logger.info(f"current stats:")
           aux_mAP = {k: v/n_test_samples for k, v in ap.items()}
