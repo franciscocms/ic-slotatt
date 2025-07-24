@@ -396,7 +396,7 @@ class Trainer:
         self.model.train() 
         for img, target in self.trainloader:
             img, target = img.to(self.device), target.to(self.device)
-            preds = self.model(img, save_masks)
+            preds = self.model(observations={"image": img}, save_masks=save_masks)
             
             if save_masks:
               logger.info(f"preds: {preds[0]}")
@@ -428,7 +428,7 @@ class Trainer:
         with torch.no_grad(): 
             for img, target in self.validloader:
                 img, target = img.to(self.device), target.to(self.device)
-                preds = self.model(img)
+                preds = self.model(observations={"image": img})
                 #batch_loss, _ = hungarian_loss(preds, target)
                 batch_loss, _ = hungarian_loss_inclusive_KL(preds, target)
                 #batch_loss = 0.5*hungarian_loss_inclusive_KL(preds, target)[0] + 0.5*hungarian_loss(preds, target)[0]
