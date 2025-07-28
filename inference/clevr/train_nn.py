@@ -58,7 +58,7 @@ TRAINING_FROM_SCRATCH = params["training_from_scratch"]
 logger.info(DEVICE)
 
 def visualize(x):
-   return ((x/2. + 0.5) * 255.).astype(int)
+   return int((x/2. + 0.5) * 255.)
 
 class SlotAttention(nn.Module):
   def __init__(self, num_slots, dim = 64, iters = 3, eps = 1e-8, hidden_dim = 128):
