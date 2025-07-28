@@ -596,6 +596,10 @@ def average_precision_clevr(pred, attributes, distance_threshold):
   detection_set = set()
 
   for detection_id in range(sorted_predictions.shape[0]):
+
+    logger.info(f"\nsearching for matches for predicted object {detection_id}...")
+
+
     # Extract the current prediction.
     current_pred = sorted_predictions[detection_id, :]
     # Find which image the prediction belongs to. Get the unsorted index from
@@ -617,10 +621,7 @@ def average_precision_clevr(pred, attributes, distance_threshold):
 
     # Loop through all objects in the ground-truth image to check for hits.
     for target_object_id in range(gt_image.shape[0]):
-      
-      logger.info(f"\nsearching for matches for {target_object_id}...")
-      
-      
+    
       target_object = gt_image[target_object_id, :]
       # Unpack the targets taking the argmax on the discrete attributes.
       (target_coords, target_object_size, target_material, target_shape,
