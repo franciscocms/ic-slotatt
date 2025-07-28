@@ -490,7 +490,7 @@ colors = ['gray', 'blue', 'brown', 'yellow', 'red', 'green', 'purple', 'cyan']
 
 
 def list2dict(inpt_list):
-    return {inpt_list[i]: i for i in range(len(inpt_list))}
+  return {inpt_list[i]: i for i in range(len(inpt_list))}
 
 
 size2id = list2dict(sizes)
@@ -647,6 +647,11 @@ def average_precision_clevr(pred, attributes, distance_threshold):
       if best_id is not None:
         if (original_image_idx, best_id) not in detection_set:
           true_positives[detection_id] = 1
+          
+          logger.info(f"target attr: {target_attr}")
+          logger.info(f"preds attr: {pred_attr}")
+
+
           detection_set.add((original_image_idx, best_id))
         else:
           false_positives[detection_id] = 1
