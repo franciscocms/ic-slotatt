@@ -19,13 +19,13 @@ def process_preds(preds):
     # preds must have shape (max_objects, n_features)
     assert len(preds.shape) == 2
 
-    shape = torch.argmax(preds[:, :3], dim=-1)
-    color = torch.argmax(preds[:, 3:11], dim=-1)
-    size = torch.argmax(preds[:, 11:13], dim=-1)
-    mat = torch.argmax(preds[:, 13:15], dim=-1)
-    x, y = transform_coords(preds[:, 15]), transform_coords(preds[:, 16])
-    real_obj = preds[:, 17]
-    return shape, size, color, mat, x, y, real_obj
+    coords = preds[:3]
+    object_size = torch.argmax(preds[3:5])
+    material = torch.argmax(preds[5:7])
+    shape = torch.argmax(preds[7:10])
+    color = torch.argmax(preds[10:18])
+    real_obj = preds[18]
+    return coords, object_size, material, shape, color, real_obj
 
 def distance(loc1, loc2):
     return torch.sqrt(torch.square(loc1[0]-loc2[0]) + torch.square(loc1[1]-loc2[1]))
@@ -45,9 +45,9 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
     #     logger.info(f"targets: {targets}")
 
     #logger.info(f"\npredictions matrix: ")
-    shape, size, color, mat, x, y, pred_real_obj = process_preds(preds)
+    coords, size, mat, shape, color, pred_real_obj = process_preds(preds)
     #logger.info(f"\ntarget matrix: ")
-    target_shape, target_size, target_color, target_mat, target_x, target_y, target_real_obj = process_preds(targets)
+    target_coords, target_size, target_mat, target_shape, target_color, target_real_obj = process_preds(targets)
 
     # shape, size, ...  has shape (17)
 
@@ -78,7 +78,7 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
             for j in range(max_objects):
                 if target_real_obj[j]:
                     if [shape[o], size[o], color[o], mat[o]] == [target_shape[j], target_size[j], target_color[j], target_mat[j]]: 
-                        dist = distance((x[o], y[o]), (target_x[j], target_y[j]))
+                        dist = np.linalg.norm((target_coords.numpy() - coords.numpy()) * 3.)
                         if dist < best_distance and j not in found_objects:
                             #logger.info(f'found at best distance {dist}')
                             found = True
@@ -89,9 +89,11 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
                             #     logger.info(f"object {j} found to have the best distance {best_distance} matching with object {o}")
             
             if found:
-                if distance((x[o], y[o]), (target_x[found_idx], target_y[found_idx])) <= threshold_dist or threshold_dist == -1:
+                if dist <= threshold_dist or threshold_dist == -1:
                     found_objects.append(found_idx)
-                    # if threshold_dist == -1: logger.info("found match below distance threshold!")
+                    
+                    if threshold_dist == -1: logger.info(f"found match between pred object {o} and real object {j} below distance threshold!")
+                    
                     tp += 1
             else: fp += 1
 

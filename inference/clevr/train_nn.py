@@ -28,6 +28,7 @@ from main.setup import params
 from main.modifiedCSIS import CSIS
 from utils.distributions import Empirical
 from utils.guide import minimize_entropy_of_sinkhorn, sinkhorn
+from eval_utils import compute_AP
 
 main_dir = os.path.abspath(__file__+'/../../../')
 
@@ -774,7 +775,8 @@ elif params["running_type"] == "eval":
   optimiser = pyro.optim.Adam({'lr': 1e-4})
   csis = CSIS(model, guide, optimiser, training_batch_size=256, num_inference_samples=params["num_inference_samples"])
 
-  threshold = [-1., 1., 0.5, 0.25, 0.125, 0.0625]
+  #threshold = [-1., 1., 0.5, 0.25, 0.125, 0.0625]
+  threshold = [-1.]
   ap = {k: 0 for k in threshold}
 
   def process_preds(trace, id):
@@ -836,16 +838,13 @@ elif params["running_type"] == "eval":
               plt.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
               plt.savefig(os.path.join(plots_dir, f"trace_{n_test_samples}_{i}.png"))
               plt.close()
-            
-            
 
-       
         preds = process_preds(prop_traces, resampling_id)
-        if len(preds.shape) == 2: preds = preds.unsqueeze(0)
+        # if len(preds.shape) == 2: preds = preds.unsqueeze(0)
         for t in threshold: 
-          ap[t] += average_precision_clevr(preds.detach().cpu().numpy(),
-                                           target.detach().cpu().numpy(),
-                                           t)
+          ap[t] += compute_AP(preds.detach().cpu(),
+                              target.detach().cpu(),
+                              t)
       
         if n_test_samples == 1 or n_test_samples % 100 == 0:
           logger.info(f"{n_test_samples} evaluated...")
