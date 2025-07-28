@@ -20,11 +20,11 @@ def process_preds(preds):
     assert len(preds.shape) == 2
 
     coords = preds[:3]
-    object_size = torch.argmax(preds[3:5])
-    material = torch.argmax(preds[5:7])
-    shape = torch.argmax(preds[7:10])
-    color = torch.argmax(preds[10:18])
-    real_obj = preds[18]
+    object_size = torch.argmax(preds[:, 3:5], dim=-1)
+    material = torch.argmax(preds[:, 5:7], dim=-1)
+    shape = torch.argmax(preds[:, 7:10], dim=-1)
+    color = torch.argmax(preds[:, 10:18], dim=-1)
+    real_obj = preds[:, 18]
     return coords, object_size, material, shape, color, real_obj
 
 def distance(loc1, loc2):
@@ -44,6 +44,9 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
     #     logger.info(f"preds: {preds}")
     #     logger.info(f"targets: {targets}")
 
+    logger.info(preds.shape)
+    logger.info(targets.shape)
+
     #logger.info(f"\npredictions matrix: ")
     coords, size, mat, shape, color, pred_real_obj = process_preds(preds)
     #logger.info(f"\ntarget matrix: ")
@@ -51,7 +54,7 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
 
     # shape, size, ...  has shape (17)
 
-    max_objects = shape.shape[0]
+    max_objects = coords.shape[0]
     
     tp = np.zeros(1)
     fp = np.zeros(1)
