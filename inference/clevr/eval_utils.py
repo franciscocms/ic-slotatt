@@ -66,6 +66,9 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
     
     tp = np.zeros(1)
     fp = np.zeros(1)
+
+    logger.info(f"\npred real flags: {pred_real_obj}\n")
+
     
     found_objects = []
     for o in range(max_objects):
