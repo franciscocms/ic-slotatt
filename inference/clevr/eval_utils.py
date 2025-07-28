@@ -44,8 +44,8 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
     #     logger.info(f"preds: {preds}")
     #     logger.info(f"targets: {targets}")
 
-    logger.info(preds.shape)
-    logger.info(targets.shape)
+    assert preds.shape == targets.shape
+    assert preds.shape[0] != 1
 
     #logger.info(f"\npredictions matrix: ")
     coords, size, mat, shape, color, pred_real_obj = process_preds(preds)

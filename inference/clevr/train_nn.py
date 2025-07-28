@@ -840,7 +840,7 @@ elif params["running_type"] == "eval":
               plt.close()
 
         preds = process_preds(prop_traces, resampling_id)
-        # if len(preds.shape) == 2: preds = preds.unsqueeze(0)
+        target = target.squeeze(0)
         for t in threshold: 
           ap[t] += compute_AP(preds.detach().cpu(),
                               target.detach().cpu(),
