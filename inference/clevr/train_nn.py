@@ -807,6 +807,10 @@ elif params["running_type"] == "eval":
         else: 
             shutil.rmtree(plots_dir)
             os.mkdir(plots_dir)
+        
+        plt.imshow(visualize(img).permute(1, 2, 0).cpu().numpy())
+        plt.savefig(os.path.join(plots_dir, f"image_{n_test_samples}.png"))
+        plt.close()
 
         for name, site in traces.nodes.items():                    
           # if site["type"] == "sample":
@@ -815,9 +819,11 @@ elif params["running_type"] == "eval":
           if name == 'image':
             for i in range(site["fn"].mean.shape[0]):
               output_image = site["fn"].mean[i]
-              plt.imshow(output_image.permute(1, 2, 0).cpu().numpy())
+              plt.imshow(visualize(output_image).permute(1, 2, 0).cpu().numpy())
               plt.savefig(os.path.join(plots_dir, f"trace_{n_test_samples}_{i}.png"))
               plt.close()
+            
+            
 
        
         preds = process_preds(prop_traces, resampling_id)
