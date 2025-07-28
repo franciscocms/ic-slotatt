@@ -19,7 +19,7 @@ def process_preds(preds):
     # preds must have shape (max_objects, n_features)
     assert len(preds.shape) == 2
 
-    coords = preds[:3]
+    coords = preds[:, :3]
     object_size = torch.argmax(preds[:, 3:5], dim=-1)
     material = torch.argmax(preds[:, 5:7], dim=-1)
     shape = torch.argmax(preds[:, 7:10], dim=-1)
@@ -66,9 +66,6 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
     
     tp = np.zeros(1)
     fp = np.zeros(1)
-
-    logger.info(f"\npred real flags: {pred_real_obj}\n")
-
     
     found_objects = []
     for o in range(max_objects):
@@ -92,9 +89,7 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
             best_distance = 1000
             
             for j in range(max_objects):
-                logger.info(f"r{j}")
                 if target_real_obj[j]:
-                    logger.info(f"is it target object {j}??")
                     if [shape[o], size[o], color[o], mat[o]] == [target_shape[j], target_size[j], target_color[j], target_mat[j]]: 
                         dist = np.linalg.norm((target_coords.numpy() - coords.numpy()) * 3.)
                         if dist < best_distance and j not in found_objects:
@@ -102,8 +97,6 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
                             found = True
                             best_distance = dist
                             found_idx = j # stores the best match between an object and all possible targets
-
-                            logger.info(f"YES!!")
 
                             # if threshold_dist == -1:
                             #     logger.info(f"object {j} found to have the best distance {best_distance} matching with object {o}")
@@ -114,8 +107,8 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
                     
                     if threshold_dist == -1: logger.info(f"found match between pred object {o} and real object {found_idx} below distance threshold!")
 
-                    logger.info(f"PREDS: {[shapes[shape[o]], sizes[size[o]], colors[color[o]], materials[mat[o]]]}")
-                    logger.info(f"TARGET: {[shapes[target_shape[found_idx]], sizes[target_size[found_idx]], colors[target_color[found_idx]], materials[target_mat[found_idx]]]}")
+                    #logger.info(f"PREDS: {[shapes[shape[o]], sizes[size[o]], colors[color[o]], materials[mat[o]]]}")
+                    #logger.info(f"TARGET: {[shapes[target_shape[found_idx]], sizes[target_size[found_idx]], colors[target_color[found_idx]], materials[target_mat[found_idx]]]}")
                     
                     tp += 1
             else: fp += 1
