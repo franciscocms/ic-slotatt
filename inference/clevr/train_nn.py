@@ -790,6 +790,8 @@ elif params["running_type"] == "eval":
         img = img.to(DEVICE)        
 
         assert params["num_inference_samples"] > 1
+
+        n_test_samples += 1
             
         posterior = csis.run(observations={"image": img})
         prop_traces = posterior.prop_traces[0]
@@ -798,20 +800,41 @@ elif params["running_type"] == "eval":
         resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
         resampling_id = resampling().item()
 
+        logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
+
+        plots_dir = os.path.abspath("set_prediction_plots")
+        if not os.path.isdir(plots_dir): os.mkdir(plots_dir)
+        else: 
+            shutil.rmtree(plots_dir)
+            os.mkdir(plots_dir)
+
+        for name, site in traces.nodes.items():                    
+          # if site["type"] == "sample":
+          #     logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
+          
+          if name == 'image':
+            for i in range(site["fn"].mean.shape[0]):
+              output_image = site["fn"].mean[i]
+              plt.imshow(output_image.permute(1, 2, 0).cpu().numpy())
+              plt.savefig(os.path.join(plots_dir, f"trace_{n_test_samples}_{i}.png"))
+              plt.close()
+
+       
         preds = process_preds(prop_traces, resampling_id)
         if len(preds.shape) == 2: preds = preds.unsqueeze(0)
         for t in threshold: 
           ap[t] += average_precision_clevr(preds.detach().cpu().numpy(),
                                            target.detach().cpu().numpy(),
                                            t)
-            
-        n_test_samples += 1
-
+      
         if n_test_samples == 1 or n_test_samples % 100 == 0:
           logger.info(f"{n_test_samples} evaluated...")
           logger.info(f"current stats:")
           aux_mAP = {k: v/n_test_samples for k, v in ap.items()}
           logger.info(aux_mAP)
+        
+        if n_test_samples == 1:
+          break
 
 
 if params["running_type"] == "train": wandb.finish()
