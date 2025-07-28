@@ -72,7 +72,7 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
     
     found_objects = []
     for o in range(max_objects):
-        logger.info(o)
+        logger.info(f"p{o}")
         if pred_real_obj[o]:
             logger.info(pred_real_obj[o])
 
@@ -92,6 +92,7 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
             best_distance = 1000
             
             for j in range(max_objects):
+                logger.info(f"r{j}")
                 if target_real_obj[j]:
                     logger.info(f"is it target object {j}??")
                     if [shape[o], size[o], color[o], mat[o]] == [target_shape[j], target_size[j], target_color[j], target_mat[j]]: 
