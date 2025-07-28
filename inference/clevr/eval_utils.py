@@ -69,7 +69,6 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
     
     found_objects = []
     for o in range(max_objects):
-        logger.info(f"p{o}")
         if pred_real_obj[o]:
             
             #logger.info(shape[o])
