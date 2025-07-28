@@ -770,7 +770,7 @@ elif params["running_type"] == "eval":
   epoch_to_load = 999
   guide.load_state_dict(torch.load(os.path.join(checkpoint_path, f"guide_{epoch_to_load}.pth")))
 
-  logger.info(f"\Inference network from epoch {epoch_to_load} successfully loaded...")
+  logger.info(f"\nInference network from epoch {epoch_to_load} successfully loaded...")
 
   optimiser = pyro.optim.Adam({'lr': 1e-4})
   csis = CSIS(model, guide, optimiser, training_batch_size=256, num_inference_samples=params["num_inference_samples"])
