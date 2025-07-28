@@ -100,10 +100,10 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
                 if dist <= threshold_dist or threshold_dist == -1:
                     found_objects.append(found_idx)
                     
-                    if threshold_dist == -1: logger.info(f"found match between pred object {o} and real object {j} below distance threshold!")
+                    if threshold_dist == -1: logger.info(f"found match between pred object {o} and real object {found_idx} below distance threshold!")
 
-                    logger.info(f"PREDS: {[shapes[shape[o]], [size[o]], colors[color[o]], materials[mat[o]]]}")
-                    logger.info(f"TARGET: {[shapes[target_shape[j]], sizes[target_size[j]], colors[target_color[j]], materials[target_mat[j]]]}")
+                    logger.info(f"PREDS: {[shapes[shape[o]], sizes[size[o]], colors[color[o]], materials[mat[o]]]}")
+                    logger.info(f"TARGET: {[shapes[target_shape[found_idx]], sizes[target_size[found_idx]], colors[target_color[found_idx]], materials[target_mat[found_idx]]]}")
                     
                     tp += 1
             else: fp += 1
