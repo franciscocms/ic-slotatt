@@ -617,6 +617,10 @@ def average_precision_clevr(pred, attributes, distance_threshold):
 
     # Loop through all objects in the ground-truth image to check for hits.
     for target_object_id in range(gt_image.shape[0]):
+      
+      logger.info(f"\nsearching for matches for {target_object_id}...")
+      
+      
       target_object = gt_image[target_object_id, :]
       # Unpack the targets taking the argmax on the discrete attributes.
       (target_coords, target_object_size, target_material, target_shape,
