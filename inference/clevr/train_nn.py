@@ -786,11 +786,11 @@ elif params["running_type"] == "eval":
     preds = torch.zeros(max_obj, features_dim)
     for name, site in trace.nodes.items():
         if site['type'] == 'sample':
-            if name == 'shape': preds[:, 7:10] = F.one_hot(site['value'][id], len(shapes))
-            if name == 'color': preds[:, 10:18] = F.one_hot(site['value'][id], len(colors))
+            if name == 'coords': preds[:, :3] = site['value'][id] # [-3., 3.]
             if name == 'size': preds[:, 3:5] = F.one_hot(site['value'][id], len(sizes))
             if name == 'mat': preds[:, 5:7] = F.one_hot(site['value'][id], len(materials))
-            if name == 'coords': preds[:, :3] = site['value'][id] # [-3., 3.]
+            if name == 'shape': preds[:, 7:10] = F.one_hot(site['value'][id], len(shapes))
+            if name == 'color': preds[:, 10:18] = F.one_hot(site['value'][id], len(colors))
             if name == 'mask': preds[:, 18] = site['value'][id]
     return preds
   
@@ -840,6 +840,10 @@ elif params["running_type"] == "eval":
               plt.close()
 
         preds = process_preds(prop_traces, resampling_id)
+        
+        logger.info(f"target: {target}")
+        logger.info(f"preds for trace {resampling_id}: {preds}")
+
         target = target.squeeze(0)
         for t in threshold: 
           ap[t] += compute_AP(preds.detach().cpu(),
