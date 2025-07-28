@@ -52,6 +52,9 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
     assert preds.shape == targets.shape
     assert preds.shape[0] != 1
 
+    logger.info(preds.shape)
+    logger.info(targets.shape)
+
     #logger.info(f"\npredictions matrix: ")
     coords, size, mat, shape, color, pred_real_obj = process_preds(preds)
     #logger.info(f"\ntarget matrix: ")
@@ -66,7 +69,7 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
     
     found_objects = []
     for o in range(max_objects):
-        if torch.round(pred_real_obj[o]):
+        if pred_real_obj[o]:
 
             logger.info(f'\ntrying to find the best match for predicted object {o}...')
             
