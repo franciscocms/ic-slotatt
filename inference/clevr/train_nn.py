@@ -775,8 +775,7 @@ elif params["running_type"] == "eval":
   optimiser = pyro.optim.Adam({'lr': 1e-4})
   csis = CSIS(model, guide, optimiser, training_batch_size=256, num_inference_samples=params["num_inference_samples"])
 
-  #threshold = [-1., 1., 0.5, 0.25, 0.125, 0.0625]
-  threshold = [-1.]
+  threshold = [-1., 1., 0.5, 0.25, 0.125, 0.0625]
   ap = {k: 0 for k in threshold}
 
   def process_preds(trace, id):
@@ -816,33 +815,33 @@ elif params["running_type"] == "eval":
         resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
         resampling_id = resampling().item()
 
-        logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
+        # logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
 
-        plots_dir = os.path.abspath("set_prediction_plots")
-        if not os.path.isdir(plots_dir): os.mkdir(plots_dir)
-        else: 
-            shutil.rmtree(plots_dir)
-            os.mkdir(plots_dir)
+        # plots_dir = os.path.abspath("set_prediction_plots")
+        # if not os.path.isdir(plots_dir): os.mkdir(plots_dir)
+        # else: 
+        #     shutil.rmtree(plots_dir)
+        #     os.mkdir(plots_dir)
         
-        plt.imshow(visualize(img[0].permute(1, 2, 0).cpu().numpy()))
-        plt.savefig(os.path.join(plots_dir, f"image_{n_test_samples}.png"))
-        plt.close()
+        # plt.imshow(visualize(img[0].permute(1, 2, 0).cpu().numpy()))
+        # plt.savefig(os.path.join(plots_dir, f"image_{n_test_samples}.png"))
+        # plt.close()
 
-        for name, site in traces.nodes.items():                    
-          # if site["type"] == "sample":
-          #     logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
+        # for name, site in traces.nodes.items():                    
+        #   # if site["type"] == "sample":
+        #   #     logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
           
-          if name == 'image':
-            for i in range(site["fn"].mean.shape[0]):
-              output_image = site["fn"].mean[i]
-              plt.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
-              plt.savefig(os.path.join(plots_dir, f"trace_{n_test_samples}_{i}.png"))
-              plt.close()
+        #   if name == 'image':
+        #     for i in range(site["fn"].mean.shape[0]):
+        #       output_image = site["fn"].mean[i]
+        #       plt.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
+        #       plt.savefig(os.path.join(plots_dir, f"trace_{n_test_samples}_{i}.png"))
+        #       plt.close()
 
         preds = process_preds(prop_traces, resampling_id)
         
-        logger.info(f"target: {target}")
-        logger.info(f"preds for trace {resampling_id}: {preds}")
+        # logger.info(f"target: {target}")
+        # logger.info(f"preds for trace {resampling_id}: {preds}")
 
         target = target.squeeze(0)
         for t in threshold: 
@@ -856,7 +855,7 @@ elif params["running_type"] == "eval":
           aux_mAP = {k: v/n_test_samples for k, v in ap.items()}
           logger.info(aux_mAP)
         
-        if n_test_samples == 1:
+        if n_test_samples == 200:
           break
 
 
