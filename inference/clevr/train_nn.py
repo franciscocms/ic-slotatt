@@ -808,7 +808,7 @@ elif params["running_type"] == "eval":
             shutil.rmtree(plots_dir)
             os.mkdir(plots_dir)
         
-        plt.imshow(visualize(img.permute(1, 2, 0).cpu().numpy()))
+        plt.imshow(visualize(img[0].permute(1, 2, 0).cpu().numpy()))
         plt.savefig(os.path.join(plots_dir, f"image_{n_test_samples}.png"))
         plt.close()
 
