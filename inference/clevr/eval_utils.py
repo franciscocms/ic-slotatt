@@ -36,6 +36,11 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
     adapted from 'https://github.com/google-research/google-research/blob/master/slot_attention/utils.py'
     """
 
+    sizes = ['small', 'large']
+    materials = ['rubber', 'metal']
+    shapes = ['cube', 'sphere', 'cylinder']
+    colors = ['gray', 'blue', 'brown', 'yellow', 'red', 'green', 'purple', 'cyan']
+
     # preds have shape (max_objects, n_features)
     # targets have shape (max_objects, n_features)
 
@@ -96,6 +101,9 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
                     found_objects.append(found_idx)
                     
                     if threshold_dist == -1: logger.info(f"found match between pred object {o} and real object {j} below distance threshold!")
+
+                    logger.info(f"PREDS: {[shapes[shape[o]], [size[o]], colors[color[o]], materials[mat[o]]]}")
+                    logger.info(f"TARGET: {[shapes[target_shape[j]], sizes[target_size[j]], colors[target_color[j]], materials[target_mat[j]]]}")
                     
                     tp += 1
             else: fp += 1
