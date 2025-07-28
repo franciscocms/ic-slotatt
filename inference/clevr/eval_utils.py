@@ -68,7 +68,7 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
     for o in range(max_objects):
         if torch.round(pred_real_obj[o]):
 
-            #logger.info(f'{o} - {pred_real_obj[o]}')
+            logger.info(f'\ntrying to find the best match for predicted object {o}...')
             
             #logger.info(shape[o])
             #logger.info(target_shape[0])
@@ -85,6 +85,7 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
             
             for j in range(max_objects):
                 if target_real_obj[j]:
+                    logger.info(f"is it target object {j}??")
                     if [shape[o], size[o], color[o], mat[o]] == [target_shape[j], target_size[j], target_color[j], target_mat[j]]: 
                         dist = np.linalg.norm((target_coords.numpy() - coords.numpy()) * 3.)
                         if dist < best_distance and j not in found_objects:
@@ -92,6 +93,8 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
                             found = True
                             best_distance = dist
                             found_idx = j # stores the best match between an object and all possible targets
+
+                            logger.info(f"YES!!")
 
                             # if threshold_dist == -1:
                             #     logger.info(f"object {j} found to have the best distance {best_distance} matching with object {o}")
