@@ -599,7 +599,6 @@ def average_precision_clevr(pred, attributes, distance_threshold):
 
     logger.info(f"\nsearching for matches for predicted object {detection_id}...")
 
-
     # Extract the current prediction.
     current_pred = sorted_predictions[detection_id, :]
     # Find which image the prediction belongs to. Get the unsorted index from
@@ -621,6 +620,8 @@ def average_precision_clevr(pred, attributes, distance_threshold):
 
     # Loop through all objects in the ground-truth image to check for hits.
     for target_object_id in range(gt_image.shape[0]):
+
+      logger.info(f"is it target object {target_object_id}?")
     
       target_object = gt_image[target_object_id, :]
       # Unpack the targets taking the argmax on the discrete attributes.
@@ -646,6 +647,7 @@ def average_precision_clevr(pred, attributes, distance_threshold):
           if distance < best_distance:
             best_distance = distance
             best_id = target_object_id
+    
     if best_distance < distance_threshold or distance_threshold == -1:
       # We have detected an object correctly within the distance confidence.
       # If this object was not detected before it's a true positive.
@@ -653,11 +655,13 @@ def average_precision_clevr(pred, attributes, distance_threshold):
         if (original_image_idx, best_id) not in detection_set:
           true_positives[detection_id] = 1
           
+          logger.info(f"YES!")
           logger.info(f"target attr: {target_attr}")
           logger.info(f"preds attr: {pred_attr}")
-
-
           detection_set.add((original_image_idx, best_id))
+          logger.info(f"adding the match pred/target {detection_id}/{target_object_id}")
+          logger.info(f"detection set so far: {detection_set}")
+
         else:
           false_positives[detection_id] = 1
       else:
