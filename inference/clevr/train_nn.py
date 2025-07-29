@@ -784,6 +784,8 @@ elif params["running_type"] == "eval":
         img = img.to(DEVICE) 
         preds = guide(observations={"image": img})
 
+        n_test_samples += 1
+
         target = target.squeeze(0)
         preds = preds.squeeze(0)
 
