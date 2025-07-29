@@ -785,9 +785,7 @@ elif params["running_type"] == "eval":
         preds = guide(observations={"image": img})
 
         target = target.squeeze(0)
-
-        logger.info(preds.shape)
-        logger.info(target.shape)
+        preds = preds.squeeze(0)
 
         for t in threshold: 
           ap[t] += compute_AP(preds.detach().cpu(),
