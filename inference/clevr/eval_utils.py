@@ -79,7 +79,7 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
             for j in range(max_objects):
                 if target_real_obj[j]:
                     if [shape[o], size[o], color[o], mat[o]] == [target_shape[j], target_size[j], target_color[j], target_mat[j]]: 
-                        dist = np.linalg.norm((target_coords.numpy() - coords.numpy()) * 3.)
+                        dist = np.linalg.norm((target_coords[j].numpy() - coords[o].numpy()) * 3.)
                         if dist < best_distance and j not in found_objects:
                             #logger.info(f'found at best distance {dist}')
                             found = True
@@ -88,6 +88,7 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
 
                             # if threshold_dist == -1:
                             logger.info(f"object {j} found to have the best distance {best_distance} matching with object {o}")
+                            logger.info(f"object {o} coords: {coords[o]} - object {j} coords: {target_coords[j]}\n")
             
             if found:
                 if dist <= threshold_dist or threshold_dist == -1:
