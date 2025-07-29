@@ -23,7 +23,7 @@ params = {
     "print_distributions": False,
     "print_importance_sampling": False,
     "bernoulli_inf_reduction": 'none',
-    "num_inference_samples": 10, # 20 for clevr sp experiments
+    "num_inference_samples": 1, # 20 for clevr sp experiments
     "N_proposal" : "normal", # mixture
     "loc_proposal" : "wo_net",
     "loc_proposal_std": 0.05, 
@@ -42,7 +42,7 @@ params = {
     "softmax_temperature": 1.0,
     "strided_convs": True,
     "check_attn": True,
-    "jobID": 102, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects (95 for 10 slots/objects)
+    "jobID": 101, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects (95 for 10 slots/objects)
     "mesh_iters": 4,
     "mesh_lr": 5, # 76: 3, 77: 5
     "logprob_coeff": 1.,

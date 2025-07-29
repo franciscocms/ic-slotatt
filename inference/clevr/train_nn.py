@@ -754,94 +754,35 @@ if params["running_type"] == "train":
 
 elif params["running_type"] == "eval":
 
-  """ 
-  eval mode in case of choosing importance sampling as inference using the trained inference network for proposals
-  """
-
-  model = clevr_gen_model
   guide = InvSlotAttentionGuide(resolution = params['resolution'],
-                                num_slots = 10,
-                                num_iterations = 3,
-                                slot_dim = params["slot_dim"],
-                                stage="eval"
-                                ).to(DEVICE)
-  
+                                  num_slots = 10,
+                                  num_iterations = 3,
+                                  slot_dim = params["slot_dim"],
+                                  stage="eval"
+                                  ).to(DEVICE)
+    
   checkpoint_path = os.path.join(main_dir, "inference", f"checkpoint-{params['jobID']}")
   epoch_to_load = 999
   guide.load_state_dict(torch.load(os.path.join(checkpoint_path, f"guide_{epoch_to_load}.pth")))
 
   logger.info(f"\nInference network from epoch {epoch_to_load} successfully loaded...")
 
-  optimiser = pyro.optim.Adam({'lr': 1e-4})
-  csis = CSIS(model, guide, optimiser, training_batch_size=256, num_inference_samples=params["num_inference_samples"])
-
   threshold = [-1., 1., 0.5, 0.25, 0.125, 0.0625]
   ap = {k: 0 for k in threshold}
 
-  def process_preds(trace, id):
-    max_obj = max(params['max_objects'], params['num_slots'])
-    
-    features_dim = 19
-    preds = torch.zeros(max_obj, features_dim)
-    for name, site in trace.nodes.items():
-        if site['type'] == 'sample':
-            if name == 'coords': preds[:, :3] = site['value'][id] # [-3., 3.]
-            if name == 'size': preds[:, 3:5] = F.one_hot(site['value'][id], len(sizes))
-            if name == 'mat': preds[:, 5:7] = F.one_hot(site['value'][id], len(materials))
-            if name == 'shape': preds[:, 7:10] = F.one_hot(site['value'][id], len(shapes))
-            if name == 'color': preds[:, 10:18] = F.one_hot(site['value'][id], len(colors))
-            if name == 'mask': preds[:, 18] = site['value'][id]
-    return preds
-  
   val_dataloader = DataLoader(val_data, batch_size = 1,
-                              shuffle=False, num_workers=8, generator=torch.Generator(device='cuda'))
+                                shuffle=False, num_workers=8, generator=torch.Generator(device='cuda'))
 
-  
+    
   logger.info(f"\nStarting inference with {params['num_inference_samples']} particles...\n")
-  
-  n_test_samples = 0
-  with torch.no_grad():
-    for img, target in val_dataloader:
-        img = img.to(DEVICE)        
 
-        assert params["num_inference_samples"] > 1
-
-        n_test_samples += 1
-            
-        posterior = csis.run(observations={"image": img})
-        prop_traces = posterior.prop_traces[0]
-        traces = posterior.exec_traces[0]
-        log_wts = posterior.log_weights[0]
-        resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
-        resampling_id = resampling().item()
-
-        # logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
-
-        # plots_dir = os.path.abspath("set_prediction_plots")
-        # if not os.path.isdir(plots_dir): os.mkdir(plots_dir)
-        # else: 
-        #     shutil.rmtree(plots_dir)
-        #     os.mkdir(plots_dir)
-        
-        # plt.imshow(visualize(img[0].permute(1, 2, 0).cpu().numpy()))
-        # plt.savefig(os.path.join(plots_dir, f"image_{n_test_samples}.png"))
-        # plt.close()
-
-        # for name, site in traces.nodes.items():                    
-        #   # if site["type"] == "sample":
-        #   #     logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
-          
-        #   if name == 'image':
-        #     for i in range(site["fn"].mean.shape[0]):
-        #       output_image = site["fn"].mean[i]
-        #       plt.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
-        #       plt.savefig(os.path.join(plots_dir, f"trace_{n_test_samples}_{i}.png"))
-        #       plt.close()
-
-        preds = process_preds(prop_traces, resampling_id)
-        
-        # logger.info(f"target: {target}")
-        # logger.info(f"preds for trace {resampling_id}: {preds}")
+  if params["num_inference_samples"] == 1:
+     
+    n_test_samples = 0
+    with torch.no_grad():
+      for img, target in val_dataloader:
+        img = img.to(DEVICE) 
+        preds = guide(observations={"image": img})
 
         target = target.squeeze(0)
         for t in threshold: 
@@ -857,6 +798,85 @@ elif params["running_type"] == "eval":
         
         if n_test_samples == 200:
           break
+
+    
+  else:
+
+    model = clevr_gen_model
+    optimiser = pyro.optim.Adam({'lr': 1e-4})
+    csis = CSIS(model, guide, optimiser, training_batch_size=256, num_inference_samples=params["num_inference_samples"])
+
+    def process_preds(trace, id):
+      max_obj = max(params['max_objects'], params['num_slots'])
+      
+      features_dim = 19
+      preds = torch.zeros(max_obj, features_dim)
+      for name, site in trace.nodes.items():
+          if site['type'] == 'sample':
+              if name == 'coords': preds[:, :3] = site['value'][id] # [-3., 3.]
+              if name == 'size': preds[:, 3:5] = F.one_hot(site['value'][id], len(sizes))
+              if name == 'mat': preds[:, 5:7] = F.one_hot(site['value'][id], len(materials))
+              if name == 'shape': preds[:, 7:10] = F.one_hot(site['value'][id], len(shapes))
+              if name == 'color': preds[:, 10:18] = F.one_hot(site['value'][id], len(colors))
+              if name == 'mask': preds[:, 18] = site['value'][id]
+      return preds
+    
+    n_test_samples = 0
+    with torch.no_grad():
+      for img, target in val_dataloader:
+          img = img.to(DEVICE)        
+
+          n_test_samples += 1
+              
+          posterior = csis.run(observations={"image": img})
+          prop_traces = posterior.prop_traces[0]
+          traces = posterior.exec_traces[0]
+          log_wts = posterior.log_weights[0]
+          resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
+          resampling_id = resampling().item()
+
+          # logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
+
+          # plots_dir = os.path.abspath("set_prediction_plots")
+          # if not os.path.isdir(plots_dir): os.mkdir(plots_dir)
+          # else: 
+          #     shutil.rmtree(plots_dir)
+          #     os.mkdir(plots_dir)
+          
+          # plt.imshow(visualize(img[0].permute(1, 2, 0).cpu().numpy()))
+          # plt.savefig(os.path.join(plots_dir, f"image_{n_test_samples}.png"))
+          # plt.close()
+
+          # for name, site in traces.nodes.items():                    
+          #   # if site["type"] == "sample":
+          #   #     logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
+            
+          #   if name == 'image':
+          #     for i in range(site["fn"].mean.shape[0]):
+          #       output_image = site["fn"].mean[i]
+          #       plt.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
+          #       plt.savefig(os.path.join(plots_dir, f"trace_{n_test_samples}_{i}.png"))
+          #       plt.close()
+
+          preds = process_preds(prop_traces, resampling_id)
+          
+          # logger.info(f"target: {target}")
+          # logger.info(f"preds for trace {resampling_id}: {preds}")
+
+          target = target.squeeze(0)
+          for t in threshold: 
+            ap[t] += compute_AP(preds.detach().cpu(),
+                                target.detach().cpu(),
+                                t)
+        
+          if n_test_samples == 1 or n_test_samples % 100 == 0:
+            logger.info(f"{n_test_samples} evaluated...")
+            logger.info(f"current stats:")
+            aux_mAP = {k: v/n_test_samples for k, v in ap.items()}
+            logger.info(aux_mAP)
+          
+          if n_test_samples == 200:
+            break
 
 
 if params["running_type"] == "train": wandb.finish()

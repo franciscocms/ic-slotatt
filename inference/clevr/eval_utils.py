@@ -8,12 +8,6 @@ sys.path.append(os.path.abspath(__file__+'/../../../'))
 import logging
 logger = logging.getLogger("eval")
 
-def transform_coords(coords):
-    #return (coords/2) + 0.5
-    """
-    re-scale coordinates (both predicted and target) from [-1., 1.] to [-3., 3.]
-    """
-    return coords*3.
 
 def process_preds(preds):
     # preds must have shape (max_objects, n_features)
@@ -27,8 +21,6 @@ def process_preds(preds):
     real_obj = preds[:, 18]
     return coords, object_size, material, shape, color, real_obj
 
-def distance(loc1, loc2):
-    return torch.sqrt(torch.square(loc1[0]-loc2[0]) + torch.square(loc1[1]-loc2[1]))
 
 def compute_AP(preds, targets, threshold_dist, print_ap=False):
 
