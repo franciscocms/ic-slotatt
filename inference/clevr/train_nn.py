@@ -754,6 +754,12 @@ if params["running_type"] == "train":
 
 elif params["running_type"] == "eval":
 
+  input_mode = "RGB" # "depth"
+
+  #if input_mode == "depth":
+    # load pre-trained model
+    
+    
   guide = InvSlotAttentionGuide(resolution = params['resolution'],
                                   num_slots = 10,
                                   num_iterations = 3,
@@ -836,32 +842,55 @@ elif params["running_type"] == "eval":
           posterior = csis.run(observations={"image": img})
           prop_traces = posterior.prop_traces[0]
           traces = posterior.exec_traces[0]
-          log_wts = posterior.log_weights[0]
-          resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
-          resampling_id = resampling().item()
-
-          # logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
-
-          # plots_dir = os.path.abspath("set_prediction_plots")
-          # if not os.path.isdir(plots_dir): os.mkdir(plots_dir)
-          # else: 
-          #     shutil.rmtree(plots_dir)
-          #     os.mkdir(plots_dir)
           
-          # plt.imshow(visualize(img[0].permute(1, 2, 0).cpu().numpy()))
-          # plt.savefig(os.path.join(plots_dir, f"image_{n_test_samples}.png"))
-          # plt.close()
+          if input_mode == "RGB":
+            log_wts = posterior.log_weights[0]
+            resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
+            resampling_id = resampling().item()
 
-          # for name, site in traces.nodes.items():                    
-          #   # if site["type"] == "sample":
-          #   #     logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
+            # logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
+
+            # plots_dir = os.path.abspath("set_prediction_plots")
+            # if not os.path.isdir(plots_dir): os.mkdir(plots_dir)
+            # else: 
+            #     shutil.rmtree(plots_dir)
+            #     os.mkdir(plots_dir)
             
-          #   if name == 'image':
-          #     for i in range(site["fn"].mean.shape[0]):
-          #       output_image = site["fn"].mean[i]
-          #       plt.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
-          #       plt.savefig(os.path.join(plots_dir, f"trace_{n_test_samples}_{i}.png"))
-          #       plt.close()
+            # plt.imshow(visualize(img[0].permute(1, 2, 0).cpu().numpy()))
+            # plt.savefig(os.path.join(plots_dir, f"image_{n_test_samples}.png"))
+            # plt.close()
+
+            # for name, site in traces.nodes.items():                    
+            #   # if site["type"] == "sample":
+            #   #     logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
+              
+            #   if name == 'image':
+            #     for i in range(site["fn"].mean.shape[0]):
+            #       output_image = site["fn"].mean[i]
+            #       plt.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
+            #       plt.savefig(os.path.join(plots_dir, f"trace_{n_test_samples}_{i}.png"))
+            #       plt.close()
+          
+          elif input_mode == "depth": 
+            depth_gen_imgs = []
+
+            for name, site in traces.nodes.items():                                  
+              if name == 'image':
+                for i in range(site["fn"].mean.shape[0]):
+                  output_image = site["fn"].mean[i]
+                  depth_image = apply_depth_transf(output_image)
+                  depth_gen_imgs.append(depth_image)
+            depth_gen_imgs = torch.stack(depth_gen_imgs)
+
+            depth_target_img = apply_depth_transf(img)
+
+            # compute the log-likelihood of each trace
+
+            # get the resampled trace
+
+
+                  
+
 
           preds = process_preds(prop_traces, resampling_id)
           
