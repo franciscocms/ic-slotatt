@@ -790,7 +790,7 @@ elif params["running_type"] == "eval":
         preds = preds.squeeze(0)
 
         for t in threshold: 
-          logger.info(f"\ndistance threshold {t}\n")
+          #logger.info(f"\ndistance threshold {t}\n")
           ap[t] += compute_AP(preds.detach().cpu(),
                               target.detach().cpu(),
                               t)
@@ -801,7 +801,7 @@ elif params["running_type"] == "eval":
           aux_mAP = {k: v/n_test_samples for k, v in ap.items()}
           logger.info(aux_mAP)
         
-        if n_test_samples == 1:
+        if n_test_samples == 200:
           break
 
     

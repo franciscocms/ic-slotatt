@@ -87,14 +87,14 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
                             found_idx = j # stores the best match between an object and all possible targets
 
                             # if threshold_dist == -1:
-                            logger.info(f"object {j} found to have the best distance {best_distance} matching with object {o}")
-                            logger.info(f"object {o} coords: {coords[o]} - object {j} coords: {target_coords[j]}\n")
+                            # logger.info(f"object {j} found to have the best distance {best_distance} matching with object {o}")
+                            # logger.info(f"object {o} coords: {coords[o]} - object {j} coords: {target_coords[j]}\n")
             
             if found:
                 if dist <= threshold_dist or threshold_dist == -1:
                     found_objects.append(found_idx)
                     
-                    logger.info(f"found match between pred object {o} and real object {found_idx} below distance threshold!")
+                    #logger.info(f"found match between pred object {o} and real object {found_idx} below distance threshold!")
 
                     #logger.info(f"PREDS: {[shapes[shape[o]], sizes[size[o]], colors[color[o]], materials[mat[o]]]}")
                     #logger.info(f"TARGET: {[shapes[target_shape[found_idx]], sizes[target_size[found_idx]], colors[target_color[found_idx]], materials[target_mat[found_idx]]]}")
