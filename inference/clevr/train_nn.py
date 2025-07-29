@@ -754,11 +754,17 @@ if params["running_type"] == "train":
 
 elif params["running_type"] == "eval":
 
-  input_mode = "RGB" # "depth"
+  input_mode = "depth" # "RGB", "depth"
 
-  #if input_mode == "depth":
+  if input_mode == "depth":
     # load pre-trained model
     
+    torch.hub.help("intel-isl/MiDaS", "DPT_BEiT_L_384", force_reload=True)  # Triggers fresh download of MiDaS repo
+
+    repo = "isl-org/ZoeDepth"
+    # Zoe_NK
+    model_zoe_nk = torch.hub.load(repo, "ZoeD_NK", pretrained=True)
+    zoe = model_zoe_nk.to(DEVICE)
     
   guide = InvSlotAttentionGuide(resolution = params['resolution'],
                                   num_slots = 10,
@@ -848,28 +854,29 @@ elif params["running_type"] == "eval":
             resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
             resampling_id = resampling().item()
 
-            # logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
+            if False:
+              logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
 
-            # plots_dir = os.path.abspath("set_prediction_plots")
-            # if not os.path.isdir(plots_dir): os.mkdir(plots_dir)
-            # else: 
-            #     shutil.rmtree(plots_dir)
-            #     os.mkdir(plots_dir)
-            
-            # plt.imshow(visualize(img[0].permute(1, 2, 0).cpu().numpy()))
-            # plt.savefig(os.path.join(plots_dir, f"image_{n_test_samples}.png"))
-            # plt.close()
-
-            # for name, site in traces.nodes.items():                    
-            #   # if site["type"] == "sample":
-            #   #     logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
+              plots_dir = os.path.abspath("set_prediction_plots")
+              if not os.path.isdir(plots_dir): os.mkdir(plots_dir)
+              else: 
+                  shutil.rmtree(plots_dir)
+                  os.mkdir(plots_dir)
               
-            #   if name == 'image':
-            #     for i in range(site["fn"].mean.shape[0]):
-            #       output_image = site["fn"].mean[i]
-            #       plt.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
-            #       plt.savefig(os.path.join(plots_dir, f"trace_{n_test_samples}_{i}.png"))
-            #       plt.close()
+              plt.imshow(visualize(img[0].permute(1, 2, 0).cpu().numpy()))
+              plt.savefig(os.path.join(plots_dir, f"image_{n_test_samples}.png"))
+              plt.close()
+
+              for name, site in traces.nodes.items():                    
+                # if site["type"] == "sample":
+                #     logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
+                
+                if name == 'image':
+                  for i in range(site["fn"].mean.shape[0]):
+                    output_image = site["fn"].mean[i]
+                    plt.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
+                    plt.savefig(os.path.join(plots_dir, f"trace_{n_test_samples}_{i}.png"))
+                    plt.close()
           
           elif input_mode == "depth": 
             depth_gen_imgs = []
@@ -878,11 +885,17 @@ elif params["running_type"] == "eval":
               if name == 'image':
                 for i in range(site["fn"].mean.shape[0]):
                   output_image = site["fn"].mean[i]
-                  depth_image = apply_depth_transf(output_image)
-                  depth_gen_imgs.append(depth_image)
+                  depth_tensor = zoe.infer(output_image)
+                  
+                  logger.info(f"shape of depth generated img: {depth_tensor.shape}")
+                  
+                  depth_gen_imgs.append(depth_tensor)
             depth_gen_imgs = torch.stack(depth_gen_imgs)
 
-            depth_target_img = apply_depth_transf(img)
+            depth_target_tensor = zoe.infer(img)
+            logger.info(f"shape of depth observed img: {depth_target_tensor.shape}")
+
+
 
             # compute the log-likelihood of each trace
 
