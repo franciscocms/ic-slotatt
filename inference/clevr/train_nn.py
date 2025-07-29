@@ -881,13 +881,20 @@ elif params["running_type"] == "eval":
           elif input_mode == "depth": 
             depth_gen_imgs = []
 
-            
+            def transform_to_depth(img: torch.Tensor):
+              logger.info(torch.amin(img))
+              logger.info(torch.amax(img))
+
+              logger.info(torch.amin(img/2 + 0.5))
+              logger.info(torch.amax(img/2 + 0.5))
+              return img/2 + 0.5
+               
             
             for name, site in traces.nodes.items():                                  
               if name == 'image':
                 for i in range(site["fn"].mean.shape[0]):
                   output_image = site["fn"].mean[i]
-                  depth_tensor = zoe.infer(output_image.unsqueeze(0)) # [1, 1, 128, 128]
+                  depth_tensor = zoe.infer(transform_to_depth(output_image.unsqueeze(0))) # [1, 1, 128, 128]
 
                   plt.imshow(depth_tensor.squeeze().cpu().numpy())
                   plt.savefig(os.path.join(plots_dir, f"depth_trace_{n_test_samples}_{i}.png"))
@@ -897,14 +904,15 @@ elif params["running_type"] == "eval":
                   depth_gen_imgs.append(depth_tensor)
             depth_gen_imgs = torch.stack(depth_gen_imgs)
 
-            depth_target_tensor = zoe.infer(img) # [1, 1, 128, 128]
+            depth_target_tensor = zoe.infer(transform_to_depth(img)) # [1, 1, 128, 128]
             plt.imshow(depth_target_tensor.squeeze().cpu().numpy())
             plt.savefig(os.path.join(plots_dir, f"depth_image_{n_test_samples}.png"))
             plt.close()
 
-
-
-            # compute the log-likelihood of each trace
+            for i in range(params["num_inference_samples"]):
+              log_p = torch.distributions.Normal(depth_gen_imgs[i], torch.tensor(0.05)).log_prob(depth_target_tensor)
+              img_dim = depth_gen_imgs[i].shape[-1]
+              log_p = log_p / (img_dim**2)
 
             # get the resampled trace
 
