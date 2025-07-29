@@ -907,7 +907,7 @@ elif params["running_type"] == "eval":
 
             log_wts = []
             for i in range(params["num_inference_samples"]):
-              log_p = torch.distributions.Normal(depth_gen_imgs[i], torch.tensor(0.05)).log_prob(depth_target_tensor)
+              log_p = dist.Normal(depth_gen_imgs[i], torch.tensor(0.05)).log_prob(depth_target_tensor)
               img_dim = depth_gen_imgs[i].shape[-1]
               log_p = log_p / (img_dim**2)
               log_wts.append(log_p)
