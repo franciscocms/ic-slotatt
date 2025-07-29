@@ -912,12 +912,13 @@ elif params["running_type"] == "eval":
               log_p = torch.sum(log_p) / (img_dim**2)
               log_wts.append(log_p)
             
-            logger.info(torch.stack(log_wts).shape)
+            
+            
             resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
             resampling_id = resampling().item()
             # get the resampled trace
 
-
+            logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
                   
 
 
