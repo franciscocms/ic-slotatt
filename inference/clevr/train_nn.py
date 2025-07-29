@@ -882,11 +882,7 @@ elif params["running_type"] == "eval":
             depth_gen_imgs = []
 
             def transform_to_depth(img: torch.Tensor):
-              logger.info(torch.amin(img))
-              logger.info(torch.amax(img))
-
-              logger.info(torch.amin(img/2 + 0.5))
-              logger.info(torch.amax(img/2 + 0.5))
+              # from [-1., 1.] to [0., 1.] img
               return img/2 + 0.5
                
             
@@ -909,11 +905,16 @@ elif params["running_type"] == "eval":
             plt.savefig(os.path.join(plots_dir, f"depth_image_{n_test_samples}.png"))
             plt.close()
 
+            log_wts = []
             for i in range(params["num_inference_samples"]):
               log_p = torch.distributions.Normal(depth_gen_imgs[i], torch.tensor(0.05)).log_prob(depth_target_tensor)
               img_dim = depth_gen_imgs[i].shape[-1]
               log_p = log_p / (img_dim**2)
-
+              log_wts.append(log_p)
+            
+            logger.info(torch.stack(log_wts).shape)
+            resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
+            resampling_id = resampling().item()
             # get the resampled trace
 
 
