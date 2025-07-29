@@ -892,18 +892,18 @@ elif params["running_type"] == "eval":
                   output_image = site["fn"].mean[i]
                   depth_tensor = zoe.infer(transform_to_depth(output_image.unsqueeze(0))) # [1, 1, 128, 128]
 
-                  plt.imshow(depth_tensor.squeeze().cpu().numpy())
-                  plt.savefig(os.path.join(plots_dir, f"depth_trace_{n_test_samples}_{i}.png"))
-                  plt.close()
+                  # plt.imshow(depth_tensor.squeeze().cpu().numpy())
+                  # plt.savefig(os.path.join(plots_dir, f"depth_trace_{n_test_samples}_{i}.png"))
+                  # plt.close()
                   
                   
                   depth_gen_imgs.append(depth_tensor)
             depth_gen_imgs = torch.stack(depth_gen_imgs)
 
             depth_target_tensor = zoe.infer(transform_to_depth(img)) # [1, 1, 128, 128]
-            plt.imshow(depth_target_tensor.squeeze().cpu().numpy())
-            plt.savefig(os.path.join(plots_dir, f"depth_image_{n_test_samples}.png"))
-            plt.close()
+            # plt.imshow(depth_target_tensor.squeeze().cpu().numpy())
+            # plt.savefig(os.path.join(plots_dir, f"depth_image_{n_test_samples}.png"))
+            # plt.close()
 
             log_wts = []
             for i in range(params["num_inference_samples"]):
@@ -911,9 +911,7 @@ elif params["running_type"] == "eval":
               img_dim = depth_gen_imgs[i].shape[-1]
               log_p = torch.sum(log_p) / (img_dim**2)
               log_wts.append(log_p)
-            
-            
-            
+
             resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
             resampling_id = resampling().item()
             # get the resampled trace
