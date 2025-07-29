@@ -754,6 +754,12 @@ if params["running_type"] == "train":
 
 elif params["running_type"] == "eval":
 
+  plots_dir = os.path.abspath("set_prediction_plots")
+  if not os.path.isdir(plots_dir): os.mkdir(plots_dir)
+  else: 
+      shutil.rmtree(plots_dir)
+      os.mkdir(plots_dir)
+
   input_mode = "depth" # "RGB", "depth"
 
   if input_mode == "depth":
@@ -857,12 +863,6 @@ elif params["running_type"] == "eval":
             if False:
               logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
 
-              plots_dir = os.path.abspath("set_prediction_plots")
-              if not os.path.isdir(plots_dir): os.mkdir(plots_dir)
-              else: 
-                  shutil.rmtree(plots_dir)
-                  os.mkdir(plots_dir)
-              
               plt.imshow(visualize(img[0].permute(1, 2, 0).cpu().numpy()))
               plt.savefig(os.path.join(plots_dir, f"image_{n_test_samples}.png"))
               plt.close()
@@ -881,19 +881,26 @@ elif params["running_type"] == "eval":
           elif input_mode == "depth": 
             depth_gen_imgs = []
 
+            
+            
             for name, site in traces.nodes.items():                                  
               if name == 'image':
                 for i in range(site["fn"].mean.shape[0]):
                   output_image = site["fn"].mean[i]
-                  depth_tensor = zoe.infer(output_image.unsqueeze(0))
+                  depth_tensor = zoe.infer(output_image.unsqueeze(0)) # [1, 1, 128, 128]
+
+                  plt.imshow(depth_tensor.squeeze().cpu().numpy())
+                  plt.savefig(os.path.join(plots_dir, f"depth_trace_{n_test_samples}_{i}.png"))
+                  plt.close()
                   
-                  logger.info(f"shape of depth generated img: {depth_tensor.shape}")
                   
                   depth_gen_imgs.append(depth_tensor)
             depth_gen_imgs = torch.stack(depth_gen_imgs)
 
-            depth_target_tensor = zoe.infer(img)
-            logger.info(f"shape of depth observed img: {depth_target_tensor.shape}")
+            depth_target_tensor = zoe.infer(img) # [1, 1, 128, 128]
+            plt.imshow(depth_target_tensor.squeeze().cpu().numpy())
+            plt.savefig(os.path.join(plots_dir, f"depth_image_{n_test_samples}.png"))
+            plt.close()
 
 
 
