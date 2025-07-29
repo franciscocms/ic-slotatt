@@ -18,7 +18,7 @@ def process_preds(preds):
     material = torch.argmax(preds[:, 5:7], dim=-1)
     shape = torch.argmax(preds[:, 7:10], dim=-1)
     color = torch.argmax(preds[:, 10:18], dim=-1)
-    real_obj = preds[:, 18]
+    real_obj = preds[:, 18] if all([p in [0., 1.] for p in preds[:, 18]]) else torch.distributions.Bernoulli(preds[:, 18]).sample()
     return coords, object_size, material, shape, color, real_obj
 
 
