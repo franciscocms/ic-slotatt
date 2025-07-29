@@ -87,7 +87,7 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
                             found_idx = j # stores the best match between an object and all possible targets
 
                             # if threshold_dist == -1:
-                            # logger.info(f"object {j} found to have the best distance {best_distance} matching with object {o}")
+                            logger.info(f"object {j} found to have the best distance {best_distance} matching with object {o}")
             
             if found:
                 if dist <= threshold_dist or threshold_dist == -1:
