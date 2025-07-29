@@ -885,7 +885,7 @@ elif params["running_type"] == "eval":
               if name == 'image':
                 for i in range(site["fn"].mean.shape[0]):
                   output_image = site["fn"].mean[i]
-                  depth_tensor = zoe.infer(output_image)
+                  depth_tensor = zoe.infer(output_image.unsqueeze(0))
                   
                   logger.info(f"shape of depth generated img: {depth_tensor.shape}")
                   
