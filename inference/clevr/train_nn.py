@@ -914,9 +914,7 @@ elif params["running_type"] == "eval":
             resampling_id = resampling().item()
             # get the resampled trace
 
-            #logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
-                  
-
+            logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
 
           preds = process_preds(prop_traces, resampling_id)
           
@@ -932,7 +930,7 @@ elif params["running_type"] == "eval":
 
           max_ap_idx = 0
           best_overall_ap = 0.   
-          for i in range(len(log_wts)):
+          for i in range(params["num_inference_samples"]):
             aux_ap = {k: 0 for k in threshold}
             preds = process_preds(prop_traces, i)
             for t in threshold: 
@@ -940,9 +938,14 @@ elif params["running_type"] == "eval":
                                      target.detach().cpu(),
                                      t)
             overall_ap = np.mean(list(aux_ap.values()))
+
+
+            logger.info(f"trace {i} - {aux_ap} with overall AP {overall_ap} ")
+
             if overall_ap > best_overall_ap:
                 best_overall_ap = overall_ap
                 max_ap_idx = i
+                logger.info(f"max_ap_idx is now {max_ap_idx} with overall AP {best_overall_ap}")
           
           max_preds = process_preds(prop_traces, max_ap_idx)
           aux_ap = {k: 0 for k in threshold}
@@ -962,7 +965,7 @@ elif params["running_type"] == "eval":
             max_aux_mAP = {k: v/n_test_samples for k, v in aux_ap.items()}
             logger.info(max_aux_mAP)
           
-          if n_test_samples == 200:
+          if n_test_samples == 1:
             break
 
 
