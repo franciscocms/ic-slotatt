@@ -760,7 +760,7 @@ elif params["running_type"] == "eval":
       shutil.rmtree(plots_dir)
       os.mkdir(plots_dir)
 
-  input_mode = "depth" # "RGB", "depth"
+  input_mode = "RGB" # "RGB", "depth", "seg_masks"
 
   if input_mode == "depth":
     # load pre-trained model
@@ -917,17 +917,23 @@ elif params["running_type"] == "eval":
 
             #logger.info(f"\nlog weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
 
-          preds = process_preds(prop_traces, resampling_id)
-          
-          # logger.info(f"target: {target}")
-          # logger.info(f"preds for trace {resampling_id}: {preds}")
+          elif input_mode == "seg_masks": 
+            pass
 
+
+
+
+
+          
+          
+          
+          
+          preds = process_preds(prop_traces, resampling_id)
           target = target.squeeze(0)
           for t in threshold: 
             ap[t] += compute_AP(preds.detach().cpu(),
                                 target.detach().cpu(),
                                 t)
-          
 
           max_ap_idx = 0
           best_overall_ap = 0.   
