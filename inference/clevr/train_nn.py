@@ -884,7 +884,6 @@ elif params["running_type"] == "eval":
             def transform_to_depth(img: torch.Tensor):
               # from [-1., 1.] to [0., 1.] img
               return img/2 + 0.5
-               
             
             for name, site in traces.nodes.items():                                  
               if name == 'image':
@@ -895,8 +894,7 @@ elif params["running_type"] == "eval":
                   # plt.imshow(depth_tensor.squeeze().cpu().numpy())
                   # plt.savefig(os.path.join(plots_dir, f"depth_trace_{n_test_samples}_{i}.png"))
                   # plt.close()
-                  
-                  
+      
                   depth_gen_imgs.append(depth_tensor)
             depth_gen_imgs = torch.stack(depth_gen_imgs)
 
@@ -930,12 +928,39 @@ elif params["running_type"] == "eval":
             ap[t] += compute_AP(preds.detach().cpu(),
                                 target.detach().cpu(),
                                 t)
-        
+          
+
+          max_ap_idx = 0
+          best_overall_ap = 0.   
+          for i in range(len(log_wts)):
+            aux_ap = {k: 0 for k in threshold}
+            preds = process_preds(prop_traces, i)
+            for t in threshold: 
+              aux_ap[t] = compute_AP(preds.detach().cpu(),
+                                     target.detach().cpu(),
+                                     t)
+            overall_ap = np.mean(list(aux_ap.values()))
+            if overall_ap > best_overall_ap:
+                best_overall_ap = overall_ap
+                max_ap_idx = i
+          
+          max_preds = process_preds(prop_traces, max_ap_idx)
+          aux_ap = {k: 0 for k in threshold}
+          for t in threshold: 
+            aux_ap[t] = compute_AP(preds.detach().cpu(),
+                                    target.detach().cpu(),
+                                    t)
+
+      
           if n_test_samples == 1 or n_test_samples % 100 == 0:
             logger.info(f"{n_test_samples} evaluated...")
             logger.info(f"current stats:")
             aux_mAP = {k: v/n_test_samples for k, v in ap.items()}
             logger.info(aux_mAP)
+
+            logger.info(f"\ncurrent stats if mAP was maximized when sampling the posterior:")
+            max_aux_mAP = {k: v/n_test_samples for k, v in aux_ap.items()}
+            logger.info(max_aux_mAP)
           
           if n_test_samples == 200:
             break
