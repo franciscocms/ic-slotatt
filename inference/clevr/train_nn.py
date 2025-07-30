@@ -915,7 +915,7 @@ elif params["running_type"] == "eval":
             resampling_id = resampling().item()
             # get the resampled trace
 
-            logger.info(f"\nlog weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
+            #logger.info(f"\nlog weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
 
           preds = process_preds(prop_traces, resampling_id)
           
@@ -946,7 +946,7 @@ elif params["running_type"] == "eval":
             if overall_ap > best_overall_ap:
                 best_overall_ap = overall_ap
                 max_ap_idx = i
-                logger.info(f"max_ap_idx is now {max_ap_idx} with log_wt {log_wts[max_ap_idx]} and overall AP {best_overall_ap}")
+                #logger.info(f"max_ap_idx is now {max_ap_idx} with log_wt {log_wts[max_ap_idx]} and overall AP {best_overall_ap}")
           
           max_preds = process_preds(prop_traces, max_ap_idx)
           for t in threshold: 
@@ -955,7 +955,7 @@ elif params["running_type"] == "eval":
                                    t)
 
       
-          if n_test_samples == 1 or n_test_samples % 1 == 0:
+          if n_test_samples == 1 or n_test_samples % 100 == 0:
             logger.info(f"\n{n_test_samples} evaluated...")
             logger.info(f"current stats:")
             aux_mAP = {k: v/n_test_samples for k, v in ap.items()}
@@ -965,7 +965,7 @@ elif params["running_type"] == "eval":
             max_aux_mAP = {k: v/n_test_samples for k, v in max_ap.items()}
             logger.info(max_aux_mAP)
           
-          if n_test_samples == 10:
+          if n_test_samples == 200:
             break
 
 
