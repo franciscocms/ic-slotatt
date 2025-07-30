@@ -914,7 +914,7 @@ elif params["running_type"] == "eval":
             resampling_id = resampling().item()
             # get the resampled trace
 
-            logger.info(f"log weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
+            logger.info(f"\nlog weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
 
           preds = process_preds(prop_traces, resampling_id)
           
