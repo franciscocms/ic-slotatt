@@ -914,7 +914,7 @@ elif params["running_type"] == "eval":
             resampling_id = resampling().item()
             # get the resampled trace
 
-            logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
+            logger.info(f"log weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
 
           preds = process_preds(prop_traces, resampling_id)
           
@@ -940,7 +940,7 @@ elif params["running_type"] == "eval":
             overall_ap = np.mean(list(aux_ap.values()))
 
 
-            logger.info(f"trace {i} - {aux_ap} with overall AP {overall_ap} ")
+            #logger.info(f"trace {i} - {aux_ap} with overall AP {overall_ap} ")
 
             if overall_ap > best_overall_ap:
                 best_overall_ap = overall_ap
@@ -965,7 +965,7 @@ elif params["running_type"] == "eval":
             max_aux_mAP = {k: v/n_test_samples for k, v in aux_ap.items()}
             logger.info(max_aux_mAP)
           
-          if n_test_samples == 1:
+          if n_test_samples == 10:
             break
 
 
