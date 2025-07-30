@@ -787,6 +787,7 @@ elif params["running_type"] == "eval":
 
   threshold = [-1., 1., 0.5, 0.25, 0.125, 0.0625]
   ap = {k: 0 for k in threshold}
+  max_ap = {k: 0 for k in threshold}
 
   val_dataloader = DataLoader(val_data, batch_size = 1,
                                 shuffle=False, num_workers=8, generator=torch.Generator(device='cuda'))
@@ -948,9 +949,8 @@ elif params["running_type"] == "eval":
                 logger.info(f"max_ap_idx is now {max_ap_idx} with log_wt {log_wts[max_ap_idx]} and overall AP {best_overall_ap}")
           
           max_preds = process_preds(prop_traces, max_ap_idx)
-          max_ap = {k: 0 for k in threshold}
           for t in threshold: 
-            max_ap[t] = compute_AP(max_preds.detach().cpu(),
+            max_ap[t] += compute_AP(max_preds.detach().cpu(),
                                    target.detach().cpu(),
                                    t)
 
