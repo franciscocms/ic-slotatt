@@ -947,18 +947,18 @@ elif params["running_type"] == "eval":
           max_preds = process_preds(prop_traces, max_ap_idx)
           aux_ap = {k: 0 for k in threshold}
           for t in threshold: 
-            aux_ap[t] = compute_AP(preds.detach().cpu(),
-                                    target.detach().cpu(),
-                                    t)
+            aux_ap[t] = compute_AP(max_preds.detach().cpu(),
+                                   target.detach().cpu(),
+                                   t)
 
       
           if n_test_samples == 1 or n_test_samples % 100 == 0:
-            logger.info(f"{n_test_samples} evaluated...")
+            logger.info(f"\n{n_test_samples} evaluated...")
             logger.info(f"current stats:")
             aux_mAP = {k: v/n_test_samples for k, v in ap.items()}
             logger.info(aux_mAP)
 
-            logger.info(f"\ncurrent stats if mAP was maximized when sampling the posterior:")
+            logger.info(f"current stats if mAP was maximized when sampling the posterior:")
             max_aux_mAP = {k: v/n_test_samples for k, v in aux_ap.items()}
             logger.info(max_aux_mAP)
           
