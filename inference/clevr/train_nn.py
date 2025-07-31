@@ -289,7 +289,7 @@ class InvSlotAttentionGuide(nn.Module):
     preds[:, :, 10:18] = self.softmax(preds[:, :, 10:18].clone())   # color
     preds[:, :, 18] = self.sigmoid(preds[:, :, 18].clone())         # real object
 
-    logger.info(f"\npredicted coords and real flag: {torch.cat((preds[:, :, :3], preds[:, :, -1].unsqueeze(-1)), dim=-1)}")
+    #logger.info(f"\npredicted coords and real flag: {torch.cat((preds[:, :, :3], preds[:, :, -1].unsqueeze(-1)), dim=-1)}")
 
     if params["running_type"] == "eval":
       pyro.sample("mask", dist.Bernoulli(preds[:, :, 18].expand([params["num_inference_samples"], -1, -1])))
@@ -863,7 +863,7 @@ elif params["running_type"] == "eval":
             resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
             resampling_id = resampling().item()
 
-            logger.info(f"\nlog weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
+            #logger.info(f"\nlog weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
 
             if False:
               logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
