@@ -297,7 +297,7 @@ class InvSlotAttentionGuide(nn.Module):
       pyro.sample("mat", dist.Categorical(probs=preds[:, :, 5:7].expand([params["num_inference_samples"], -1, -1])))
       pyro.sample("shape", dist.Categorical(probs=preds[:, :, 7:10].expand([params["num_inference_samples"], -1, -1])))
       pyro.sample("color", dist.Categorical(probs=preds[:, :, 10:18].expand([params["num_inference_samples"], -1, -1])))
-      pyro.sample("coords", dist.Normal(preds[:, :, :3].expand([params["num_inference_samples"], -1, -1]), torch.tensor(0.05)))
+      pyro.sample("coords", dist.Normal(preds[:, :, :3].expand([params["num_inference_samples"], -1, -1]), torch.tensor(0.01)))
     return preds
 
 
