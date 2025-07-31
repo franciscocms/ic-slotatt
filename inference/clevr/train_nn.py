@@ -289,7 +289,7 @@ class InvSlotAttentionGuide(nn.Module):
     preds[:, :, 10:18] = self.softmax(preds[:, :, 10:18].clone())   # color
     preds[:, :, 18] = self.sigmoid(preds[:, :, 18].clone())         # real object
 
-    logger.info(f"\npredicted coords: {preds[:, :, 18]}")
+    logger.info(f"\npredicted coords: {preds[:, :, :3]}")
 
     if params["running_type"] == "eval":
       pyro.sample("mask", dist.Bernoulli(preds[:, :, 18].expand([params["num_inference_samples"], -1, -1])))
