@@ -939,9 +939,6 @@ elif params["running_type"] == "eval":
                                 target.detach().cpu(),
                                 t)
 
-          
-
-
           max_ap_idx = 0
           best_overall_ap = 0.   
           for i in range(params["num_inference_samples"]):
@@ -979,7 +976,9 @@ elif params["running_type"] == "eval":
             logger.info(max_aux_mAP)
           
           if n_test_samples == 200:
+            logger.info(f"\ninference ended...")
             break
+            
 
 
 if params["running_type"] == "train": wandb.finish()
