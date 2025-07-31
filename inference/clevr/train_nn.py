@@ -861,6 +861,8 @@ elif params["running_type"] == "eval":
             resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
             resampling_id = resampling().item()
 
+            logger.info(f"\nlog weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
+
             if False:
               logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
 
@@ -935,6 +937,13 @@ elif params["running_type"] == "eval":
                                 target.detach().cpu(),
                                 t)
 
+          logger.info(f"\npred coords and real flag: {torch.cat((preds[:, :3],
+                                                               preds[:, -1]), dim=-1)}")
+          
+          logger.info(f"\ntarget coords and real flag: {torch.cat((target[:, :3],
+                                                                   target[:, -1]), dim=-1)}")
+
+
           max_ap_idx = 0
           best_overall_ap = 0.   
           for i in range(params["num_inference_samples"]):
@@ -971,7 +980,7 @@ elif params["running_type"] == "eval":
             max_aux_mAP = {k: v/n_test_samples for k, v in max_ap.items()}
             logger.info(max_aux_mAP)
           
-          if n_test_samples == 200:
+          if n_test_samples == 1:
             break
 
 
