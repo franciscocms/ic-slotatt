@@ -289,6 +289,8 @@ class InvSlotAttentionGuide(nn.Module):
     preds[:, :, 10:18] = self.softmax(preds[:, :, 10:18].clone())   # color
     preds[:, :, 18] = self.sigmoid(preds[:, :, 18].clone())         # real object
 
+    logger.info(f"\npredicted coords: {preds[:, :, 18]}")
+
     if params["running_type"] == "eval":
       pyro.sample("mask", dist.Bernoulli(preds[:, :, 18].expand([params["num_inference_samples"], -1, -1])))
       pyro.sample("size", dist.Categorical(probs=preds[:, :, 3:5].expand([params["num_inference_samples"], -1, -1])))
@@ -937,9 +939,7 @@ elif params["running_type"] == "eval":
                                 target.detach().cpu(),
                                 t)
 
-          logger.info(f"\npred coords and real flag: {torch.cat((preds[:, :3], preds[:, -1].unsqueeze(-1)), dim=-1)}")
           
-          logger.info(f"\ntarget coords and real flag: {torch.cat((target[:, :3], target[:, -1].unsqueeze(-1)), dim=-1)}")
 
 
           max_ap_idx = 0
