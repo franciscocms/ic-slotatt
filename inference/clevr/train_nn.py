@@ -937,9 +937,9 @@ elif params["running_type"] == "eval":
                                 target.detach().cpu(),
                                 t)
 
-          logger.info(f"\npred coords and real flag: {torch.cat((preds[:, :3], preds[:, -1]), dim=-1)}")
+          logger.info(f"\npred coords and real flag: {torch.cat((preds[:, :3], preds[:, -1].unsqueeze(-1)), dim=-1)}")
           
-          logger.info(f"\ntarget coords and real flag: {torch.cat((target[:, :3], target[:, -1]), dim=-1)}")
+          logger.info(f"\ntarget coords and real flag: {torch.cat((target[:, :3], target[:, -1].unsqueeze(-1)), dim=-1)}")
 
 
           max_ap_idx = 0
