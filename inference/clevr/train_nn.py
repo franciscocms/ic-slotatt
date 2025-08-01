@@ -820,7 +820,7 @@ elif params["running_type"] == "eval":
       shutil.rmtree(plots_dir)
       os.mkdir(plots_dir)
 
-  input_mode = "RGB" # "RGB", "depth", "seg_masks"
+  input_mode = "depth" # "RGB", "depth", "seg_masks"
 
   if input_mode == "depth":
     # load pre-trained model
