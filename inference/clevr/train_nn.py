@@ -1033,7 +1033,7 @@ elif params["running_type"] == "eval":
             max_aux_mAP = {k: v/n_test_samples for k, v in max_ap.items()}
             logger.info(max_aux_mAP)
           
-          if n_test_samples == 1:
+          if n_test_samples == 200:
             logger.info(f"\ninference ended...")
             break
             
