@@ -820,7 +820,7 @@ elif params["running_type"] == "eval":
       shutil.rmtree(plots_dir)
       os.mkdir(plots_dir)
 
-  input_mode = "depth" # "RGB", "depth", "seg_masks"
+  input_mode = "RGB" # "RGB", "depth", "seg_masks"
 
   if input_mode == "depth":
     # load pre-trained model
@@ -840,7 +840,7 @@ elif params["running_type"] == "eval":
                                   ).to(DEVICE)
     
   checkpoint_path = os.path.join(main_dir, "inference", f"checkpoint-{params['jobID']}")
-  epoch_to_load = 999
+  epoch_to_load = 290 # 999
   guide.load_state_dict(torch.load(os.path.join(checkpoint_path, f"guide_{epoch_to_load}.pth")))
 
   logger.info(f"\nInference network from epoch {epoch_to_load} successfully loaded...")
