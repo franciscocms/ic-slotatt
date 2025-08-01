@@ -495,17 +495,16 @@ class Trainer:
                 img, target = img.to(self.device), target.to(self.device)
                 preds = self.model(observations={"image": img})
                 if params["jobID"] == 101: batch_loss, _ = hungarian_loss(preds, target)
-                elif params["jobID"] == 102: batch_loss, _ = hungarian_loss_inclusive_KL(preds, target)
-
-                preds[:, :, 3:5] = F.one_hot(preds[:, :, 3:5], len(sizes))       # size
-                preds[:, :, 5:7] = F.one_hot(preds[:, :, 5:7], len(materials))       # material
-                preds[:, :, 7:10] = F.one_hot(preds[:, :, 7:10], len(shapes))     # shape
-                preds[:, :, 10:18] = F.one_hot(preds[:, :, 10:18], len(colors))   # color
-                preds[:, :, 18] = torch.distributions.Bernoulli(preds[:, :, 18]).sample()         # real object
-                
+                elif params["jobID"] == 102: batch_loss, _ = hungarian_loss_inclusive_KL(preds, target)               
                 
                 for i in range(preds.shape[0]):
                   for t in threshold: 
+                      preds[i, :, 3:5] = F.one_hot(preds[i, :, 3:5], len(sizes))       # size
+                      preds[i, :, 5:7] = F.one_hot(preds[i, :, 5:7], len(materials))       # material
+                      preds[i, :, 7:10] = F.one_hot(preds[i, :, 7:10], len(shapes))     # shape
+                      preds[i, :, 10:18] = F.one_hot(preds[i, :, 10:18], len(colors))   # color
+                      preds[i, :, 18] = torch.distributions.Bernoulli(preds[i, :, 18]).sample()         # real object
+                      
                       ap[t] += compute_AP(preds[i].detach().cpu(), 
                                           target[i].detach().cpu(), 
                                           t)
