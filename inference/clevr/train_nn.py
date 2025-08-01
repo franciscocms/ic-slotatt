@@ -491,6 +491,13 @@ class Trainer:
                 if params["jobID"] == 101: batch_loss, _ = hungarian_loss(preds, target)
                 elif params["jobID"] == 102: batch_loss, _ = hungarian_loss_inclusive_KL(preds, target)
 
+                preds[:, :, 3:5] = F.one_hot(preds[:, :, 3:5], len(sizes))       # size
+                preds[:, :, 5:7] = F.one_hot(preds[:, :, 5:7], len(materials))       # material
+                preds[:, :, 7:10] = F.one_hot(preds[:, :, 7:10], len(shapes))     # shape
+                preds[:, :, 10:18] = F.one_hot(preds[:, :, 10:18], len(colors))   # color
+                preds[:, :, 18] = torch.distributions.Bernoulli(preds[:, :, 18]).sample()         # real object
+                
+                
                 for i in range(preds.shape[0]):
                   for t in threshold: 
                       ap[t] += compute_AP(preds[i].detach().cpu(), 
