@@ -58,6 +58,12 @@ TRAINING_FROM_SCRATCH = params["training_from_scratch"]
 
 logger.info(DEVICE)
 
+sizes = ['small', 'large']
+materials = ['rubber', 'metal']
+shapes = ['cube', 'sphere', 'cylinder']
+colors = ['gray', 'blue', 'brown', 'yellow', 'red', 'green', 'purple', 'cyan']
+
+
 def visualize(x):
    return ((x/2. + 0.5) * 255.).astype(int)
 
