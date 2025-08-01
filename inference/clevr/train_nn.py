@@ -397,7 +397,7 @@ def hungarian_loss_inclusive_KL(pred, target, loss_fn=F.smooth_l1_loss):
             
             if var == "coords":
               aux_dist = torch.distributions.Normal(pred[:, :, i:k], torch.tensor(0.01))
-              log_prob = -aux_dist.log_prob(target[:, o, i:k].unsqueeze(-1).expand(-1, pred.size(1)))
+              log_prob = -aux_dist.log_prob(target[:, o, i:k].unsqueeze(-2).expand(-1, pred.size(1), -1))
             elif var == "mask":
               aux_dist = torch.distributions.Bernoulli(pred[:, :, i:k])
               log_prob = -aux_dist.log_prob(target[:, o, i:k].unsqueeze(-1).expand(-1, pred.size(1)))
