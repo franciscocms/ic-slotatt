@@ -407,6 +407,7 @@ def hungarian_loss_inclusive_KL(pred, target, loss_fn=F.smooth_l1_loss):
                
             #logger.info(f"var {var} - log_prob using pred with shape {pred[:, :, i:k].shape} for {i} to {k}")
             
+            logger.info(f"{var} - {log_prob.shape} - {latent_pdist.shape}")
                                         
             i = k
             log_prob = log_prob.unsqueeze(-1)
