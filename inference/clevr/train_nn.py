@@ -493,8 +493,8 @@ class Trainer:
 
                 for i in range(preds.shape[0]):
                   for t in threshold: 
-                      ap[t] += compute_AP(preds[i],
-                                          target[i], 
+                      ap[t] += compute_AP(preds[i].detach().cpu(), 
+                                          target[i].detach().cpu(), 
                                           t)
                 
                 loss += batch_loss.item()
