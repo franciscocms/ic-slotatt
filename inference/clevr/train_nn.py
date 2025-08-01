@@ -289,7 +289,7 @@ class InvSlotAttentionGuide(nn.Module):
     preds[:, :, 10:18] = self.softmax(preds[:, :, 10:18].clone())   # color
     preds[:, :, 18] = self.sigmoid(preds[:, :, 18].clone())         # real object
 
-    logger.info(f"\nnetwork predicted coords and real flag: {torch.cat((preds[:, :, :3], preds[:, :, -1].unsqueeze(-1)), dim=-1)}")
+    #logger.info(f"\nnetwork predicted coords and real flag: {torch.cat((preds[:, :, :3], preds[:, :, -1].unsqueeze(-1)), dim=-1)}")
 
     if params["running_type"] == "eval":
       pyro.sample("mask", dist.Bernoulli(preds[:, :, 18].expand([params["num_inference_samples"], -1, -1])))
@@ -397,7 +397,7 @@ def hungarian_loss_inclusive_KL(pred, target, loss_fn=F.smooth_l1_loss):
             
             if var == "coords":
               aux_dist = torch.distributions.Normal(pred[:, :, i:k], torch.tensor(0.01))
-              log_prob = -aux_dist.log_prob(target[:, o, i:k].unsqueeze(-2).expand(-1, pred.size(1), -1))
+              log_prob = -aux_dist.log_prob(target[:, o, i:k].unsqueeze(-2).expand(-1, pred.size(1), -1)).mean(-1)
             elif var == "mask":
               aux_dist = torch.distributions.Bernoulli(pred[:, :, i:k])
               log_prob = -aux_dist.log_prob(target[:, o, i:k].unsqueeze(-1).expand(-1, pred.size(1)))
@@ -406,8 +406,6 @@ def hungarian_loss_inclusive_KL(pred, target, loss_fn=F.smooth_l1_loss):
               log_prob = -aux_dist.log_prob(torch.argmax(target[:, o, i:k], dim=-1).unsqueeze(-1).expand(-1, pred.size(1))) 
                
             #logger.info(f"var {var} - log_prob using pred with shape {pred[:, :, i:k].shape} for {i} to {k}")
-            
-            logger.info(f"{var} - {log_prob.shape} - {latent_pdist.shape}")
                                         
             i = k
             log_prob = log_prob.unsqueeze(-1)
