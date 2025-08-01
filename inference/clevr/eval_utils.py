@@ -44,9 +44,9 @@ def compute_AP(preds, targets, threshold_dist, print_ap=False):
     assert preds.shape == targets.shape
     assert preds.shape[0] != 1
     
-    # if threshold_dist == -1.:
-    #     logger.info(f"\npred coords and real flag: {torch.cat((preds[:, :3], preds[:, -1].unsqueeze(-1)), dim=-1)}")  
-    #     logger.info(f"\ntarget coords and real flag: {torch.cat((targets[:, :3], targets[:, -1].unsqueeze(-1)), dim=-1)}")
+    if threshold_dist == -1.:
+        logger.info(f"\npred coords and real flag: {torch.cat((preds[:, :3], preds[:, -1].unsqueeze(-1)), dim=-1)}")  
+        logger.info(f"\ntarget coords and real flag: {torch.cat((targets[:, :3], targets[:, -1].unsqueeze(-1)), dim=-1)}")
 
     #logger.info(f"\npredictions matrix: ")
     coords, size, mat, shape, color, pred_real_obj = process_preds(preds)
