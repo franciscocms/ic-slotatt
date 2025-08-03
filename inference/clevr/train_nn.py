@@ -1038,31 +1038,20 @@ elif params["running_type"] == "eval":
                       slots_attn = slots_attn.reshape(B, N, int(np.sqrt(d)), int(np.sqrt(d))).double()
                       grid = torch.from_numpy(build_2d_grid((32, 32)))
 
-                      logger.info(slots_attn.shape) # [B, N, ]
-                      logger.info(slots_attn.dtype)
-                      logger.info(grid.shape)
-                      logger.info(grid.dtype)
-
                       coords = torch.einsum('nij,ijk->nk', slots_attn[idx].cpu(), grid)
-                      logger.info(coords.shape)
+                      # logger.info(coords.shape)
                       pred_real_flag = [m for m in range(N) if torch.round(preds[m, -1]) == 1] 
                       
-                      logger.info(f"pred real flag: {pred_real_flag}")
+                      # logger.info(f"pred real flag: {pred_real_flag}")
 
                       coords = coords[pred_real_flag]
+                      input_point = np.asarray(coords * 128)
+                      input_label = np.array([1 for _ in range(coords.shape[0])])
 
-                      logger.info(coords.shape)
-
-
-
-
-
-
-
+                      logger.info(f"input points: {input_point}")
                       
-                      
-                      input_point = np.array([[10, 10]])
-                      input_label = np.array([0])
+                      #input_point = np.array([[10, 10]])
+                      #input_label = np.array([0])
                       masks, scores, logits = predictor.predict(
                           point_coords=input_point,
                           point_labels=input_label,
