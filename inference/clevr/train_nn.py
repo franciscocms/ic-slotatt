@@ -1022,6 +1022,14 @@ elif params["running_type"] == "eval":
                     with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
                       output_image = output_image/2 + 0.5 # [-1., 1.] -> [0., 1.]
                       predictor.set_image(output_image.permute(1, 2, 0).cpu().numpy())
+                      
+                      # build a 2d grid and get the output masks from SA-MESH to give 2d coordinates for these points
+
+
+
+
+                      
+                      
                       input_point = np.array([[10, 10]])
                       input_label = np.array([0])
                       masks, scores, logits = predictor.predict(
@@ -1036,7 +1044,7 @@ elif params["running_type"] == "eval":
 
                       # masks [3, 128, 128]
                     
-                    logger.info(f"mask scores: {masks}")
+                    logger.info(f"mask scores: {scores}")
 
                     transformed_tensor = masks[0]
 
@@ -1047,12 +1055,10 @@ elif params["running_type"] == "eval":
                   elif input_mode == "seg_masks": 
                     for m in range(len(masks)):
                       plt.imshow(masks[m])
-                      plt.tile(f"score: {scores[m]}")
+                      plt.title(f"score: {scores[m]}")
                       plt.savefig(os.path.join(plots_dir, f"mask_{m}_transf_trace_{n_test_samples}_{i}.png"))
                       plt.close()
-                  
-                  
-      
+
                   transform_gen_imgs.append(torch.tensor(transformed_tensor))
             transform_gen_imgs = torch.stack(transform_gen_imgs)
 
