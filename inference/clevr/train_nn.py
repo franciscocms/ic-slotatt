@@ -1035,7 +1035,7 @@ elif params["running_type"] == "eval":
                       # build a 2d grid and get the output masks from SA-MESH to give 2d coordinates for these points
                       slots_attn = csis.guide.attn
                       B, N, d = slots_attn.shape
-                      slots_attn = slots_attn.reshape(B, N, int(np.sqrt(d)), int(np.sqrt(d)))
+                      slots_attn = slots_attn.reshape(B, N, int(np.sqrt(d)), int(np.sqrt(d))).double()
                       grid = torch.from_numpy(build_2d_grid((32, 32)))
 
                       logger.info(slots_attn.shape) # [B, N, ]
