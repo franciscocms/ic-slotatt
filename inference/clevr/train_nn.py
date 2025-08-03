@@ -1021,9 +1021,12 @@ elif params["running_type"] == "eval":
 
                     with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
                       logger.info(f"range of generated images: {torch.amin(output_image)} - {torch.amax(output_image)}")
+                      output_image = ((output_image/2 + 1)*255).long()
+                      logger.info(f"range of generated images: {torch.amin(output_image)} - {torch.amax(output_image)}")
+                      
                       predictor.set_image(output_image.permute(1, 2, 0).cpu().numpy())
                       input_point = np.array([[10, 10]])
-                      input_label = np.array([1])
+                      input_label = np.array([0])
                       masks, scores, logits = predictor.predict(
                           point_coords=input_point,
                           point_labels=input_label,
@@ -1063,10 +1066,12 @@ elif params["running_type"] == "eval":
               with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
                 
                 logger.info(f"range of target image: {torch.amin(img)} - {torch.amax(img)}")
-                
+                img = ((img/2 + 1)*255).long()
+                logger.info(f"range of target image: {torch.amin(img)} - {torch.amax(img)}")
+
                 predictor.set_image(img[0].permute(1, 2, 0).cpu().numpy())
                 input_point = np.array([[10, 10]])
-                input_label = np.array([0, 1])
+                input_label = np.array([0])
                 masks, scores, logits = predictor.predict(
                     point_coords=input_point,
                     point_labels=input_label,
