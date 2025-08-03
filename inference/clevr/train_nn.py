@@ -993,30 +993,10 @@ elif params["running_type"] == "eval":
             resampling_id = resampling().item()
 
             #logger.info(f"\nlog weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
-
-            if False:
-              logger.info(f"log weights: {log_wts} - resampled trace: {resampling_id}")
-
-              plt.imshow(visualize(img[0].permute(1, 2, 0).cpu().numpy()))
-              plt.savefig(os.path.join(plots_dir, f"image_{n_test_samples}.png"))
-              plt.close()
-
-              for name, site in traces.nodes.items():                    
-                # if site["type"] == "sample":
-                #     logger.info(f"{name} - {site['value'].shape}")# - {site['value'][resampling_id]}")
-                
-                if name == 'image':
-                  for i in range(site["fn"].mean.shape[0]):
-                    output_image = site["fn"].mean[i]
-                    plt.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
-                    plt.savefig(os.path.join(plots_dir, f"trace_{n_test_samples}_{i}.png"))
-                    plt.close()
           
           elif input_mode in ["depth", "seg_masks"]: 
             transform_gen_imgs = []
 
-            
-            
             def transform_to_depth(img: torch.Tensor):
               # from [-1., 1.] to [0., 1.] img
               return img/2 + 0.5
