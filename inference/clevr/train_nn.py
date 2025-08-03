@@ -1038,6 +1038,10 @@ elif params["running_type"] == "eval":
                           point_labels=input_label,
                           multimask_output=True,
                       )
+                    sorted_ind = np.argsort(scores)[::-1]
+                    masks = masks[sorted_ind]
+                    scores = scores[sorted_ind]
+                    logits = logits[sorted_ind]
 
                       # masks [3, 128, 128]
                     
@@ -1048,22 +1052,44 @@ elif params["running_type"] == "eval":
                     
                     #transformed_tensor = 
 
-                  # plt.imshow(transformed_tensor.squeeze().cpu().numpy())
-                  # plt.savefig(os.path.join(plots_dir, f"depth_trace_{n_test_samples}_{i}.png"))
-                  # plt.close()
+                  if input_mode == "depth":
+                    plt.imshow(transformed_tensor.squeeze().cpu().numpy())
+                  elif input_mode == "seg_masks": 
+                    plt.imshow(masks[0])
+                  plt.savefig(os.path.join(plots_dir, f"transf_trace_{n_test_samples}_{i}.png"))
+                  plt.close()
       
                   transform_gen_imgs.append(transformed_tensor)
             transform_gen_imgs = torch.stack(transform_gen_imgs)
 
             if input_mode == "depth":
               transformed_target_tensor = zoe.infer(transform_to_depth(img)) # [1, 1, 128, 128]
+              # plt.imshow(transformed_target_tensor.squeeze().cpu().numpy())
+              # plt.savefig(os.path.join(plots_dir, f"depth_image_{n_test_samples}.png"))
+              # plt.close()
             
-            # elif input_mode == "seg_masks":
-            #   transformed_target_tensor = 
+            elif input_mode == "seg_masks":
+              with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
+                predictor.set_image(output_image.permute(1, 2, 0).cpu().numpy())
+                input_point = np.array([[10, 10]])
+                input_label = np.array([1])
+                masks, scores, logits = predictor.predict(
+                    point_coords=input_point,
+                    point_labels=input_label,
+                    multimask_output=True,
+                )
+              sorted_ind = np.argsort(scores)[::-1]
+              masks = masks[sorted_ind]
+              scores = scores[sorted_ind]
+              logits = logits[sorted_ind]
+
+              plt.imshow(masks[0])
+              plt.savefig(os.path.join(plots_dir, f"transf_image_{n_test_samples}.png"))
+              plt.close()
             
-            # plt.imshow(transformed_target_tensor.squeeze().cpu().numpy())
-            # plt.savefig(os.path.join(plots_dir, f"depth_image_{n_test_samples}.png"))
-            # plt.close()
+
+
+            
 
             log_wts = []
             for i in range(params["num_inference_samples"]):
