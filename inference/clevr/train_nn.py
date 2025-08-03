@@ -979,7 +979,7 @@ elif params["running_type"] == "eval":
     
     n_test_samples = 0
     with torch.no_grad():
-      for img, target in val_dataloader:
+      for idx, (img, target) in enumerate(val_dataloader):
           img = img.to(DEVICE)        
 
           n_test_samples += 1
@@ -1033,10 +1033,14 @@ elif params["running_type"] == "eval":
                       slots_attn = csis.guide.attn
                       B, N, d = slots_attn.shape
                       slots_attn = slots_attn.reshape(B, N, int(np.sqrt(d)), int(np.sqrt(d)))
-                      grid = torch.from_numpy(build_2d_grid((32, 32))).permute(2, 0, 1)
+                      grid = torch.from_numpy(build_2d_grid((32, 32)))
 
                       logger.info(slots_attn.shape) # [B, N, ]
                       logger.info(grid.shape)
+
+                      coords = torch.einsum('nij,ijk->nk', slots_attn[idx], grid)
+
+                      logger.info(coords.shape)
 
 
 
