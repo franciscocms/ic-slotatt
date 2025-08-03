@@ -981,6 +981,11 @@ elif params["running_type"] == "eval":
           posterior = csis.run(observations={"image": img})
           prop_traces = posterior.prop_traces[0]
           traces = posterior.exec_traces[0]
+
+          if True:
+            plt.imshow(visualize(img[0].permute(1, 2, 0).cpu().numpy()))
+            plt.savefig(os.path.join(plots_dir, f"image_{n_test_samples}.png"))
+            plt.close()
           
           if input_mode == "RGB":
             log_wts = posterior.log_weights[0]
@@ -1020,6 +1025,11 @@ elif params["running_type"] == "eval":
               if name == 'image':
                 for i in range(site["fn"].mean.shape[0]):
                   output_image = site["fn"].mean[i]
+
+                  if True:
+                    plt.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
+                    plt.savefig(os.path.join(plots_dir, f"trace_{n_test_samples}_{i}.png"))
+                    plt.close()
                   
                   if input_mode == "depth":
                     transformed_tensor = zoe.infer(transform_to_depth(output_image.unsqueeze(0))) # [1, 1, 128, 128]
@@ -1045,10 +1055,10 @@ elif params["running_type"] == "eval":
 
                       # masks [3, 128, 128]
                     
-                    for i, mask in enumerate(masks):
-                      logger.info(scores[i])
-                      logger.info(np.amin(mask))
-                      logger.info(np.amax(mask))
+                    # for i, mask in enumerate(masks):
+                    #   logger.info(scores[i])
+                    #   logger.info(np.amin(mask))
+                    #   logger.info(np.amax(mask))
                     
                     transformed_tensor = masks[0]
 
@@ -1155,7 +1165,7 @@ elif params["running_type"] == "eval":
             max_aux_mAP = {k: v/n_test_samples for k, v in max_ap.items()}
             logger.info(max_aux_mAP)
           
-          if n_test_samples == 200:
+          if n_test_samples == 1:
             logger.info(f"\ninference ended...")
             break
             
