@@ -834,7 +834,7 @@ elif params["running_type"] == "eval":
       shutil.rmtree(plots_dir)
       os.mkdir(plots_dir)
 
-  input_mode = "depth" # "RGB", "depth", "seg_masks"
+  input_mode = "seg_masks" # "RGB", "depth", "seg_masks"
 
   if input_mode == "depth":
     # load pre-trained model
@@ -845,6 +845,13 @@ elif params["running_type"] == "eval":
     # Zoe_NK
     model_zoe_nk = torch.hub.load(repo, "ZoeD_NK", pretrained=True)
     zoe = model_zoe_nk.to(DEVICE)
+  
+
+  elif input_mode == "seg_masks":
+    from sam2.build_sam import build_sam2
+    from sam2.sam2_image_predictor import SAM2ImagePredictor
+
+    logger.info("got there!")
     
   guide = InvSlotAttentionGuide(resolution = params['resolution'],
                                   num_slots = 10,
@@ -955,8 +962,8 @@ elif params["running_type"] == "eval":
                     plt.savefig(os.path.join(plots_dir, f"trace_{n_test_samples}_{i}.png"))
                     plt.close()
           
-          elif input_mode == "depth": 
-            depth_gen_imgs = []
+          elif input_mode in ["depth", "seg_masks"]: 
+            transform_gen_imgs = []
 
             def transform_to_depth(img: torch.Tensor):
               # from [-1., 1.] to [0., 1.] img
@@ -966,35 +973,40 @@ elif params["running_type"] == "eval":
               if name == 'image':
                 for i in range(site["fn"].mean.shape[0]):
                   output_image = site["fn"].mean[i]
-                  depth_tensor = zoe.infer(transform_to_depth(output_image.unsqueeze(0))) # [1, 1, 128, 128]
+                  
+                  if input_mode == "depth":
+                    transformed_tensor = zoe.infer(transform_to_depth(output_image.unsqueeze(0))) # [1, 1, 128, 128]
+                  # elif input_mode == "seg_masks":
+                  #   transformed_tensor = 
 
-                  # plt.imshow(depth_tensor.squeeze().cpu().numpy())
+                  # plt.imshow(transformed_tensor.squeeze().cpu().numpy())
                   # plt.savefig(os.path.join(plots_dir, f"depth_trace_{n_test_samples}_{i}.png"))
                   # plt.close()
       
-                  depth_gen_imgs.append(depth_tensor)
-            depth_gen_imgs = torch.stack(depth_gen_imgs)
+                  transform_gen_imgs.append(transformed_tensor)
+            transform_gen_imgs = torch.stack(transform_gen_imgs)
 
-            depth_target_tensor = zoe.infer(transform_to_depth(img)) # [1, 1, 128, 128]
-            # plt.imshow(depth_target_tensor.squeeze().cpu().numpy())
+            if input_mode == "depth":
+              transformed_target_tensor = zoe.infer(transform_to_depth(img)) # [1, 1, 128, 128]
+            
+            # elif input_mode == "seg_masks":
+            #   transformed_target_tensor = 
+            
+            # plt.imshow(transformed_target_tensor.squeeze().cpu().numpy())
             # plt.savefig(os.path.join(plots_dir, f"depth_image_{n_test_samples}.png"))
             # plt.close()
 
             log_wts = []
             for i in range(params["num_inference_samples"]):
-              log_p = dist.Normal(depth_gen_imgs[i], torch.tensor(0.05)).log_prob(depth_target_tensor)
-              img_dim = depth_gen_imgs[i].shape[-1]
+              log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(0.05)).log_prob(transformed_target_tensor)
+              img_dim = transform_gen_imgs[i].shape[-1]
               log_p = torch.sum(log_p) / (img_dim**2)
               log_wts.append(log_p)
 
             resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
             resampling_id = resampling().item()
-            # get the resampled trace
 
             #logger.info(f"\nlog weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
-
-          elif input_mode == "seg_masks": 
-            pass
 
 
 
