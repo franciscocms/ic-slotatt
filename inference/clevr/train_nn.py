@@ -1039,7 +1039,9 @@ elif params["running_type"] == "eval":
                       grid = torch.from_numpy(build_2d_grid((32, 32)))
 
                       logger.info(slots_attn.shape) # [B, N, ]
+                      logger.info(slots_attn.dtype)
                       logger.info(grid.shape)
+                      logger.info(grid.dtype)
 
                       coords = torch.einsum('nij,ijk->nk', slots_attn[idx].cpu(), grid)
                       logger.info(coords.shape)
