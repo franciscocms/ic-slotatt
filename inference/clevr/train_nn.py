@@ -1039,8 +1039,12 @@ elif params["running_type"] == "eval":
                           multimask_output=True,
                       )
 
-                      logger.info(scores)
-                      logger.info(masks.shape)
+                      # masks [3, 128, 128]
+                    
+                    for i, mask in enumerate(masks):
+                      logger.info(scores[i])
+                      logger.info(np.amin(mask))
+                      logger.info(np.amax(mask))
                     
                     #transformed_tensor = 
 
