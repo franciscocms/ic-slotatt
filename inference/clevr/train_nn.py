@@ -847,8 +847,13 @@ elif params["running_type"] == "eval":
     zoe = model_zoe_nk.to(DEVICE)
   
   elif input_mode == "seg_masks":
+    import hydra # type: ignore
     from sam2.build_sam import build_sam2 # type: ignore
     from sam2.sam2_image_predictor import SAM2ImagePredictor # type: ignore
+
+    hydra.core.global_hydra.GlobalHydra.instance().clear()
+    # reinit hydra with a new search path for configs
+    hydra.initialize_config_module("/nas-ctm01/homes/fcsilva/sam2/sam2/configs/sam2.1")
 
     def show_mask(mask, ax, random_color=False, borders = True):
       if random_color:
@@ -1005,6 +1010,8 @@ elif params["running_type"] == "eval":
           elif input_mode in ["depth", "seg_masks"]: 
             transform_gen_imgs = []
 
+            
+            
             def transform_to_depth(img: torch.Tensor):
               # from [-1., 1.] to [0., 1.] img
               return img/2 + 0.5
@@ -1019,7 +1026,7 @@ elif params["running_type"] == "eval":
                   elif input_mode == "seg_masks":
                     
                     checkpoint = "/nas-ctm01/homes/fcsilva/sam2/checkpoints/sam2.1_hiera_large.pt"
-                    model_cfg = "/nas-ctm01/homes/fcsilva/sam2/sam2/configs/sam2.1/sam2.1_hiera_l.yaml"
+                    model_cfg = "sam2.1_hiera_l.yaml"
                     predictor = SAM2ImagePredictor(build_sam2(model_cfg, checkpoint))
 
                     with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
