@@ -1059,7 +1059,7 @@ elif params["running_type"] == "eval":
                   plt.savefig(os.path.join(plots_dir, f"transf_trace_{n_test_samples}_{i}.png"))
                   plt.close()
       
-                  transform_gen_imgs.append(transformed_tensor)
+                  transform_gen_imgs.append(torch.tensor(transformed_tensor))
             transform_gen_imgs = torch.stack(transform_gen_imgs)
 
             if input_mode == "depth":
@@ -1094,7 +1094,7 @@ elif params["running_type"] == "eval":
 
             log_wts = []
             for i in range(params["num_inference_samples"]):
-              log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(0.05)).log_prob(transformed_target_tensor)
+              log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(0.05)).log_prob(torch.tensor(transformed_target_tensor))
               img_dim = transform_gen_imgs[i].shape[-1]
               log_p = torch.sum(log_p) / (img_dim**2)
               log_wts.append(log_p)
