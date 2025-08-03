@@ -1030,7 +1030,7 @@ elif params["running_type"] == "eval":
                     predictor = SAM2ImagePredictor(build_sam2(model_cfg, checkpoint))
 
                     with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
-                      predictor.set_image(np.asarray(output_image))
+                      predictor.set_image(output_image.cpu().numpy())
                       input_point = np.array([[10, 10]])
                       input_label = np.array([1])
                       masks, scores, logits = predictor.predict(
