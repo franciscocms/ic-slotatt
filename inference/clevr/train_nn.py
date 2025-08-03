@@ -851,9 +851,9 @@ elif params["running_type"] == "eval":
     from sam2.build_sam import build_sam2 # type: ignore
     from sam2.sam2_image_predictor import SAM2ImagePredictor # type: ignore
 
-    hydra.core.global_hydra.GlobalHydra.instance().clear()
+    #hydra.core.global_hydra.GlobalHydra.instance().clear()
     # reinit hydra with a new search path for configs
-    hydra.initialize_config_module("/nas-ctm01/homes/fcsilva/sam2/sam2/configs/sam2.1")
+    #hydra.initialize_config_module("/nas-ctm01/homes/fcsilva/sam2/sam2/configs/sam2.1")
 
     def show_mask(mask, ax, random_color=False, borders = True):
       if random_color:
