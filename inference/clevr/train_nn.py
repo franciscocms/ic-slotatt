@@ -1035,27 +1035,11 @@ elif params["running_type"] == "eval":
                       # build a 2d grid and get the output masks from SA-MESH to give 2d coordinates for these points
                       slots_attn = csis.guide.attn
                       B, N, d = slots_attn.shape
+                      # normalize attn matrices
+                      slots_attn = slots_attn / torch.sum(slots_attn, dim=-1, keepdim=True)
                       slots_attn = slots_attn.reshape(B, N, int(np.sqrt(d)), int(np.sqrt(d))).double()
                       grid = torch.from_numpy(build_2d_grid((32, 32)))
-
-                      
-                      # normalize attn matrices
-                      logger.info(torch.amin(slots_attn))
-                      logger.info(torch.amax(slots_attn))
-
-                      slots_attn = slots_attn / torch.amax(slots_attn, dim=1, keepdim=True)
-
-                      logger.info(torch.amin(slots_attn))
-                      logger.info(torch.amax(slots_attn))
-
-
-
-
                       # plot the generated image with some red points on the coords to check that it's right!
-
-
-
-
 
 
                       coords = torch.einsum('nij,ijk->nk', slots_attn[idx].cpu(), grid)
