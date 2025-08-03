@@ -988,6 +988,9 @@ elif params["running_type"] == "eval":
           prop_traces = posterior.prop_traces[0]
           traces = posterior.exec_traces[0]
 
+          # get the predictions of the first proposal trace
+          preds = process_preds(prop_traces, 0) 
+
           if True:
             plt.imshow(visualize(img[0].permute(1, 2, 0).cpu().numpy()))
             plt.savefig(os.path.join(plots_dir, f"image_{n_test_samples}.png"))
@@ -1039,8 +1042,16 @@ elif params["running_type"] == "eval":
                       logger.info(grid.shape)
 
                       coords = torch.einsum('nij,ijk->nk', slots_attn[idx], grid)
+                      logger.info(coords.shape)
+                      pred_real_flag = [m for m in range(N) if torch.round(preds[m, -1]) == 1] 
+                      
+                      logger.info(f"pred real flag: {pred_real_flag}")
+
+                      coords = coords[pred_real_flag]
 
                       logger.info(coords.shape)
+
+
 
 
 
