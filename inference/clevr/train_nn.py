@@ -159,6 +159,12 @@ class SlotAttention(nn.Module):
         slots = slots + self.fc2(F.relu(self.fc1(self.norm_pre_ff(slots))))  
     return slots, attn
 
+def build_2d_grid(resolution):
+  ranges = [np.linspace(0., 1., num=res) for res in resolution]
+  grid = np.meshgrid(*ranges, sparse=False, indexing="ij")
+  grid = np.stack(grid, axis=-1)
+  return grid
+
 def build_grid(resolution):
   ranges = [np.linspace(0., 1., num=res) for res in resolution]
   grid = np.meshgrid(*ranges, sparse=False, indexing="ij")
@@ -269,10 +275,10 @@ class InvSlotAttentionGuide(nn.Module):
     x = self.encoder_cnn(img) # [B, input_dim, C] 
     x = nn.LayerNorm(x.shape[1:]).to(DEVICE)(x)
     self.features_to_slots = self.mlp(x)
-    self.slots, attn = self.slot_attention(self.features_to_slots)
+    self.slots, self.attn = self.slot_attention(self.features_to_slots)
 
     if save_masks:
-        aux_attn = attn.reshape((B, self.num_slots, params['resolution'][0], params['resolution'][1])) if not params["strided_convs"] else attn.reshape((B, self.num_slots, int(params['resolution'][0]/4), int(params['resolution'][1]/4)))
+        aux_attn = self.attn.reshape((B, self.num_slots, params['resolution'][0], params['resolution'][1])) if not params["strided_convs"] else self.attn.reshape((B, self.num_slots, int(params['resolution'][0]/4), int(params['resolution'][1]/4)))
         fig, ax = plt.subplots(ncols=self.num_slots)
         for j in range(self.num_slots):                                       
             im = ax[j].imshow(aux_attn[0, j, :, :].detach().cpu().numpy())
@@ -1024,6 +1030,14 @@ elif params["running_type"] == "eval":
                       predictor.set_image(output_image.permute(1, 2, 0).cpu().numpy())
                       
                       # build a 2d grid and get the output masks from SA-MESH to give 2d coordinates for these points
+                      slots_attn = csis.guide.attn
+                      B, N, d = slots_attn.shape
+                      slots_attn = slots_attn.reshape(B, N, int(np.sqrt(d)), int(np.sqrt(d)))
+                      grid = torch.from_numpy(build_2d_grid((32, 32))).permute(2, 0, 1)
+
+                      logger.info(slots_attn.shape) # [B, N, ]
+                      logger.info(grid.shape)
+
 
 
 
