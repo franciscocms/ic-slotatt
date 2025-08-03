@@ -1050,12 +1050,12 @@ elif params["running_type"] == "eval":
                       logger.info(np.amin(mask))
                       logger.info(np.amax(mask))
                     
-                    #transformed_tensor = 
+                    transformed_tensor = masks[0]
 
                   if input_mode == "depth":
                     plt.imshow(transformed_tensor.squeeze().cpu().numpy())
                   elif input_mode == "seg_masks": 
-                    plt.imshow(masks[0])
+                    plt.imshow(transformed_tensor)
                   plt.savefig(os.path.join(plots_dir, f"transf_trace_{n_test_samples}_{i}.png"))
                   plt.close()
       
@@ -1083,7 +1083,8 @@ elif params["running_type"] == "eval":
               scores = scores[sorted_ind]
               logits = logits[sorted_ind]
 
-              plt.imshow(masks[0])
+              transformed_target_tensor = masks[0]
+              plt.imshow(transformed_target_tensor)
               plt.savefig(os.path.join(plots_dir, f"transf_image_{n_test_samples}.png"))
               plt.close()
             
