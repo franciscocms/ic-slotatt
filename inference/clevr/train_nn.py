@@ -1041,7 +1041,7 @@ elif params["running_type"] == "eval":
                       logger.info(slots_attn.shape) # [B, N, ]
                       logger.info(grid.shape)
 
-                      coords = torch.einsum('nij,ijk->nk', slots_attn[idx], grid)
+                      coords = torch.einsum('nij,ijk->nk', slots_attn[idx].cpu(), grid)
                       logger.info(coords.shape)
                       pred_real_flag = [m for m in range(N) if torch.round(preds[m, -1]) == 1] 
                       
