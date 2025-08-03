@@ -1038,6 +1038,26 @@ elif params["running_type"] == "eval":
                       slots_attn = slots_attn.reshape(B, N, int(np.sqrt(d)), int(np.sqrt(d))).double()
                       grid = torch.from_numpy(build_2d_grid((32, 32)))
 
+                      
+                      # normalize attn matrices
+                      logger.info(torch.amin(slots_attn))
+                      logger.info(torch.amax(slots_attn))
+
+                      slots_attn = slots_attn / torch.amax(slots_attn, dim=1, keepdim=True)
+
+                      logger.info(torch.amin(slots_attn))
+                      logger.info(torch.amax(slots_attn))
+
+
+
+
+                      # plot the generated image with some red points on the coords to check that it's right!
+
+
+
+
+
+
                       coords = torch.einsum('nij,ijk->nk', slots_attn[idx].cpu(), grid)
                       # logger.info(coords.shape)
                       pred_real_flag = [m for m in range(N) if torch.round(preds[m, -1]) == 1] 
