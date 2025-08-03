@@ -1020,10 +1020,7 @@ elif params["running_type"] == "eval":
                     predictor = SAM2ImagePredictor(build_sam2(model_cfg, checkpoint))
 
                     with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
-                      logger.info(f"range of generated images: {torch.amin(output_image)} - {torch.amax(output_image)}")
-                      output_image = output_image/2 + 0.5
-                      logger.info(f"range of generated images: {torch.amin(output_image)} - {torch.amax(output_image)}")
-                      
+                      output_image = output_image/2 + 0.5 # [-1., 1.] -> [0., 1.]
                       predictor.set_image(output_image.permute(1, 2, 0).cpu().numpy())
                       input_point = np.array([[10, 10]])
                       input_label = np.array([0])
@@ -1039,19 +1036,22 @@ elif params["running_type"] == "eval":
 
                       # masks [3, 128, 128]
                     
-                    # for i, mask in enumerate(masks):
-                    #   logger.info(scores[i])
-                    #   logger.info(np.amin(mask))
-                    #   logger.info(np.amax(mask))
-                    
+                    logger.info(f"mask scores: {masks}")
+
                     transformed_tensor = masks[0]
 
                   if input_mode == "depth":
                     plt.imshow(transformed_tensor.squeeze().cpu().numpy())
+                    plt.savefig(os.path.join(plots_dir, f"transf_trace_{n_test_samples}_{i}.png"))
+                    plt.close()
                   elif input_mode == "seg_masks": 
-                    plt.imshow(transformed_tensor)
-                  plt.savefig(os.path.join(plots_dir, f"transf_trace_{n_test_samples}_{i}.png"))
-                  plt.close()
+                    for m in range(len(masks)):
+                      plt.imshow(masks[m])
+                      plt.tile(f"score: {scores[m]}")
+                      plt.savefig(os.path.join(plots_dir, f"mask_{m}_transf_trace_{n_test_samples}_{i}.png"))
+                      plt.close()
+                  
+                  
       
                   transform_gen_imgs.append(torch.tensor(transformed_tensor))
             transform_gen_imgs = torch.stack(transform_gen_imgs)
@@ -1064,11 +1064,7 @@ elif params["running_type"] == "eval":
             
             elif input_mode == "seg_masks":
               with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
-                
-                logger.info(f"range of target image: {torch.amin(img)} - {torch.amax(img)}")
-                img = img/2 + 0.5
-                logger.info(f"range of target image: {torch.amin(img)} - {torch.amax(img)}")
-
+                img = img/2 + 0.5 # [-1., 1.] -> [0., 1.]
                 predictor.set_image(img[0].permute(1, 2, 0).cpu().numpy())
                 input_point = np.array([[10, 10]])
                 input_label = np.array([0])
