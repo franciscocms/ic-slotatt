@@ -1021,7 +1021,7 @@ elif params["running_type"] == "eval":
 
                     with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
                       logger.info(f"range of generated images: {torch.amin(output_image)} - {torch.amax(output_image)}")
-                      output_image = output_image/2 + 1
+                      output_image = output_image/2 + 0.5
                       logger.info(f"range of generated images: {torch.amin(output_image)} - {torch.amax(output_image)}")
                       
                       predictor.set_image(output_image.permute(1, 2, 0).cpu().numpy())
@@ -1066,7 +1066,7 @@ elif params["running_type"] == "eval":
               with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
                 
                 logger.info(f"range of target image: {torch.amin(img)} - {torch.amax(img)}")
-                img = img/2 + 1
+                img = img/2 + 0.5
                 logger.info(f"range of target image: {torch.amin(img)} - {torch.amax(img)}")
 
                 predictor.set_image(img[0].permute(1, 2, 0).cpu().numpy())
