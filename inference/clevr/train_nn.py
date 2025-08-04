@@ -8,6 +8,7 @@ import json
 import numpy as np
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 import time
 from scipy.optimize import linear_sum_assignment
 from PIL import Image
@@ -1058,27 +1059,36 @@ elif params["running_type"] == "eval":
                       input_point = np.asarray(coords * 128)
                       input_label = np.array([1 for _ in range(coords.shape[0])])
 
+                      logger.info(f"input points: {input_point}")
+
+                      box = []
+                      for point in input_point:
+                        box.append([point[0]-10, point[1]-10, point[0]+10, point[1]+10])
+                      
+                      logger.info(f"box: {box}")
+
                       input_point = np.concatenate((input_point, np.array([[10, 10]])))
                       input_label = np.concatenate((input_label, np.array([0])))
 
                       if True:
                         plt.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
                         for p, point in enumerate(input_point):
-                          if input_label[p]: plt.scatter(point[0], point[1], marker="x")
-                          else: plt.scatter(point[0], point[1], marker="o")
+                          # if input_label[p]: plt.scatter(point[0], point[1], marker="x")
+                          # else: plt.scatter(point[0], point[1], marker="o")
+                          plt.add_patch(Rectangle((box[p][0], box[p][1]), 20, 20, fc ='none',  ec ='r') )
 
                         
                         plt.savefig(os.path.join(plots_dir, f"trace_{n_test_samples}_{i}.png"))
                         plt.close()
 
-                      logger.info(f"input points: {input_point}")
                       
-                      #input_point = np.array([[10, 10]])
-                      #input_label = np.array([0])
+                      
+                      
                       masks, scores, logits = predictor.predict(
-                          point_coords=input_point,
-                          point_labels=input_label,
-                          multimask_output=True,
+                          point_coords=None,
+                          point_labels=None,
+                          box=box,
+                          multimask_output=False,
                       )
                     sorted_ind = np.argsort(scores)[::-1]
                     masks = masks[sorted_ind]
