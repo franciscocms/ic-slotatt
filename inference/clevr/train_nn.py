@@ -1064,6 +1064,7 @@ elif params["running_type"] == "eval":
                       box = []
                       for point in input_point:
                         box.append([point[0]-10, point[1]-10, point[0]+10, point[1]+10])
+                      box = np.asarray(box)
                       
                       logger.info(f"box: {box} with shape {box.shape}")
 
