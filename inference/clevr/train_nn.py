@@ -1065,7 +1065,7 @@ elif params["running_type"] == "eval":
                       for point in input_point:
                         box.append([point[0]-10, point[1]-10, point[0]+10, point[1]+10])
                       
-                      logger.info(f"box: {box}")
+                      logger.info(f"box: {box} with shape {box.shape}")
 
                       input_point = np.concatenate((input_point, np.array([[10, 10]])))
                       input_label = np.concatenate((input_label, np.array([0])))
@@ -1097,6 +1097,7 @@ elif params["running_type"] == "eval":
 
                       # masks [3, 128, 128]
                     
+                    logger.info(f"mask shape: {masks.shape}")
                     logger.info(f"mask scores: {scores}")
 
                     transformed_tensor = masks[0]
@@ -1106,11 +1107,12 @@ elif params["running_type"] == "eval":
                     plt.savefig(os.path.join(plots_dir, f"transf_trace_{n_test_samples}_{i}.png"))
                     plt.close()
                   elif input_mode == "seg_masks": 
-                    for m in range(len(masks)):
-                      plt.imshow(masks[m])
-                      plt.title(f"score: {scores[m]}")
-                      plt.savefig(os.path.join(plots_dir, f"mask_{m}_transf_trace_{n_test_samples}_{i}.png"))
-                      plt.close()
+                    #for m in range(len(masks)):
+                    #plt.imshow(masks[m])
+                    plt.imshow(np.squeeze(masks))
+                    plt.title(f"score: {scores}")
+                    plt.savefig(os.path.join(plots_dir, f"mask_transf_trace_{n_test_samples}_{i}.png"))
+                    plt.close()
 
                   transform_gen_imgs.append(torch.tensor(transformed_tensor))
             transform_gen_imgs = torch.stack(transform_gen_imgs)
