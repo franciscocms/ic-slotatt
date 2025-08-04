@@ -1091,10 +1091,10 @@ elif params["running_type"] == "eval":
                           box=box,
                           multimask_output=False,
                       )
-                    sorted_ind = np.argsort(scores)[::-1]
-                    masks = masks[sorted_ind]
-                    scores = scores[sorted_ind]
-                    logits = logits[sorted_ind]
+                    # sorted_ind = np.argsort(scores)[::-1]
+                    # masks = masks[sorted_ind]
+                    # scores = scores[sorted_ind]
+                    # logits = logits[sorted_ind]
 
                       # masks [3, 128, 128]
                     
