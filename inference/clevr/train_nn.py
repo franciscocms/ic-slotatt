@@ -1071,13 +1071,13 @@ elif params["running_type"] == "eval":
                       input_label = np.concatenate((input_label, np.array([0])))
 
                       if True:
-                        plt.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
+                        fig = plt.figure()
+                        ax = fig.add_subplot(111)
+                        ax.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
                         for p, point in enumerate(input_point):
                           # if input_label[p]: plt.scatter(point[0], point[1], marker="x")
                           # else: plt.scatter(point[0], point[1], marker="o")
-                          plt.add_patch(Rectangle((box[p][0], box[p][1]), 20, 20, fc ='none',  ec ='r') )
-
-                        
+                          ax.add_patch(Rectangle((box[p][0], box[p][1]), 20, 20, fc ='none',  ec ='r'))
                         plt.savefig(os.path.join(plots_dir, f"trace_{n_test_samples}_{i}.png"))
                         plt.close()
 
