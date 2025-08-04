@@ -1060,7 +1060,7 @@ elif params["running_type"] == "eval":
                       if True:
                         plt.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
                         for coord in coords:
-                          plt.scatter(coord[0], coord[1], "xo")
+                          plt.scatter(coord[0], coord[1], marker="rx")
                         
                         plt.savefig(os.path.join(plots_dir, f"trace_{n_test_samples}_{i}.png"))
                         plt.close()
