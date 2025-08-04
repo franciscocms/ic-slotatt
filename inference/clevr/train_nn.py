@@ -1108,12 +1108,12 @@ elif params["running_type"] == "eval":
                     plt.savefig(os.path.join(plots_dir, f"transf_trace_{n_test_samples}_{i}.png"))
                     plt.close()
                   elif input_mode == "seg_masks": 
-                    #for m in range(len(masks)):
-                    #plt.imshow(masks[m])
-                    plt.imshow(np.squeeze(masks))
-                    plt.title(f"score: {scores}")
-                    plt.savefig(os.path.join(plots_dir, f"mask_transf_trace_{n_test_samples}_{i}.png"))
-                    plt.close()
+                    masks = np.squeeze(masks)
+                    for m in range(len(masks)):
+                      plt.imshow(masks[m])
+                      plt.title(f"score: {scores[m]}")
+                      plt.savefig(os.path.join(plots_dir, f"mask_{m}_transf_trace_{n_test_samples}_{i}.png"))
+                      plt.close()
 
                   transform_gen_imgs.append(torch.tensor(transformed_tensor))
             transform_gen_imgs = torch.stack(transform_gen_imgs)
