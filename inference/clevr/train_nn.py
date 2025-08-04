@@ -1063,7 +1063,7 @@ elif params["running_type"] == "eval":
 
                       box = []
                       for point in input_point:
-                        box.append([point[0]-10, point[1]-10, point[0]+10, point[1]+10])
+                        box.append([point[0]-20, point[1]-20, point[0]+20, point[1]+20])
                       box = np.asarray(box)
                       
                       logger.info(f"box: {box} with shape {box.shape}")
@@ -1078,13 +1078,10 @@ elif params["running_type"] == "eval":
                         for p, point in enumerate(coords):
                           # if input_label[p]: plt.scatter(point[0], point[1], marker="x")
                           # else: plt.scatter(point[0], point[1], marker="o")
-                          ax.add_patch(Rectangle((box[p][0], box[p][1]), 20, 20, fc ='none',  ec ='r'))
+                          ax.add_patch(Rectangle((box[p][0], box[p][1]), 40, 40, fc ='none',  ec ='r'))
                         plt.savefig(os.path.join(plots_dir, f"trace_{n_test_samples}_{i}.png"))
                         plt.close()
 
-                      
-                      
-                      
                       masks, scores, logits = predictor.predict(
                           point_coords=None,
                           point_labels=None,
