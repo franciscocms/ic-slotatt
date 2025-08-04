@@ -161,7 +161,7 @@ class SlotAttention(nn.Module):
 
 def build_2d_grid(resolution):
   ranges = [np.linspace(0., 1., num=res) for res in resolution]
-  grid = np.meshgrid(*ranges, sparse=False, indexing="ij")
+  grid = np.meshgrid(*ranges, sparse=False, indexing="xy")
   grid = np.stack(grid, axis=-1)
   return grid
 
@@ -1015,10 +1015,7 @@ elif params["running_type"] == "eval":
                 for i in range(site["fn"].mean.shape[0]):
                   output_image = site["fn"].mean[i]
 
-                  if True:
-                    plt.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
-                    plt.savefig(os.path.join(plots_dir, f"trace_{n_test_samples}_{i}.png"))
-                    plt.close()
+                  
                   
                   if input_mode == "depth":
                     transformed_tensor = zoe.infer(transform_to_depth(output_image.unsqueeze(0))) # [1, 1, 128, 128]
@@ -1039,7 +1036,16 @@ elif params["running_type"] == "eval":
                       slots_attn = slots_attn / torch.sum(slots_attn, dim=-1, keepdim=True)
                       slots_attn = slots_attn.reshape(B, N, int(np.sqrt(d)), int(np.sqrt(d))).double()
                       grid = torch.from_numpy(build_2d_grid((32, 32)))
+                      
+                      
+                      
+                      
                       # plot the generated image with some red points on the coords to check that it's right!
+
+
+
+
+
 
 
                       coords = torch.einsum('nij,ijk->nk', slots_attn[idx].cpu(), grid)
@@ -1050,6 +1056,17 @@ elif params["running_type"] == "eval":
 
                       coords = coords[pred_real_flag]
                       input_point = np.asarray(coords * 128)
+
+                      if True:
+                        plt.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
+                        for coord in coords:
+                          plt.scatter(coord[0], coord[1], "xo")
+                        
+                        plt.savefig(os.path.join(plots_dir, f"trace_{n_test_samples}_{i}.png"))
+                        plt.close()
+
+
+
                       input_label = np.array([1 for _ in range(coords.shape[0])])
 
                       logger.info(f"input points: {input_point}")
