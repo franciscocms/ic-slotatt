@@ -1058,8 +1058,8 @@ elif params["running_type"] == "eval":
                       input_point = np.asarray(coords * 128)
                       input_label = np.array([1 for _ in range(coords.shape[0])])
 
-                      input_point = np.concatenate(input_point, np.array([10, 10]))
-                      input_label = np.concatenate(input_label, np.array([0]))
+                      input_point = np.concatenate((input_point, np.array([[10, 10]])))
+                      input_label = np.concatenate((input_label, np.array([0])))
 
                       if True:
                         plt.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
