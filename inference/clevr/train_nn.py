@@ -1074,7 +1074,7 @@ elif params["running_type"] == "eval":
                         fig = plt.figure()
                         ax = fig.add_subplot(111)
                         ax.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
-                        for p, point in enumerate(input_point):
+                        for p, point in enumerate(coords):
                           # if input_label[p]: plt.scatter(point[0], point[1], marker="x")
                           # else: plt.scatter(point[0], point[1], marker="o")
                           ax.add_patch(Rectangle((box[p][0], box[p][1]), 20, 20, fc ='none',  ec ='r'))
