@@ -995,7 +995,9 @@ elif params["running_type"] == "eval":
     n_test_samples = 0
     with torch.no_grad():
       for idx, (img, target, pixel_coords) in enumerate(val_dataloader):
-          img = img.to(DEVICE)        
+          img = img.to(DEVICE)   
+
+          pixel_coords = pixel_coords[0]     
 
           n_test_samples += 1
               
