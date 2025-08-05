@@ -582,9 +582,10 @@ color2id = list2dict(colors)
 
 
 class CLEVR(Dataset):
-    def __init__(self, images_path, scenes_path, max_objs=6, get_target=True):
+    def __init__(self, images_path, scenes_path, max_objs=6, get_target=True, get_pixel_coords=False):
         self.max_objs = max_objs
         self.get_target = get_target
+        self.get_pixel_coords = get_pixel_coords
         self.images_path = images_path
         
         with open(scenes_path, 'r') as f:
@@ -607,6 +608,7 @@ class CLEVR(Dataset):
         img = Image.open(os.path.join(self.images_path, scene['image_filename'])).convert('RGB')
         img = self.transform(img)
         target = []
+        pixel_coords = []
         if self.get_target:
             for obj in scene['objects']:
                 coords = ((torch.Tensor(obj['3d_coords']) + 3.) / 6.).view(1, 3)
@@ -617,10 +619,15 @@ class CLEVR(Dataset):
                 color = F.one_hot(torch.LongTensor([color2id[obj['color']]]), 8)
                 obj_vec = torch.cat((coords, size, material, shape, color, torch.Tensor([[1.]])), dim=1)[0]
                 target.append(obj_vec)
+
+                resize_factor = np.array([128/320, 128/240])
+                pixel_coords.append(torch.from_numpy(obj['pixel_coords'][:2] * resize_factor)) # 320x240 -> 128x128
+
             while len(target) < self.max_objs:
                 target.append(torch.zeros(19, device='cpu'))
-            target = torch.stack(target)       
-        return img*2 - 1, target
+            target = torch.stack(target)  
+            pixel_coords = torch.stack(pixel_coords)     
+        return img*2 - 1, target if not self.get_pixel_coords else img*2 - 1, target, pixel_coords
 
 
 def average_precision_clevr(pred, attributes, distance_threshold):
@@ -835,6 +842,14 @@ if params["running_type"] == "train":
 
 elif params["running_type"] == "eval":
 
+  val_data = CLEVR(images_path = os.path.join(dataset_path, 'images/val'),
+                   scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json'),
+                   max_objs=10,
+                   get_pixel_coords = True)
+  val_dataloader = DataLoader(val_data, batch_size = 512,
+                                shuffle=False, num_workers=8, generator=torch.Generator(device='cuda'))
+  
+  
   plots_dir = os.path.abspath("set_prediction_plots")
   if not os.path.isdir(plots_dir): os.mkdir(plots_dir)
   else: 
@@ -980,7 +995,7 @@ elif params["running_type"] == "eval":
     
     n_test_samples = 0
     with torch.no_grad():
-      for idx, (img, target) in enumerate(val_dataloader):
+      for idx, (img, target, pixel_coords) in enumerate(val_dataloader):
           img = img.to(DEVICE)        
 
           n_test_samples += 1
@@ -1045,14 +1060,17 @@ elif params["running_type"] == "eval":
                       grid = torch.from_numpy(build_2d_grid((32, 32)))
                       
                       coords = torch.einsum('nij,ijk->nk', slots_attn[idx].cpu(), grid)
+                      
+                      logger.info(f"pred coords shape: {coords.shape}")
+                      logger.info(f"pixel coords shape: {pixel_coords.shape}")
+                      
+                      
                       # logger.info(coords.shape)
                       pred_real_flag = [m for m in range(N) if torch.round(preds[m, -1]) == 1] 
                       
                       # logger.info(f"pred real flag: {pred_real_flag}")
 
                       coords = coords[pred_real_flag] # [#real, 2]
-
-                      logger.info(f"coords: {coords}")
 
                       transformed_tensor = torch.zeros(128, 128)
 
@@ -1194,9 +1212,6 @@ elif params["running_type"] == "eval":
             max_ap[t] += compute_AP(max_preds.detach().cpu(),
                                    target.detach().cpu(),
                                    t)
-
-          logger.info(max_preds[:, :3])
-          logger.info(target[:, :3])
       
           if n_test_samples == 1 or n_test_samples % 100 == 0:
             logger.info(f"\n{n_test_samples} evaluated...")
