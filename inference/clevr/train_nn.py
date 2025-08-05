@@ -841,7 +841,7 @@ elif params["running_type"] == "eval":
       shutil.rmtree(plots_dir)
       os.mkdir(plots_dir)
 
-  input_mode = "RGB" # "RGB", "depth", "seg_masks"
+  input_mode = "seg_masks" # "RGB", "depth", "seg_masks"
 
   if input_mode == "depth":
     # load pre-trained model
@@ -1044,6 +1044,9 @@ elif params["running_type"] == "eval":
                       # logger.info(f"pred real flag: {pred_real_flag}")
 
                       coords = coords[pred_real_flag]
+                      coords = coords[0].unsqueeze(0)
+
+
                       input_point = np.asarray(coords * 128)
                       input_label = np.array([1 for _ in range(coords.shape[0])])
 
@@ -1056,30 +1059,31 @@ elif params["running_type"] == "eval":
                       
                       logger.info(f"box: {box} with shape {box.shape}")
 
-                      input_point = np.concatenate((input_point, np.array([[10, 10]])))
-                      input_label = np.concatenate((input_label, np.array([0])))
+                      # input_point = np.concatenate((input_point, np.array([[10, 10]])))
+                      # input_label = np.concatenate((input_label, np.array([0])))
 
+                      
                       if True:
                         fig = plt.figure()
                         ax = fig.add_subplot(111)
                         ax.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
                         for p, point in enumerate(coords):
-                          # if input_label[p]: plt.scatter(point[0], point[1], marker="x")
-                          # else: plt.scatter(point[0], point[1], marker="o")
-                          ax.add_patch(Rectangle((box[p][0], box[p][1]), 40, 40, fc ='none',  ec ='r'))
+                          if input_label[p]: plt.scatter(point[0], point[1], marker="x")
+                          else: plt.scatter(point[0], point[1], marker="o")
+
+                          #ax.add_patch(Rectangle((box[p][0], box[p][1]), 40, 40, fc ='none',  ec ='r'))
                         plt.savefig(os.path.join(plots_dir, f"trace_{n_test_samples}_{i}.png"))
                         plt.close()
 
                       masks, scores, logits = predictor.predict(
-                          point_coords=None,
-                          point_labels=None,
-                          box=box,
-                          multimask_output=False,
+                          point_coords=input_point,
+                          point_labels=input_label,
+                          multimask_output=True,
                       )
-                    # sorted_ind = np.argsort(scores)[::-1]
-                    # masks = masks[sorted_ind]
-                    # scores = scores[sorted_ind]
-                    # logits = logits[sorted_ind]
+                    sorted_ind = np.argsort(scores)[::-1]
+                    masks = masks[sorted_ind]
+                    scores = scores[sorted_ind]
+                    logits = logits[sorted_ind]
 
                       # masks [3, 128, 128]
                     
@@ -1093,7 +1097,7 @@ elif params["running_type"] == "eval":
                     plt.savefig(os.path.join(plots_dir, f"transf_trace_{n_test_samples}_{i}.png"))
                     plt.close()
                   elif input_mode == "seg_masks": 
-                    masks = np.squeeze(masks)
+                    #masks = np.squeeze(masks)
                     for m in range(len(masks)):
                       plt.imshow(masks[m])
                       plt.title(f"score: {scores[m]}")
@@ -1183,8 +1187,8 @@ elif params["running_type"] == "eval":
             max_aux_mAP = {k: v/n_test_samples for k, v in max_ap.items()}
             logger.info(max_aux_mAP)
           
-          # if n_test_samples == 1:
-          #   break
+          if n_test_samples == 1:
+            break
   logger.info(f"\ninference ended...")
 
 if params["running_type"] == "train": wandb.finish()
