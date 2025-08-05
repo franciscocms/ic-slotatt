@@ -627,7 +627,9 @@ class CLEVR(Dataset):
                 target.append(torch.zeros(19, device='cpu'))
             target = torch.stack(target)  
             pixel_coords = torch.stack(pixel_coords)     
-        return img*2 - 1, target if not self.get_pixel_coords else img*2 - 1, target, pixel_coords
+        if not self.get_pixel_coords:
+          return img*2 - 1, target 
+        else: return img*2 - 1, target, pixel_coords
 
 
 def average_precision_clevr(pred, attributes, distance_threshold):
