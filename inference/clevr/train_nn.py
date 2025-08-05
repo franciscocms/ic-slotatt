@@ -1104,10 +1104,14 @@ elif params["running_type"] == "eval":
                         for m in range(len(masks)):
                           plt.imshow(masks[m])
                           plt.title(f"score: {scores[m]}")
-                          plt.savefig(os.path.join(plots_dir, f"trace_{i}_mask_{m}_image_{n_test_samples}.png"))
+                          plt.savefig(os.path.join(plots_dir, f"trace_{i}_mask_{o}_image_{n_test_samples}.png"))
                           plt.close()
                   
                   logger.info(transformed_tensor.shape)
+
+                  plt.imshow(transformed_tensor.cpu().numpy())
+                  plt.savefig(os.path.join(plots_dir, f"trace_{i}_all_mask_image_{n_test_samples}.png"))
+                  plt.close()
 
                   transform_gen_imgs.append(torch.tensor(transformed_tensor))
             
