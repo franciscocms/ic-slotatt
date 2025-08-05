@@ -841,7 +841,7 @@ elif params["running_type"] == "eval":
       shutil.rmtree(plots_dir)
       os.mkdir(plots_dir)
 
-  input_mode = "seg_masks" # "RGB", "depth", "seg_masks"
+  input_mode = "RGB" # "RGB", "depth", "seg_masks"
 
   if input_mode == "depth":
     # load pre-trained model
@@ -992,7 +992,7 @@ elif params["running_type"] == "eval":
           # get the predictions of the first proposal trace
           preds = process_preds(prop_traces, 0) 
 
-          if True:
+          if False:
             plt.imshow(visualize(img[0].permute(1, 2, 0).cpu().numpy()))
             plt.savefig(os.path.join(plots_dir, f"image_{n_test_samples}.png"))
             plt.close()
@@ -1016,8 +1016,7 @@ elif params["running_type"] == "eval":
                 for i in range(site["fn"].mean.shape[0]):
                   output_image = site["fn"].mean[i]
 
-                  
-                  
+
                   if input_mode == "depth":
                     transformed_tensor = zoe.infer(transform_to_depth(output_image.unsqueeze(0))) # [1, 1, 128, 128]
                   elif input_mode == "seg_masks":
@@ -1038,17 +1037,6 @@ elif params["running_type"] == "eval":
                       slots_attn = slots_attn.reshape(B, N, int(np.sqrt(d)), int(np.sqrt(d))).double()
                       grid = torch.from_numpy(build_2d_grid((32, 32)))
                       
-                      
-                      
-                      
-                      # plot the generated image with some red points on the coords to check that it's right!
-
-
-
-
-
-
-
                       coords = torch.einsum('nij,ijk->nk', slots_attn[idx].cpu(), grid)
                       # logger.info(coords.shape)
                       pred_real_flag = [m for m in range(N) if torch.round(preds[m, -1]) == 1] 
@@ -1117,9 +1105,9 @@ elif params["running_type"] == "eval":
 
             if input_mode == "depth":
               transformed_target_tensor = zoe.infer(transform_to_depth(img)) # [1, 1, 128, 128]
-              # plt.imshow(transformed_target_tensor.squeeze().cpu().numpy())
-              # plt.savefig(os.path.join(plots_dir, f"depth_image_{n_test_samples}.png"))
-              # plt.close()
+              plt.imshow(transformed_target_tensor.squeeze().cpu().numpy())
+              plt.savefig(os.path.join(plots_dir, f"depth_image_{n_test_samples}.png"))
+              plt.close()
             
             elif input_mode == "seg_masks":
               with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
@@ -1141,10 +1129,6 @@ elif params["running_type"] == "eval":
               plt.imshow(transformed_target_tensor)
               plt.savefig(os.path.join(plots_dir, f"transf_image_{n_test_samples}.png"))
               plt.close()
-            
-
-
-            
 
             log_wts = []
             for i in range(params["num_inference_samples"]):
@@ -1156,16 +1140,6 @@ elif params["running_type"] == "eval":
             resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
             resampling_id = resampling().item()
 
-            #logger.info(f"\nlog weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
-
-
-
-
-
-          
-          
-          
-          
           preds = process_preds(prop_traces, resampling_id)
           target = target.squeeze(0)
           for t in threshold: 
@@ -1209,10 +1183,8 @@ elif params["running_type"] == "eval":
             max_aux_mAP = {k: v/n_test_samples for k, v in max_ap.items()}
             logger.info(max_aux_mAP)
           
-          if n_test_samples == 1:
-            logger.info(f"\ninference ended...")
-            break
-            
-
+          # if n_test_samples == 1:
+          #   break
+  logger.info(f"\ninference ended...")
 
 if params["running_type"] == "train": wandb.finish()
