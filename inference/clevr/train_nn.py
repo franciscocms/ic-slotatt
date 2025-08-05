@@ -1055,7 +1055,7 @@ elif params["running_type"] == "eval":
                       for o, attn_obj_coords in enumerate(coords):
                         attn_obj_coords = attn_obj_coords.unsqueeze(0)
                         
-                        sampled_obj_coords = torch.distributions.Normal(attn_obj_coords, torch.tensor(0.05)).sample((5,))
+                        sampled_obj_coords = torch.distributions.Normal(attn_obj_coords, 0.05).sample((5,))
                         best_score, best_score_idx = 0., 0
                         all_best_masks, all_best_scores = [], []
                         for s_idx, obj_coords in enumerate(sampled_obj_coords):
