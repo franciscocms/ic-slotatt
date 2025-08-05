@@ -840,15 +840,7 @@ if params["running_type"] == "train":
   trainer.train(root_folder)
   logger.info("\ntraining ended...")
 
-elif params["running_type"] == "eval":
-
-  val_data = CLEVR(images_path = os.path.join(dataset_path, 'images/val'),
-                   scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json'),
-                   max_objs=10,
-                   get_pixel_coords = True)
-  val_dataloader = DataLoader(val_data, batch_size = 512,
-                                shuffle=False, num_workers=8, generator=torch.Generator(device='cuda'))
-  
+elif params["running_type"] == "eval":  
   
   plots_dir = os.path.abspath("set_prediction_plots")
   if not os.path.isdir(plots_dir): os.mkdir(plots_dir)
@@ -937,6 +929,11 @@ elif params["running_type"] == "eval":
   ap = {k: 0 for k in threshold}
   max_ap = {k: 0 for k in threshold}
 
+  val_data = CLEVR(images_path = os.path.join(dataset_path, 'images/val'),
+                   scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json'),
+                   max_objs=10,
+                   get_pixel_coords = True)
+  
   val_dataloader = DataLoader(val_data, batch_size = 1,
                                 shuffle=False, num_workers=8, generator=torch.Generator(device='cuda'))
 
