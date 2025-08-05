@@ -1067,7 +1067,7 @@ elif params["running_type"] == "eval":
                         fig = plt.figure()
                         ax = fig.add_subplot(111)
                         ax.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
-                        for p, point in enumerate(coords):
+                        for p, point in enumerate(input_point):
                           if input_label[p]: plt.scatter(point[0], point[1], marker="x")
                           else: plt.scatter(point[0], point[1], marker="o")
 
