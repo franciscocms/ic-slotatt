@@ -1052,25 +1052,46 @@ elif params["running_type"] == "eval":
 
                       transformed_tensor = torch.zeros(128, 128)
 
-                      for o, obj_coords in enumerate(coords):
-                        obj_coords = obj_coords.unsqueeze(0)
-
-                        input_point = np.asarray(obj_coords * 128)
-                        input_label = np.array([1 for _ in range(obj_coords.shape[0])])
-
-                        logger.info(f"input points: {input_point}")
-
-                        # box = []
-                        # for point in input_point:
-                        #   box.append([point[0]-20, point[1]-20, point[0]+20, point[1]+20])
-                        # box = np.asarray(box)
+                      for o, attn_obj_coords in enumerate(coords):
+                        attn_obj_coords = attn_obj_coords.unsqueeze(0)
                         
-                        # logger.info(f"box: {box} with shape {box.shape}")
+                        sampled_obj_coords = torch.distributions.Normal(attn_obj_coords, torch.tensor(0.05)).sample((5,))
+                        best_score, best_score_idx = 0., 0
+                        all_best_masks, all_best_scores = [], []
+                        for s_idx, obj_coords in enumerate(sampled_obj_coords):
 
-                        input_point = np.concatenate((input_point, np.array([[10, 10]])))
-                        input_label = np.concatenate((input_label, np.array([0])))
+                          input_point = np.asarray(obj_coords * 128)
+                          input_label = np.array([1 for _ in range(obj_coords.shape[0])])
 
-                      
+                          input_point = np.concatenate((input_point, np.array([[10, 10]])))
+                          input_label = np.concatenate((input_label, np.array([0])))
+
+                          masks, scores, logits = predictor.predict(
+                              point_coords=input_point,
+                              point_labels=input_label,
+                              multimask_output=True,
+                          )
+                          sorted_ind = np.argsort(scores)[::-1]
+                          masks = masks[sorted_ind]
+                          scores = scores[sorted_ind]
+                          logits = logits[sorted_ind]
+
+                          # taking only the mask with highest score
+                          masks = torch.tensor(masks[0]).unsqueeze(0).cpu().numpy()
+                          all_best_masks.append(masks)
+                          all_best_scores.append(scores[0])
+
+                          if scores[0] > best_score:
+                            best_score = scores[0]
+                            best_score_idx = s_idx
+                          
+                        
+                        masks = all_best_masks[best_score_idx]
+                        scores = all_best_scores[best_score_idx]
+
+                        logger.info(masks.shape)
+                        logger.info(scores.shape)
+                        
                         if True:
                           fig = plt.figure()
                           ax = fig.add_subplot(111)
@@ -1083,29 +1104,13 @@ elif params["running_type"] == "eval":
                           plt.savefig(os.path.join(plots_dir, f"trace_{i}_object_{o}_image_{n_test_samples}.png"))
                           plt.close()
 
-                        masks, scores, logits = predictor.predict(
-                            point_coords=input_point,
-                            point_labels=input_label,
-                            multimask_output=True,
-                        )
-                        sorted_ind = np.argsort(scores)[::-1]
-                        masks = masks[sorted_ind]
-                        scores = scores[sorted_ind]
-                        logits = logits[sorted_ind]
-
-                        # taking only the mask with highest score
-                        masks = torch.tensor(masks[0]).unsqueeze(0).cpu().numpy()
-                        
-                        logger.info(f"mask shape: {masks.shape}")
-                        logger.info(f"mask scores: {scores}")
-
                         transformed_tensor += torch.tensor(masks[0]*(o+1))
 
-                        for m in range(len(masks)):
-                          plt.imshow(masks[m])
-                          plt.title(f"score: {scores[m]}")
-                          plt.savefig(os.path.join(plots_dir, f"trace_{i}_mask_{o}_image_{n_test_samples}.png"))
-                          plt.close()
+                        #for m in range(len(masks)):
+                        plt.imshow(masks)
+                        plt.title(f"score: {scores}")
+                        plt.savefig(os.path.join(plots_dir, f"trace_{i}_mask_{o}_image_{n_test_samples}.png"))
+                        plt.close()
                   
                   logger.info(transformed_tensor.shape)
 
