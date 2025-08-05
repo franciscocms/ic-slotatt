@@ -1107,7 +1107,7 @@ elif params["running_type"] == "eval":
                         transformed_tensor += torch.tensor(masks[0]*(o+1))
 
                         #for m in range(len(masks)):
-                        plt.imshow(masks)
+                        plt.imshow(masks.squeeze())
                         plt.title(f"score: {scores}")
                         plt.savefig(os.path.join(plots_dir, f"trace_{i}_mask_{o}_image_{n_test_samples}.png"))
                         plt.close()
