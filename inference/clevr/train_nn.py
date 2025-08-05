@@ -1066,50 +1066,34 @@ elif params["running_type"] == "eval":
                       
                       
                       # logger.info(coords.shape)
-                      pred_real_flag = [m for m in range(N) if torch.round(preds[m, -1]) == 1] 
+                      # pred_real_flag = [m for m in range(N) if torch.round(preds[m, -1]) == 1] 
                       
                       # logger.info(f"pred real flag: {pred_real_flag}")
 
-                      coords = coords[pred_real_flag] # [#real, 2]
+                      #coords = coords[pred_real_flag] # [#real, 2]
 
                       transformed_tensor = torch.zeros(128, 128)
 
-                      for o, attn_obj_coords in enumerate(coords):
-                        attn_obj_coords = attn_obj_coords.unsqueeze(0)
+                      for o, obj_coords in enumerate(pixel_coords):
                         
-                        sampled_obj_coords = torch.distributions.Normal(attn_obj_coords, 0.05).sample((20,))
-                        best_score, best_score_idx = 0., 0
-                        all_best_masks, all_best_scores = [], []
-                        for s_idx, obj_coords in enumerate(sampled_obj_coords):
+                        input_point = np.asarray(obj_coords)
+                        input_label = np.array([1 for _ in range(obj_coords.shape[0])])
 
-                          input_point = np.asarray(obj_coords * 128)
-                          input_label = np.array([1 for _ in range(obj_coords.shape[0])])
+                        input_point = np.concatenate((input_point, np.array([[10, 10]])))
+                        input_label = np.concatenate((input_label, np.array([0])))
 
-                          input_point = np.concatenate((input_point, np.array([[10, 10]])))
-                          input_label = np.concatenate((input_label, np.array([0])))
+                        masks, scores, logits = predictor.predict(
+                            point_coords=input_point,
+                            point_labels=input_label,
+                            multimask_output=True,
+                        )
+                        sorted_ind = np.argsort(scores)[::-1]
+                        masks = masks[sorted_ind]
+                        scores = scores[sorted_ind]
+                        logits = logits[sorted_ind]
 
-                          masks, scores, logits = predictor.predict(
-                              point_coords=input_point,
-                              point_labels=input_label,
-                              multimask_output=True,
-                          )
-                          sorted_ind = np.argsort(scores)[::-1]
-                          masks = masks[sorted_ind]
-                          scores = scores[sorted_ind]
-                          logits = logits[sorted_ind]
-
-                          # taking only the mask with highest score
-                          masks = torch.tensor(masks[0]).unsqueeze(0).cpu().numpy()
-                          all_best_masks.append(masks)
-                          all_best_scores.append(scores[0])
-
-                          if scores[0] > best_score:
-                            best_score = scores[0]
-                            best_score_idx = s_idx
-                          
-                        
-                        masks = all_best_masks[best_score_idx]
-                        scores = all_best_scores[best_score_idx]
+                        # taking only the mask with highest score
+                        masks = torch.tensor(masks[0]).unsqueeze(0).cpu().numpy()
 
                         # logger.info(masks.shape)
                         # logger.info(scores.shape)
