@@ -1019,6 +1019,11 @@ elif params["running_type"] == "eval":
 
                   if input_mode == "depth":
                     transformed_tensor = zoe.infer(transform_to_depth(output_image.unsqueeze(0))) # [1, 1, 128, 128]
+                    plt.imshow(transformed_tensor.squeeze().cpu().numpy())
+                    plt.savefig(os.path.join(plots_dir, f"transf_trace_{n_test_samples}_{i}.png"))
+                    plt.close()
+                  
+                  
                   elif input_mode == "seg_masks":
                     
                     checkpoint = "/nas-ctm01/homes/fcsilva/sam2/checkpoints/sam2.1_hiera_large.pt"
@@ -1043,68 +1048,69 @@ elif params["running_type"] == "eval":
                       
                       # logger.info(f"pred real flag: {pred_real_flag}")
 
-                      coords = coords[pred_real_flag]
-                      coords = coords[0].unsqueeze(0)
+                      coords = coords[pred_real_flag] # [#real, 2]
 
+                      transformed_tensor = torch.zeros(128, 128)
 
-                      input_point = np.asarray(coords * 128)
-                      input_label = np.array([1 for _ in range(coords.shape[0])])
+                      for o, obj_coords in enumerate(coords):
+                        obj_coords = obj_coords.unsqueeze(0)
 
-                      logger.info(f"input points: {input_point}")
+                        input_point = np.asarray(obj_coords * 128)
+                        input_label = np.array([1 for _ in range(obj_coords.shape[0])])
 
-                      box = []
-                      for point in input_point:
-                        box.append([point[0]-20, point[1]-20, point[0]+20, point[1]+20])
-                      box = np.asarray(box)
+                        logger.info(f"input points: {input_point}")
+
+                        # box = []
+                        # for point in input_point:
+                        #   box.append([point[0]-20, point[1]-20, point[0]+20, point[1]+20])
+                        # box = np.asarray(box)
+                        
+                        # logger.info(f"box: {box} with shape {box.shape}")
+
+                        # input_point = np.concatenate((input_point, np.array([[10, 10]])))
+                        # input_label = np.concatenate((input_label, np.array([0])))
+
                       
-                      logger.info(f"box: {box} with shape {box.shape}")
+                        if True:
+                          fig = plt.figure()
+                          ax = fig.add_subplot(111)
+                          ax.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
+                          for p, point in enumerate(input_point):
+                            if input_label[p]: plt.scatter(point[0], point[1], marker="x")
+                            else: plt.scatter(point[0], point[1], marker="o")
 
-                      # input_point = np.concatenate((input_point, np.array([[10, 10]])))
-                      # input_label = np.concatenate((input_label, np.array([0])))
+                            #ax.add_patch(Rectangle((box[p][0], box[p][1]), 40, 40, fc ='none',  ec ='r'))
+                          plt.savefig(os.path.join(plots_dir, f"trace_{i}_object_{o}_image_{n_test_samples}.png"))
+                          plt.close()
 
-                      
-                      if True:
-                        fig = plt.figure()
-                        ax = fig.add_subplot(111)
-                        ax.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
-                        for p, point in enumerate(input_point):
-                          if input_label[p]: plt.scatter(point[0], point[1], marker="x")
-                          else: plt.scatter(point[0], point[1], marker="o")
+                        masks, scores, logits = predictor.predict(
+                            point_coords=input_point,
+                            point_labels=input_label,
+                            multimask_output=True,
+                        )
+                        sorted_ind = np.argsort(scores)[::-1]
+                        masks = masks[sorted_ind]
+                        scores = scores[sorted_ind]
+                        logits = logits[sorted_ind]
 
-                          #ax.add_patch(Rectangle((box[p][0], box[p][1]), 40, 40, fc ='none',  ec ='r'))
-                        plt.savefig(os.path.join(plots_dir, f"trace_{n_test_samples}_{i}.png"))
-                        plt.close()
+                        # taking only the mask with highest score
+                        masks = masks[0].unsqueeeze(0)
+                        
+                        logger.info(f"mask shape: {masks.shape}")
+                        logger.info(f"mask scores: {scores}")
 
-                      masks, scores, logits = predictor.predict(
-                          point_coords=input_point,
-                          point_labels=input_label,
-                          multimask_output=True,
-                      )
-                    sorted_ind = np.argsort(scores)[::-1]
-                    masks = masks[sorted_ind]
-                    scores = scores[sorted_ind]
-                    logits = logits[sorted_ind]
+                        transformed_tensor += torch.tensor(masks[0]*(o+1))
 
-                      # masks [3, 128, 128]
-                    
-                    logger.info(f"mask shape: {masks.shape}")
-                    logger.info(f"mask scores: {scores}")
-
-                    transformed_tensor = masks[0]
-
-                  if input_mode == "depth":
-                    plt.imshow(transformed_tensor.squeeze().cpu().numpy())
-                    plt.savefig(os.path.join(plots_dir, f"transf_trace_{n_test_samples}_{i}.png"))
-                    plt.close()
-                  elif input_mode == "seg_masks": 
-                    #masks = np.squeeze(masks)
-                    for m in range(len(masks)):
-                      plt.imshow(masks[m])
-                      plt.title(f"score: {scores[m]}")
-                      plt.savefig(os.path.join(plots_dir, f"mask_{m}_transf_trace_{n_test_samples}_{i}.png"))
-                      plt.close()
+                        for m in range(len(masks)):
+                          plt.imshow(masks[m])
+                          plt.title(f"score: {scores[m]}")
+                          plt.savefig(os.path.join(plots_dir, f"trace_{i}_mask_{m}_image_{n_test_samples}.png"))
+                          plt.close()
+                  
+                  logger.info(transformed_tensor.shape)
 
                   transform_gen_imgs.append(torch.tensor(transformed_tensor))
+            
             transform_gen_imgs = torch.stack(transform_gen_imgs)
 
             if input_mode == "depth":
