@@ -1094,7 +1094,7 @@ elif params["running_type"] == "eval":
                         logits = logits[sorted_ind]
 
                         # taking only the mask with highest score
-                        masks = masks[0].unsqueeeze(0)
+                        masks = torch.tensor(masks[0]).unsqueeeze(0).numpy()
                         
                         logger.info(f"mask shape: {masks.shape}")
                         logger.info(f"mask scores: {scores}")
