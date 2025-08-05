@@ -1052,6 +1052,8 @@ elif params["running_type"] == "eval":
 
                       coords = coords[pred_real_flag] # [#real, 2]
 
+                      logger.info(f"coords: {coords}")
+
                       transformed_tensor = torch.zeros(128, 128)
 
                       for o, attn_obj_coords in enumerate(coords):
@@ -1091,8 +1093,8 @@ elif params["running_type"] == "eval":
                         masks = all_best_masks[best_score_idx]
                         scores = all_best_scores[best_score_idx]
 
-                        logger.info(masks.shape)
-                        logger.info(scores.shape)
+                        # logger.info(masks.shape)
+                        # logger.info(scores.shape)
                         
                         if True:
                           fig = plt.figure()
