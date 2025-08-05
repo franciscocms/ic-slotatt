@@ -992,6 +992,8 @@ elif params["running_type"] == "eval":
           # get the predictions of the first proposal trace
           preds = process_preds(prop_traces, 0) 
 
+          
+
           if False:
             plt.imshow(visualize(img[0].permute(1, 2, 0).cpu().numpy()))
             plt.savefig(os.path.join(plots_dir, f"image_{n_test_samples}.png"))
@@ -1191,6 +1193,8 @@ elif params["running_type"] == "eval":
                                    target.detach().cpu(),
                                    t)
 
+          logger.info(max_preds[:, :3])
+          logger.info(target[:, :3])
       
           if n_test_samples == 1 or n_test_samples % 100 == 0:
             logger.info(f"\n{n_test_samples} evaluated...")
