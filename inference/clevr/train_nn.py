@@ -620,7 +620,7 @@ class CLEVR(Dataset):
                 obj_vec = torch.cat((coords, size, material, shape, color, torch.Tensor([[1.]])), dim=1)[0]
                 target.append(obj_vec)
 
-                resize_factor = np.array([128/320, 128/240])
+                resize_factor = np.array([128/480, 128/320])
                 pixel_coords.append(torch.Tensor([obj['pixel_coords'][0]*resize_factor[0], obj['pixel_coords'][1]*resize_factor[1]])) # 320x240 -> 128x128
 
             while len(target) < self.max_objs:
