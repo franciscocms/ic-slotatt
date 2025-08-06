@@ -1070,7 +1070,7 @@ elif params["running_type"] == "eval":
                       
                       # logger.info(f"pred real flag: {pred_real_flag}")
 
-                      pred_coords = pred_coords[pred_real_flag] * 128. # [#real, 2]
+                      real_pred_coords = pred_coords[pred_real_flag] * 128. # [#real, 2]
                       
                       # logger.info(f"pred coords shape: {coords.shape}")
                       # logger.info(f"pixel coords shape: {pixel_coords.shape}") # [real_N, 2]
@@ -1120,18 +1120,20 @@ elif params["running_type"] == "eval":
                         
                         elif mask_type == "colorID":
                           # mask color is defined by the predicted object color
-                          dists = torch.cdist(pixel_coords, pred_coords.float(), p=2).cpu().numpy()
+                          dists = torch.cdist(pixel_coords, real_pred_coords.float(), p=2).cpu().numpy()
                           row_ind, col_ind = linear_sum_assignment(dists)
 
                           logger.info(f"target coords: {pixel_coords}")
-                          logger.info(f"pred coords: {pred_coords}")
+                          logger.info(f"pred coords: {real_pred_coords}")
                           logger.info(f"matching: {col_ind}")
 
 
                           o_idx = list(row_ind).index(o)
-                          logger.info(f"target index {o} in position {o_idx} -> pred object {col_ind[o_idx]}...")
+                          # check, in preds, where 'col_ind[o_idx]' is
+                          pred_abs_idx = pred_coords.tolist().index(col_ind[o_idx])
+                          logger.info(f"target index {o} in position {o_idx} -> pred object {col_ind[o_idx]} with abs index {pred_abs_idx}...")
 
-                          color_pred = torch.argmax(preds[col_ind[o_idx], 10:18], dim=-1).item()
+                          color_pred = torch.argmax(preds[pred_abs_idx, 10:18], dim=-1).item()
                           transformed_tensor += torch.tensor(masks[0]*(color_pred+1))
 
                           
