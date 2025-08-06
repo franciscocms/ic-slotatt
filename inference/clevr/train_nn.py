@@ -1119,8 +1119,12 @@ elif params["running_type"] == "eval":
                         elif mask_type == "colorID":
                           color_pred = torch.argmax(preds[:, 10:18], dim=-1)
 
+                          logger.info(pixel_coords.dtype)
+                          logger.info(pred_coords.dtype)
+
+
                           # check matching between pred_coords e pixel_coords
-                          dists = torch.cdist(pixel_coords, pred_coords, p=2).cpu().numpy()
+                          dists = torch.cdist(pixel_coords, pred_coords.float(), p=2).cpu().numpy()
 
                           # Hungarian algorithm (minimize total distance)
                           row_ind, col_ind = linear_sum_assignment(dists)
