@@ -1077,10 +1077,10 @@ elif params["running_type"] == "eval":
 
                       for o, obj_coords in enumerate(pixel_coords):
                         
-                        input_point = np.asarray(obj_coords)
+                        input_point = obj_coords
                         input_label = np.array([1 for _ in range(obj_coords.shape[0])])
 
-                        input_point = np.concatenate((input_point, np.array([[10, 10]])))
+                        input_point = np.concatenate((input_point.unsqueeze(0).numpy(), np.array([[10, 10]])))
                         input_label = np.concatenate((input_label, np.array([0])))
 
                         masks, scores, logits = predictor.predict(
