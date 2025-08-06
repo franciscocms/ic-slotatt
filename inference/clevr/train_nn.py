@@ -1123,7 +1123,7 @@ elif params["running_type"] == "eval":
 
                           # Hungarian algorithm (minimize total distance)
                           row_ind, col_ind = linear_sum_assignment(dists)
-                          o_idx = row_ind.index(o)
+                          o_idx = list(row_ind).index(o)
 
                           color_pred = torch.argmax(preds[col_ind[o_idx], 10:18], dim=-1).item()
                           transformed_tensor += torch.tensor(masks[0]*(color_pred+1))
