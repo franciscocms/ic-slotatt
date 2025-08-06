@@ -1070,7 +1070,7 @@ elif params["running_type"] == "eval":
                       
                       # logger.info(f"pred real flag: {pred_real_flag}")
 
-                      pred_coords = pred_coords[pred_real_flag] # [#real, 2]
+                      pred_coords = pred_coords[pred_real_flag] * 128. # [#real, 2]
                       
                       # logger.info(f"pred coords shape: {coords.shape}")
                       # logger.info(f"pixel coords shape: {pixel_coords.shape}") # [real_N, 2]
