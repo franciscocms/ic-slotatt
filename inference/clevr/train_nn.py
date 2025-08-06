@@ -1115,15 +1115,21 @@ elif params["running_type"] == "eval":
                           plt.close()
 
                         if mask_type == "regular":
+                          # mask color is defined by object id 'o'
                           transformed_tensor += torch.tensor(masks[0]*(o+1))
+                        
                         elif mask_type == "colorID":
-                          
-                          # check matching between pred_coords e pixel_coords
+                          # mask color is defined by the predicted object color
                           dists = torch.cdist(pixel_coords, pred_coords.float(), p=2).cpu().numpy()
-
-                          # Hungarian algorithm (minimize total distance)
                           row_ind, col_ind = linear_sum_assignment(dists)
+
+                          logger.info(f"target coords: {pixel_coords}")
+                          logger.info(f"pred coords: {pred_coords}")
+                          logger.info(f"matching: {col_ind}")
+
+
                           o_idx = list(row_ind).index(o)
+                          logger.info(f"target index {o} in position {o_idx} -> pred object {col_ind[o_idx]}...")
 
                           color_pred = torch.argmax(preds[col_ind[o_idx], 10:18], dim=-1).item()
                           transformed_tensor += torch.tensor(masks[0]*(color_pred+1))
