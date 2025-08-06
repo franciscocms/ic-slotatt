@@ -1062,8 +1062,8 @@ elif params["running_type"] == "eval":
                       
                       coords = torch.einsum('nij,ijk->nk', slots_attn[idx].cpu(), grid)
                       
-                      logger.info(f"pred coords shape: {coords.shape}")
-                      logger.info(f"pixel coords shape: {pixel_coords.shape}")
+                      # logger.info(f"pred coords shape: {coords.shape}")
+                      # logger.info(f"pixel coords shape: {pixel_coords.shape}") # [real_N, 2]
                       
                       
                       # logger.info(coords.shape)
@@ -1077,18 +1077,12 @@ elif params["running_type"] == "eval":
 
                       for o, obj_coords in enumerate(pixel_coords):
                         
+                        obj_coords = np.asarray(obj_coords.unsqueeze(0)) # obj_coords [2]
                         input_point = obj_coords
                         input_label = np.array([1 for _ in range(obj_coords.shape[0])])
 
-                        logger.info(input_point.shape)
-
-                        input_point = np.concatenate((input_point.unsqueeze(0).numpy(), np.array([[10, 10]])))
-                        logger.info(input_point.shape)
-
+                        input_point = np.concatenate((input_point, np.array([[10, 10]])))
                         input_label = np.concatenate((input_label, np.array([0])))
-                        logger.info(input_label.shape)
-
-
 
                         masks, scores, logits = predictor.predict(
                             point_coords=input_point,
