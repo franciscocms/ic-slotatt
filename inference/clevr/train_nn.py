@@ -1123,12 +1123,15 @@ elif params["running_type"] == "eval":
                           dists = torch.cdist(pixel_coords, real_pred_coords.float(), p=2).cpu().numpy()
                           row_ind, col_ind = linear_sum_assignment(dists)
 
-                          logger.info(f"target coords: {pixel_coords}")
-                          logger.info(f"pred coords: {real_pred_coords}")
+                          logger.info(f"target coords: {pixel_coords.dtype}")
+                          logger.info(f"pred coords: {real_pred_coords.dtype}")
                           logger.info(f"matching: {col_ind}")
 
 
                           o_idx = list(row_ind).index(o)
+                          
+                          logger.info(real_pred_coords[col_ind[o_idx]].dtype)
+                          
                           # check, in preds, where 'col_ind[o_idx]' is
                           pred_abs_idx = pred_coords.tolist().index(real_pred_coords[col_ind[o_idx]].double().tolist())
                           logger.info(f"target index {o} in position {o_idx} -> pred object {col_ind[o_idx]} with abs index {pred_abs_idx}...")
