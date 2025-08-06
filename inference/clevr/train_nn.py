@@ -850,7 +850,9 @@ elif params["running_type"] == "eval":
       shutil.rmtree(plots_dir)
       os.mkdir(plots_dir)
 
-  input_mode = "seg_masks" # "RGB", "depth", "seg_masks"
+  input_mode = "seg_masks" # ["RGB", "depth", "seg_masks"]
+  if input_mode == "seg_masks":
+    mask_type = "colorID" # ["regular", "colorID", "matID"]
 
   if input_mode == "depth":
     # load pre-trained model
@@ -1034,6 +1036,8 @@ elif params["running_type"] == "eval":
                 for i in range(site["fn"].mean.shape[0]):
                   output_image = site["fn"].mean[i]
 
+                  preds = process_preds(prop_traces, i) # get latent predictions related to trace i
+
 
                   if input_mode == "depth":
                     transformed_tensor = zoe.infer(transform_to_depth(output_image.unsqueeze(0))) # [1, 1, 128, 128]
@@ -1060,18 +1064,16 @@ elif params["running_type"] == "eval":
                       slots_attn = slots_attn.reshape(B, N, int(np.sqrt(d)), int(np.sqrt(d))).double()
                       grid = torch.from_numpy(build_2d_grid((32, 32)))
                       
-                      coords = torch.einsum('nij,ijk->nk', slots_attn[idx].cpu(), grid)
-                      
-                      # logger.info(f"pred coords shape: {coords.shape}")
-                      # logger.info(f"pixel coords shape: {pixel_coords.shape}") # [real_N, 2]
-                      
-                      
+                      pred_coords = torch.einsum('nij,ijk->nk', slots_attn[idx].cpu(), grid)
                       # logger.info(coords.shape)
-                      # pred_real_flag = [m for m in range(N) if torch.round(preds[m, -1]) == 1] 
+                      pred_real_flag = [m for m in range(N) if torch.round(preds[m, -1]) == 1] 
                       
                       # logger.info(f"pred real flag: {pred_real_flag}")
 
-                      #coords = coords[pred_real_flag] # [#real, 2]
+                      pred_coords = pred_coords[pred_real_flag] # [#real, 2]
+                      
+                      # logger.info(f"pred coords shape: {coords.shape}")
+                      # logger.info(f"pixel coords shape: {pixel_coords.shape}") # [real_N, 2]
 
                       transformed_tensor = torch.zeros(128, 128)
 
@@ -1112,7 +1114,34 @@ elif params["running_type"] == "eval":
                           plt.savefig(os.path.join(plots_dir, f"trace_{i}_object_{o}_image_{n_test_samples}.png"))
                           plt.close()
 
-                        transformed_tensor += torch.tensor(masks[0]*(o+1))
+                        if mask_type == "regular":
+                          transformed_tensor += torch.tensor(masks[0]*(o+1))
+                        elif mask_type == "colorID":
+                          color_pred = torch.argmax(preds[:, 10:18], dim=-1)
+
+                          # check matching between pred_coords e pixel_coords
+                          dists = torch.cdist(pixel_coords, pred_coords, p=2).cpu().numpy()
+
+                          # Hungarian algorithm (minimize total distance)
+                          row_ind, col_ind = linear_sum_assignment(dists)
+
+                          logger.info(row_ind)
+                          logger.info(col_ind)
+
+                          logger.info(f"\npred coords: {preds[:, :3]}")
+                          logger.info(f"\ntarget coords: {target[:, :3]}")
+
+
+                          # i need to find out what is the color predicted for object 'o',
+                          # how do I do that???
+
+
+
+
+
+                           
+                        #elif mask_type == "matID":
+                           
 
                         #for m in range(len(masks)):
                         plt.imshow(masks.squeeze())
