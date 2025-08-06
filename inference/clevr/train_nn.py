@@ -1130,7 +1130,7 @@ elif params["running_type"] == "eval":
 
                           o_idx = list(row_ind).index(o)
                           # check, in preds, where 'col_ind[o_idx]' is
-                          pred_abs_idx = pred_coords.tolist().index(real_pred_coords[col_ind[o_idx]].tolist())
+                          pred_abs_idx = pred_coords.tolist().index(real_pred_coords[col_ind[o_idx]].float().tolist())
                           logger.info(f"target index {o} in position {o_idx} -> pred object {col_ind[o_idx]} with abs index {pred_abs_idx}...")
 
                           color_pred = torch.argmax(preds[pred_abs_idx, 10:18], dim=-1).item()
