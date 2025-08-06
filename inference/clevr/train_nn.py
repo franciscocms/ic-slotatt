@@ -621,7 +621,7 @@ class CLEVR(Dataset):
                 target.append(obj_vec)
 
                 resize_factor = np.array([128/320, 128/240])
-                pixel_coords.append(torch.tensor([obj['pixel_coords'][0]*resize_factor[0], obj['pixel_coords'][1]*resize_factor[1]])) # 320x240 -> 128x128
+                pixel_coords.append(torch.Tensor([obj['pixel_coords'][0]*resize_factor[0], obj['pixel_coords'][1]*resize_factor[1]])) # 320x240 -> 128x128
 
             while len(target) < self.max_objs:
                 target.append(torch.zeros(19, device='cpu'))
