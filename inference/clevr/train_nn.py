@@ -1117,27 +1117,18 @@ elif params["running_type"] == "eval":
                         if mask_type == "regular":
                           transformed_tensor += torch.tensor(masks[0]*(o+1))
                         elif mask_type == "colorID":
-                          color_pred = torch.argmax(preds[:, 10:18], dim=-1)
-
-                          logger.info(pixel_coords.dtype)
-                          logger.info(pred_coords.dtype)
-
-
+                          
                           # check matching between pred_coords e pixel_coords
                           dists = torch.cdist(pixel_coords, pred_coords.float(), p=2).cpu().numpy()
 
                           # Hungarian algorithm (minimize total distance)
                           row_ind, col_ind = linear_sum_assignment(dists)
+                          o_idx = row_ind.index(o)
 
-                          logger.info(row_ind)
-                          logger.info(col_ind)
+                          color_pred = torch.argmax(preds[col_ind[o_idx], 10:18], dim=-1).item()
+                          transformed_tensor += torch.tensor(masks[0]*(color_pred+1))
 
-                          logger.info(f"\npred coords: {preds[:, :3]}")
-                          logger.info(f"\ntarget coords: {target[:, :3]}")
-
-
-                          # i need to find out what is the color predicted for object 'o',
-                          # how do I do that???
+                          
 
 
 
