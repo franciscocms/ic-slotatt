@@ -1017,6 +1017,9 @@ elif params["running_type"] == "eval":
           prop_traces = posterior.prop_traces[0]
           traces = posterior.exec_traces[0]
 
+          if input_mode == "slots":
+            target_slots = guide.slots
+
           # get the predictions of the first proposal trace
           preds = process_preds(prop_traces, 0) 
 
@@ -1233,21 +1236,17 @@ elif params["running_type"] == "eval":
 
             logger.info(trace_slots.shape) # [particles, N, 64]
 
-            # check if the predictions for observed and generated scenes are similar... 
-            # if they're not, this approach is not viable...
-            #
+            logger.info(target_slots.shape)
+
+            # align each trace slots with slots from the target image
 
             resampling_id = 0
 
-            logger.info(f"preds from generated img 0 (probabilities, not OHE): {preds[0]}")
+            
 
              
           
           preds = process_preds(prop_traces, resampling_id)
-
-          logger.info(f"preds from target img (OHE after sampling from probs): {preds}")
-
-
           assert len(target.shape) == 2
           for t in threshold: 
             ap[t] += compute_AP(preds.detach().cpu(),
