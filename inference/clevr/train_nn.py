@@ -1144,6 +1144,24 @@ elif params["running_type"] == "eval":
                                  os.path.join(plots_dir, f"trace_{i}_mask_{o}_image_{n_test_samples}.png"),
                                  title=f"score: {scores}")
                   
+                  elif input_mode == "slots":
+             
+                    trace_generated_imgs = []
+                    for name, site in traces.nodes.items():                                  
+                      if name == 'image':
+                        for i in range(site["fn"].mean.shape[0]):
+                          output_image = site["fn"].mean[i]
+                          trace_generated_imgs.append(output_image)
+                    trace_generated_imgs = torch.stack(trace_generated_imgs)
+
+                    logger.info(trace_generated_imgs.shape)
+                  
+
+
+
+
+
+                  
                   logger.info(transformed_tensor.shape)
 
                   save_img(transformed_tensor.cpu().numpy(),
@@ -1202,6 +1220,9 @@ elif params["running_type"] == "eval":
               save_img(transformed_target_tensor.cpu().numpy(),
                        os.path.join(plots_dir, f"transf_image_{n_test_samples}.png"))
 
+            
+            
+            
             log_wts = []
             for i in range(params["num_inference_samples"]):
               log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(0.05)).log_prob(torch.tensor(transformed_target_tensor))
@@ -1212,17 +1233,7 @@ elif params["running_type"] == "eval":
             resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
             resampling_id = resampling().item()
 
-          elif input_mode == "slots":
-             
-            trace_generated_imgs = []
-            for name, site in traces.nodes.items():                                  
-              if name == 'image':
-                for i in range(site["fn"].mean.shape[0]):
-                  output_image = site["fn"].mean[i]
-                  trace_generated_imgs.append(output_image)
-            trace_generated_imgs = torch.stack(trace_generated_imgs)
-
-            logger.info(trace_generated_imgs.shape)
+          
 
 
              
