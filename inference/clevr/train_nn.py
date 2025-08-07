@@ -1029,7 +1029,7 @@ elif params["running_type"] == "eval":
 
             #logger.info(f"\nlog weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
           
-          elif input_mode in ["depth", "seg_masks"]: 
+          elif input_mode in ["depth", "seg_masks", "slots"]: 
             transform_gen_imgs = []
 
             def transform_to_depth(img: torch.Tensor):
@@ -1161,7 +1161,7 @@ elif params["running_type"] == "eval":
 
 
 
-                  
+
                   logger.info(transformed_tensor.shape)
 
                   save_img(transformed_tensor.cpu().numpy(),
