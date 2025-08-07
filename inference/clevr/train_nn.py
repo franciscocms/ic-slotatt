@@ -1248,11 +1248,11 @@ elif params["running_type"] == "eval":
             logger.info(row_ind)
             logger.info(col_ind)
 
-            logger.info(trace_slots[0, 0, :3])
+            logger.info(trace_slots[0])
             
             trace_slots = trace_slots[col_ind]
 
-            logger.info(trace_slots[0, 0, :3])
+            logger.info(trace_slots[0])
 
 
             # take col_ind and apply a permutation in the order of trace slots
