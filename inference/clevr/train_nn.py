@@ -1201,7 +1201,7 @@ elif params["running_type"] == "eval":
                       mat = torch.argmax(target[o, 5:7], dim=-1).item()
                       transformed_target_tensor += torch.tensor(masks[0]*(mat+1))
 
-              plt.imshow(transformed_target_tensor)
+              plt.imshow(transformed_target_tensor.cpu().numpy())
               plt.savefig(os.path.join(plots_dir, f"transf_image_{n_test_samples}.png"))
               plt.close()
 
