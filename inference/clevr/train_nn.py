@@ -1132,10 +1132,10 @@ elif params["running_type"] == "eval":
                           
                           logger.info(real_pred_coords[col_ind[o_idx]])
                           logger.info(real_pred_coords[col_ind[o_idx]].dtype)
-                          logger.info(pred_coords.tolist())
+                          logger.info(128*pred_coords.tolist())
                           
                           # check, in preds, where 'col_ind[o_idx]' is
-                          pred_abs_idx = torch.where(pred_coords*128. == real_pred_coords[col_ind[o_idx]])
+                          pred_abs_idx = torch.where(pred_coords*128. == real_pred_coords[col_ind[o_idx]])[0][0]
                           logger.info(pred_abs_idx)
 
                           logger.info(f"target index {o} in position {o_idx} -> pred object {col_ind[o_idx]} with abs index {pred_abs_idx}...")
