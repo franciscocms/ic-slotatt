@@ -857,7 +857,7 @@ elif params["running_type"] == "eval":
 
   input_mode = "seg_masks" # ["RGB", "depth", "seg_masks"]
   if input_mode == "seg_masks":
-    mask_type = "matID" # ["regular", "colorID", "matID"]
+    mask_type = "regular" # ["regular", "colorID", "matID"]
 
   if input_mode == "depth":
     # load pre-trained model
