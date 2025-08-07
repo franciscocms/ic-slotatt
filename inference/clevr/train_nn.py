@@ -1247,6 +1247,12 @@ elif params["running_type"] == "eval":
 
             logger.info(row_ind)
             logger.info(col_ind)
+            logger.info(torch.Tensor(col_ind).shape)
+            
+            col_ind_expanded = torch.Tensor(col_ind).unsqueeze(-1).expand(-1, -1, trace_slots.size(-1))
+            trace_slots = torch.gather(trace_slots, dim=1, index=col_ind_expanded)
+
+            logger.info(trace_slots.shape)
             
             #trace_slots = trace_slots[col_ind]
 
