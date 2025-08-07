@@ -855,7 +855,7 @@ elif params["running_type"] == "eval":
       shutil.rmtree(plots_dir)
       os.mkdir(plots_dir)
 
-  input_mode = "seg_masks" # ["RGB", "depth", "seg_masks"]
+  input_mode = "slots" # ["RGB", "depth", "seg_masks", "slots"]
   if input_mode == "seg_masks":
     mask_type = "regular" # ["regular", "colorID", "matID"]
 
@@ -1212,6 +1212,21 @@ elif params["running_type"] == "eval":
             resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
             resampling_id = resampling().item()
 
+          elif input_mode == "slots":
+             
+            trace_generated_imgs = []
+            for name, site in traces.nodes.items():                                  
+              if name == 'image':
+                for i in range(site["fn"].mean.shape[0]):
+                  output_image = site["fn"].mean[i]
+                  trace_generated_imgs.append(output_image)
+            trace_generated_imgs = torch.stack(trace_generated_imgs)
+
+            logger.info(trace_generated_imgs.shape)
+
+
+             
+          
           preds = process_preds(prop_traces, resampling_id)
           assert len(target.shape) == 2
           for t in threshold: 
