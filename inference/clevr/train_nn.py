@@ -1229,14 +1229,10 @@ elif params["running_type"] == "eval":
                   output_image = site["fn"].mean[i]
                   trace_generated_imgs.append(output_image)
             trace_generated_imgs = torch.stack(trace_generated_imgs)
-
-            logger.info(trace_generated_imgs.shape) # [particles, 3, 128, 128]
-
+            # logger.info(trace_generated_imgs.shape) # [particles, 3, 128, 128]
             preds, trace_slots = guide(observations={"image": trace_generated_imgs}, return_slots=True)
-
-            logger.info(trace_slots.shape) # [particles, N, 64]
-
-            logger.info(target_slots.shape)
+            # logger.info(trace_slots.shape) # [particles, N, 64]
+            # logger.info(target_slots.shape)
 
             slots_dist = torch.cdist(trace_slots, target_slots)
             slots_dist = slots_dist.detach().cpu().numpy()
@@ -1248,26 +1244,17 @@ elif params["running_type"] == "eval":
             assert len(trace_slots.shape) == 3 # 
             batch_idx = torch.arange(trace_slots.size(0)).unsqueeze(1).expand(trace_slots.size(0), trace_slots.size(1))
             trace_slots = trace_slots[batch_idx, indices[:, 1]]
-
-            logger.info(trace_slots.shape)
             
-            #trace_slots = trace_slots[col_ind]
+            log_wts = dist.Normal(trace_slots, torch.tensor(0.05)).log_prob(torch.tensor(target_slots))
+            slots_dim = trace_slots.shape[-1]
+            log_wts = torch.sum(log_wts) / slots_dim
 
+            logger.info(log_wts)
 
-            # take col_ind and apply a permutation in the order of trace slots
+            resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
+            resampling_id = resampling().item()
 
-            # then compute the log likelihood of each trace slots under the target observation
-
-
-
-
-
-
-            # align each trace slots with slots from the target image
-
-            resampling_id = 0
-
-            
+            logger.info(f"resampled trace: {resampling_id}")         
 
              
           
