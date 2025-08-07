@@ -1238,6 +1238,17 @@ elif params["running_type"] == "eval":
 
             logger.info(target_slots.shape)
 
+            slots_dist = torch.cdist(trace_slots, target_slots)
+            slots_dist = slots_dist.detach().cpu().numpy()
+
+            logger.info(slots_dist.shape)
+
+            row_ind, col_ind = np.array([linear_sum_assignment(d) for d in slots_dist])
+
+            logger.info(row_ind)
+            logger.info(col_ind)
+
+
             # align each trace slots with slots from the target image
 
             resampling_id = 0
