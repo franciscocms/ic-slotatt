@@ -272,7 +272,7 @@ class InvSlotAttentionGuide(nn.Module):
     self.sigmoid = nn.Sigmoid()
     self.tanh = nn.Tanh()
 
-  def forward(self, observations={"image": torch.zeros(1, 3, 128, 128)}, save_masks=False):
+  def forward(self, observations={"image": torch.zeros(1, 3, 128, 128)}, save_masks=False, return_slots=False):
     
     img = observations["image"]
     img = img.to(DEVICE)
@@ -316,7 +316,11 @@ class InvSlotAttentionGuide(nn.Module):
       pyro.sample("shape", dist.Categorical(probs=preds[:, :, 7:10].expand([params["num_inference_samples"], -1, -1])))
       pyro.sample("color", dist.Categorical(probs=preds[:, :, 10:18].expand([params["num_inference_samples"], -1, -1])))
       pyro.sample("coords", dist.Normal(preds[:, :, :3].expand([params["num_inference_samples"], -1, -1]), torch.tensor(0.01)))
-    return preds
+    
+    if not return_slots:
+      return preds
+    else:
+      return preds, self.slots
 
 
 def hungarian_loss(pred, target, loss_fn=F.smooth_l1_loss):
@@ -1223,7 +1227,12 @@ elif params["running_type"] == "eval":
                   trace_generated_imgs.append(output_image)
             trace_generated_imgs = torch.stack(trace_generated_imgs)
 
-            logger.info(trace_generated_imgs.shape)
+            logger.info(trace_generated_imgs.shape) # [particles, 3, 128, 128]
+
+            _, trace_slots = guide(observations={"image": trace_generated_imgs}, return_slots=True)
+
+            logger.info(trace_slots.shape)
+            
 
              
           
