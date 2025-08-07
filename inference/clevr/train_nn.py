@@ -1250,11 +1250,11 @@ elif params["running_type"] == "eval":
             
             logger.info(log_wts.shape)
             
-            log_wts = torch.sum(log_wts) / slots_dim
+            log_wts = torch.sum(log_wts, dim=(-1, -1)) / slots_dim
 
-            logger.info(log_wts)
+            logger.info(log_wts.shape)
 
-            resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
+            resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
             resampling_id = resampling().item()
 
             logger.info(f"resampled trace: {resampling_id}")         
