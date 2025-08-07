@@ -1130,7 +1130,9 @@ elif params["running_type"] == "eval":
 
                           o_idx = list(row_ind).index(o)
                           
+                          logger.info(real_pred_coords[col_ind[o_idx]])
                           logger.info(real_pred_coords[col_ind[o_idx]].dtype)
+                          logger.info(pred_coords.tolist())
                           
                           # check, in preds, where 'col_ind[o_idx]' is
                           pred_abs_idx = pred_coords.tolist().index(real_pred_coords[col_ind[o_idx]].double().tolist())
