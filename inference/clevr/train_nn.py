@@ -999,7 +999,8 @@ elif params["running_type"] == "eval":
       for idx, (img, target, pixel_coords) in enumerate(val_dataloader):
           img = img.to(DEVICE)   
 
-          pixel_coords = pixel_coords[0]     
+          pixel_coords = pixel_coords[0]  
+          target = target[0]   
 
           n_test_samples += 1
               
@@ -1136,8 +1137,6 @@ elif params["running_type"] == "eval":
                           elif mask_type == "matID":
                             mat_pred = torch.argmax(preds[pred_abs_idx, 5:7], dim=-1).item()
                             transformed_tensor += torch.tensor(masks[0]*(mat_pred+1))
-                             
-                           
 
                         #for m in range(len(masks)):
                         plt.imshow(masks.squeeze())
@@ -1162,22 +1161,46 @@ elif params["running_type"] == "eval":
               plt.close()
             
             elif input_mode == "seg_masks":
+    
               with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
                 img = img/2 + 0.5 # [-1., 1.] -> [0., 1.]
                 predictor.set_image(img[0].permute(1, 2, 0).cpu().numpy())
-                input_point = np.array([[10, 10]])
-                input_label = np.array([0])
-                masks, scores, logits = predictor.predict(
-                    point_coords=input_point,
-                    point_labels=input_label,
-                    multimask_output=True,
-                )
-              sorted_ind = np.argsort(scores)[::-1]
-              masks = masks[sorted_ind]
-              scores = scores[sorted_ind]
-              logits = logits[sorted_ind]
+                
+                transformed_target_tensor = torch.zeros(128, 128)
 
-              transformed_target_tensor = masks[0]
+                for o, obj_coords in enumerate(pixel_coords):
+                  obj_coords = np.asarray(obj_coords.unsqueeze(0)) # obj_coords [2]
+                  input_point = obj_coords
+                  input_label = np.array([1 for _ in range(obj_coords.shape[0])])
+
+                  input_point = np.concatenate((input_point, np.array([[10, 10]])))
+                  input_label = np.concatenate((input_label, np.array([0])))
+
+                  masks, scores, logits = predictor.predict(
+                      point_coords=input_point,
+                      point_labels=input_label,
+                      multimask_output=True,
+                  )
+                  sorted_ind = np.argsort(scores)[::-1]
+                  masks = masks[sorted_ind]
+                  scores = scores[sorted_ind]
+                  logits = logits[sorted_ind]
+
+                  # taking only the mask with highest score
+                  masks = torch.tensor(masks[0]).unsqueeze(0).cpu().numpy()
+
+                  if mask_type == "regular":
+                    # mask color is defined by object id 'o'
+                    transformed_target_tensor += torch.tensor(masks[0]*(o+1))
+                  
+                  else:
+                    if mask_type == "colorID":
+                      color = torch.argmax(target[o, 10:18], dim=-1).item()
+                      transformed_target_tensor += torch.tensor(masks[0]*(color+1))
+                    elif mask_type == "matID":
+                      mat = torch.argmax(target[o, 5:7], dim=-1).item()
+                      transformed_target_tensor += torch.tensor(masks[0]*(mat+1))
+
               plt.imshow(transformed_target_tensor)
               plt.savefig(os.path.join(plots_dir, f"transf_image_{n_test_samples}.png"))
               plt.close()
@@ -1193,7 +1216,7 @@ elif params["running_type"] == "eval":
             resampling_id = resampling().item()
 
           preds = process_preds(prop_traces, resampling_id)
-          target = target.squeeze(0)
+          assert len(target.shape) == 2
           for t in threshold: 
             ap[t] += compute_AP(preds.detach().cpu(),
                                 target.detach().cpu(),
