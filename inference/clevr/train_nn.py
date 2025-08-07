@@ -1243,16 +1243,11 @@ elif params["running_type"] == "eval":
 
             logger.info(slots_dist.shape)
 
-            row_ind, col_ind = np.array([linear_sum_assignment(d) for d in slots_dist])
-
-            logger.info(row_ind)
-            logger.info(col_ind)
-            # logger.info(torch.Tensor(col_ind).shape)
+            indices = np.array([linear_sum_assignment(d) for d in slots_dist])
             
-            # col_ind_expanded = torch.Tensor(col_ind).unsqueeze(-1).expand(-1, -1, trace_slots.size(-1))
-            # trace_slots = torch.gather(trace_slots, dim=1, index=col_ind_expanded)
-
-            trace_slots = trace_slots[row_ind, col_ind]
+            assert len(trace_slots.shape) == 3 # 
+            batch_idx = torch.arange(trace_slots.size(0)).unsqueeze(1).expand(trace_slots.size(0), trace_slots.size(1))
+            trace_slots = trace_slots[batch_idx, indices[:, 1]]
 
             logger.info(trace_slots.shape)
             
