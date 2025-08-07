@@ -1250,7 +1250,7 @@ elif params["running_type"] == "eval":
             
             logger.info(log_wts.shape)
             
-            log_wts = torch.sum(log_wts, dim=(-1, -1)) / slots_dim
+            log_wts = torch.sum(log_wts, dim=(-1, -2)) / slots_dim
 
             logger.info(log_wts.shape)
 
