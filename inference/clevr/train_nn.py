@@ -1229,14 +1229,25 @@ elif params["running_type"] == "eval":
 
             logger.info(trace_generated_imgs.shape) # [particles, 3, 128, 128]
 
-            _, trace_slots = guide(observations={"image": trace_generated_imgs}, return_slots=True)
+            preds, trace_slots = guide(observations={"image": trace_generated_imgs}, return_slots=True)
 
-            logger.info(trace_slots.shape)
-            
+            logger.info(trace_slots.shape) # [particles, N, 64]
+
+            # check if the predictions for observed and generated scenes are similar... 
+            # if they're not, this approach is not viable...
+            #
+
+            resampling_id = 0
+
+            logger.info(f"preds from generated img 0 (probabilities, not OHE): {preds[0]}")
 
              
           
           preds = process_preds(prop_traces, resampling_id)
+
+          logger.info(f"preds from target img (OHE after sampling from probs): {preds}")
+
+
           assert len(target.shape) == 2
           for t in threshold: 
             ap[t] += compute_AP(preds.detach().cpu(),
