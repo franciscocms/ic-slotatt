@@ -64,6 +64,11 @@ materials = ['rubber', 'metal']
 shapes = ['cube', 'sphere', 'cylinder']
 colors = ['gray', 'blue', 'brown', 'yellow', 'red', 'green', 'purple', 'cyan']
 
+def save_img(f, path, title=""):
+  plt.imshow(f)
+  plt.title(title)
+  plt.savefig(path)
+  plt.close()
 
 def visualize(x):
    return ((x/2. + 0.5) * 255.).astype(int)
@@ -1014,9 +1019,8 @@ elif params["running_type"] == "eval":
           
 
           if False:
-            plt.imshow(visualize(img[0].permute(1, 2, 0).cpu().numpy()))
-            plt.savefig(os.path.join(plots_dir, f"image_{n_test_samples}.png"))
-            plt.close()
+            save_img(visualize(img[0].permute(1, 2, 0).cpu().numpy()),
+                     os.path.join(plots_dir, f"image_{n_test_samples}.png"))
           
           if input_mode == "RGB":
             log_wts = posterior.log_weights[0]
@@ -1042,10 +1046,8 @@ elif params["running_type"] == "eval":
 
                   if input_mode == "depth":
                     transformed_tensor = zoe.infer(transform_to_depth(output_image.unsqueeze(0))) # [1, 1, 128, 128]
-                    plt.imshow(transformed_tensor.squeeze().cpu().numpy())
-                    plt.savefig(os.path.join(plots_dir, f"transf_trace_{n_test_samples}_{i}.png"))
-                    plt.close()
-                  
+                    save_img(transformed_tensor.squeeze().cpu().numpy(),
+                             os.path.join(plots_dir, f"transf_trace_{n_test_samples}_{i}.png"))
                   
                   elif input_mode == "seg_masks":
                     
@@ -1138,17 +1140,14 @@ elif params["running_type"] == "eval":
                             mat_pred = torch.argmax(preds[pred_abs_idx, 5:7], dim=-1).item()
                             transformed_tensor += torch.tensor(masks[0]*(mat_pred+1))
 
-                        #for m in range(len(masks)):
-                        plt.imshow(masks.squeeze())
-                        plt.title(f"score: {scores}")
-                        plt.savefig(os.path.join(plots_dir, f"trace_{i}_mask_{o}_image_{n_test_samples}.png"))
-                        plt.close()
+                        save_img(masks.squeeze(),
+                                 os.path.join(plots_dir, f"trace_{i}_mask_{o}_image_{n_test_samples}.png"),
+                                 title=f"score: {scores}")
                   
                   logger.info(transformed_tensor.shape)
 
-                  plt.imshow(transformed_tensor.cpu().numpy())
-                  plt.savefig(os.path.join(plots_dir, f"trace_{i}_all_mask_image_{n_test_samples}.png"))
-                  plt.close()
+                  save_img(transformed_tensor.cpu().numpy(),
+                           os.path.join(plots_dir, f"trace_{i}_all_mask_image_{n_test_samples}.png"))
 
                   transform_gen_imgs.append(torch.tensor(transformed_tensor))
             
@@ -1156,9 +1155,8 @@ elif params["running_type"] == "eval":
 
             if input_mode == "depth":
               transformed_target_tensor = zoe.infer(transform_to_depth(img)) # [1, 1, 128, 128]
-              plt.imshow(transformed_target_tensor.squeeze().cpu().numpy())
-              plt.savefig(os.path.join(plots_dir, f"depth_image_{n_test_samples}.png"))
-              plt.close()
+              save_img(transformed_target_tensor.squeeze().cpu().numpy(),
+                       os.path.join(plots_dir, f"depth_image_{n_test_samples}.png"))
             
             elif input_mode == "seg_masks":
     
@@ -1201,9 +1199,8 @@ elif params["running_type"] == "eval":
                       mat = torch.argmax(target[o, 5:7], dim=-1).item()
                       transformed_target_tensor += torch.tensor(masks[0]*(mat+1))
 
-              plt.imshow(transformed_target_tensor.cpu().numpy())
-              plt.savefig(os.path.join(plots_dir, f"transf_image_{n_test_samples}.png"))
-              plt.close()
+              save_img(transformed_target_tensor.cpu().numpy(),
+                       os.path.join(plots_dir, f"transf_image_{n_test_samples}.png"))
 
             log_wts = []
             for i in range(params["num_inference_samples"]):
