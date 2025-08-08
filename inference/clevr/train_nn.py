@@ -863,6 +863,8 @@ elif params["running_type"] == "eval":
   if input_mode == "seg_masks":
     mask_type = "regular" # ["regular", "colorID", "matID"]
 
+  SAVING_IMG = False
+
   if input_mode == "depth":
     # load pre-trained model
     
@@ -1023,9 +1025,7 @@ elif params["running_type"] == "eval":
           # get the predictions of the first proposal trace
           preds = process_preds(prop_traces, 0) 
 
-          
-
-          if False:
+          if SAVING_IMG:
             save_img(visualize(img[0].permute(1, 2, 0).cpu().numpy()),
                      os.path.join(plots_dir, f"image_{n_test_samples}.png"))
           
@@ -1053,8 +1053,9 @@ elif params["running_type"] == "eval":
 
                   if input_mode == "depth":
                     transformed_tensor = zoe.infer(transform_to_depth(output_image.unsqueeze(0))) # [1, 1, 128, 128]
-                    save_img(transformed_tensor.squeeze().cpu().numpy(),
-                             os.path.join(plots_dir, f"transf_trace_{n_test_samples}_{i}.png"))
+                    if SAVING_IMG:
+                      save_img(transformed_tensor.squeeze().cpu().numpy(),
+                              os.path.join(plots_dir, f"transf_trace_{n_test_samples}_{i}.png"))
                   
                   elif input_mode == "seg_masks":
                     
@@ -1074,7 +1075,7 @@ elif params["running_type"] == "eval":
                       slots_attn = slots_attn.reshape(B, N, int(np.sqrt(d)), int(np.sqrt(d))).double()
                       grid = torch.from_numpy(build_2d_grid((32, 32)))
                       
-                      pred_coords = torch.einsum('nij,ijk->nk', slots_attn[idx].cpu(), grid)
+                      pred_coords = torch.einsum('nij,ijk->nk', slots_attn[0].cpu(), grid)
                       # logger.info(coords.shape)
                       pred_real_flag = [m for m in range(N) if torch.round(preds[m, -1]) == 1] 
                       
@@ -1112,7 +1113,7 @@ elif params["running_type"] == "eval":
                         # logger.info(masks.shape)
                         # logger.info(scores.shape)
                         
-                        if True:
+                        if SAVING_IMG:
                           fig = plt.figure()
                           ax = fig.add_subplot(111)
                           ax.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
@@ -1147,15 +1148,13 @@ elif params["running_type"] == "eval":
                             mat_pred = torch.argmax(preds[pred_abs_idx, 5:7], dim=-1).item()
                             transformed_tensor += torch.tensor(masks[0]*(mat_pred+1))
 
-                        save_img(masks.squeeze(),
-                                 os.path.join(plots_dir, f"trace_{i}_mask_{o}_image_{n_test_samples}.png"),
-                                 title=f"score: {scores}")
-                               
-
-                  logger.info(transformed_tensor.shape)
-
-                  save_img(transformed_tensor.cpu().numpy(),
-                           os.path.join(plots_dir, f"trace_{i}_all_mask_image_{n_test_samples}.png"))
+                        if SAVING_IMG:
+                          save_img(masks.squeeze(),
+                                  os.path.join(plots_dir, f"trace_{i}_mask_{o}_image_{n_test_samples}.png"),
+                                  title=f"score: {scores}")
+                  if SAVING_IMG:
+                    save_img(transformed_tensor.cpu().numpy(),
+                            os.path.join(plots_dir, f"trace_{i}_all_mask_image_{n_test_samples}.png"))
 
                   transform_gen_imgs.append(torch.tensor(transformed_tensor))
             
@@ -1163,8 +1162,9 @@ elif params["running_type"] == "eval":
 
             if input_mode == "depth":
               transformed_target_tensor = zoe.infer(transform_to_depth(img)) # [1, 1, 128, 128]
-              save_img(transformed_target_tensor.squeeze().cpu().numpy(),
-                       os.path.join(plots_dir, f"depth_image_{n_test_samples}.png"))
+              if SAVING_IMG:
+                save_img(transformed_target_tensor.squeeze().cpu().numpy(),
+                        os.path.join(plots_dir, f"depth_image_{n_test_samples}.png"))
             
             elif input_mode == "seg_masks":
     
@@ -1206,9 +1206,9 @@ elif params["running_type"] == "eval":
                     elif mask_type == "matID":
                       mat = torch.argmax(target[o, 5:7], dim=-1).item()
                       transformed_target_tensor += torch.tensor(masks[0]*(mat+1))
-
-              save_img(transformed_target_tensor.cpu().numpy(),
-                       os.path.join(plots_dir, f"transf_image_{n_test_samples}.png"))
+              if SAVING_IMG:
+                save_img(transformed_target_tensor.cpu().numpy(),
+                        os.path.join(plots_dir, f"transf_image_{n_test_samples}.png"))
 
             log_wts = []
             for i in range(params["num_inference_samples"]):
@@ -1237,7 +1237,7 @@ elif params["running_type"] == "eval":
             slots_dist = torch.cdist(trace_slots, target_slots)
             slots_dist = slots_dist.detach().cpu().numpy()
 
-            logger.info(slots_dist.shape)
+            # logger.info(slots_dist.shape)
 
             indices = np.array([linear_sum_assignment(d) for d in slots_dist])
             
@@ -1248,16 +1248,16 @@ elif params["running_type"] == "eval":
             log_wts = dist.Normal(trace_slots, torch.tensor(0.5)).log_prob(torch.tensor(target_slots))
             slots_dim = trace_slots.shape[-1]
             
-            logger.info(log_wts)
+            # logger.info(log_wts)
             
             log_wts = torch.sum(log_wts, dim=(-1, -2)) / slots_dim
 
-            logger.info(log_wts)
+            # logger.info(log_wts)
 
             resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
             resampling_id = resampling().item()
 
-            logger.info(f"resampled trace: {resampling_id}")         
+            # logger.info(f"resampled trace: {resampling_id}")         
 
              
           
