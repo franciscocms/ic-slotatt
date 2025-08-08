@@ -860,8 +860,11 @@ elif params["running_type"] == "eval":
       os.mkdir(plots_dir)
 
   input_mode = "seg_masks" # ["RGB", "depth", "seg_masks", "slots"]
+  logger.info(f"\ninput_mode = {input_mode}")
   if input_mode == "seg_masks":
-    mask_type = "colorID" # ["regular", "colorID", "matID"]
+    mask_type = "matID" # ["regular", "colorID", "matID"]
+    logger.info(f"mask_type = {mask_type}")
+
 
   SAVING_IMG = False
 
