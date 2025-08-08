@@ -1137,7 +1137,12 @@ elif params["running_type"] == "eval":
                           # mask color is defined by the predicted object color
                           dists = torch.cdist(pixel_coords, real_pred_coords.float(), p=2).cpu().numpy()
                           row_ind, col_ind = linear_sum_assignment(dists)
-                          o_idx = list(row_ind).index(o)
+                          try:
+                            o_idx = list(row_ind).index(o)
+                          except:
+                            logger.info(row_ind)
+                            logger.info(col_ind)
+                            logger.info(o)
                           
                           # check, in preds, where 'col_ind[o_idx]' is
                           pred_abs_idx = torch.where(pred_coords*128. == real_pred_coords[col_ind[o_idx]])[0][0]
