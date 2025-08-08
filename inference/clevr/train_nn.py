@@ -25,7 +25,7 @@ sys.path.append(os.path.abspath(__file__+'/../../../'))
 import wandb # type: ignore
 
 from main.clevr_model import clevr_gen_model
-from main.setup import params
+from main.setup import params, JOB_SPLIT
 from main.modifiedCSIS import CSIS
 from utils.distributions import Empirical
 from utils.guide import minimize_entropy_of_sinkhorn, sinkhorn
@@ -38,7 +38,7 @@ params["lr"] = 4e-4
 
 import logging
 if params["running_type"] == "train": logfile_name = f"log-{params['jobID']}.log"
-elif params["running_type"] == "eval": logfile_name = f"eval-{params['jobID']}.log"
+elif params["running_type"] == "eval": logfile_name = f"eval-{params['jobID']}-{JOB_SPLIT['id']}.log"
 logger = logging.getLogger(params["running_type"])
 logger.setLevel(logging.INFO)
 fh = logging.FileHandler(logfile_name, mode='w')
