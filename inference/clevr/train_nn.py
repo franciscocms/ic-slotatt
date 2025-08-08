@@ -1135,28 +1135,24 @@ elif params["running_type"] == "eval":
                         else:
                            
                           # mask color is defined by the predicted object color
-                          dists = torch.cdist(pixel_coords, real_pred_coords.float(), p=2).cpu().numpy()
+                          dists = torch.cdist(pixel_coords, real_pred_coords.float(), p=2).cpu().numpy() # [2, real_n, real_n]
                           row_ind, col_ind = linear_sum_assignment(dists)
-                          try:
-                            o_idx = list(row_ind).index(o)
-                          except:
-                            logger.info(pixel_coords.shape)
-                            logger.info(real_pred_coords.shape)
-                            logger.info(row_ind)
-                            logger.info(col_ind)
-                            logger.info(o)
                           
-                          # check, in preds, where 'col_ind[o_idx]' is
-                          pred_abs_idx = torch.where(pred_coords*128. == real_pred_coords[col_ind[o_idx]])[0][0]
+                          # maybe 'real_n' != 'pred_real_n' and 'o' won't be in row_ind (i.e. the index of pred real objects)
+                          if o in row_ind:
+                            o_idx = list(row_ind).index(o)
+                          
+                            # check, in preds, where 'col_ind[o_idx]' is
+                            pred_abs_idx = torch.where(pred_coords*128. == real_pred_coords[col_ind[o_idx]])[0][0]
 
-                          # logger.info(f"target index {o} in position {o_idx} -> pred object {col_ind[o_idx]} with abs index {pred_abs_idx}...")
+                            # logger.info(f"target index {o} in position {o_idx} -> pred object {col_ind[o_idx]} with abs index {pred_abs_idx}...")
 
-                          if mask_type == "colorID":
-                            color_pred = torch.argmax(preds[pred_abs_idx, 10:18], dim=-1).item()
-                            transformed_tensor += torch.tensor(masks[0]*(color_pred+1))
-                          elif mask_type == "matID":
-                            mat_pred = torch.argmax(preds[pred_abs_idx, 5:7], dim=-1).item()
-                            transformed_tensor += torch.tensor(masks[0]*(mat_pred+1))
+                            if mask_type == "colorID":
+                              color_pred = torch.argmax(preds[pred_abs_idx, 10:18], dim=-1).item()
+                              transformed_tensor += torch.tensor(masks[0]*(color_pred+1))
+                            elif mask_type == "matID":
+                              mat_pred = torch.argmax(preds[pred_abs_idx, 5:7], dim=-1).item()
+                              transformed_tensor += torch.tensor(masks[0]*(mat_pred+1))
 
                         if SAVING_IMG:
                           save_img(masks.squeeze(),
