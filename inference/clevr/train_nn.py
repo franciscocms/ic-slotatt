@@ -1245,7 +1245,7 @@ elif params["running_type"] == "eval":
             batch_idx = torch.arange(trace_slots.size(0)).unsqueeze(1).expand(trace_slots.size(0), trace_slots.size(1))
             trace_slots = trace_slots[batch_idx, indices[:, 1]]
             
-            log_wts = dist.Normal(trace_slots, torch.tensor(0.05)).log_prob(torch.tensor(target_slots))
+            log_wts = dist.Normal(trace_slots, torch.tensor(0.1)).log_prob(torch.tensor(target_slots))
             slots_dim = trace_slots.shape[-1]
             
             logger.info(log_wts)
