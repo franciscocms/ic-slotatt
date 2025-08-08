@@ -862,7 +862,7 @@ elif params["running_type"] == "eval":
   input_mode = "seg_masks" # ["RGB", "depth", "seg_masks", "slots"]
   logger.info(f"\ninput_mode = {input_mode}")
   if input_mode == "seg_masks":
-    mask_type = "matID" # ["regular", "colorID", "matID"]
+    mask_type = "colorID" # ["regular", "colorID", "matID"]
     logger.info(f"mask_type = {mask_type}")
 
 
@@ -1140,6 +1140,8 @@ elif params["running_type"] == "eval":
                           try:
                             o_idx = list(row_ind).index(o)
                           except:
+                            logger.info(pixel_coords.shape)
+                            logger.info(real_pred_coords.shape)
                             logger.info(row_ind)
                             logger.info(col_ind)
                             logger.info(o)
