@@ -861,7 +861,7 @@ elif params["running_type"] == "eval":
 
   input_mode = "seg_masks" # ["RGB", "depth", "seg_masks", "slots"]
   if input_mode == "seg_masks":
-    mask_type = "regular" # ["regular", "colorID", "matID"]
+    mask_type = "colorID" # ["regular", "colorID", "matID"]
 
   SAVING_IMG = False
 
