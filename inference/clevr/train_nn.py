@@ -859,7 +859,7 @@ elif params["running_type"] == "eval":
       shutil.rmtree(plots_dir)
       os.mkdir(plots_dir)
 
-  input_mode = "slots" # ["RGB", "depth", "seg_masks", "slots"]
+  input_mode = "seg_masks" # ["RGB", "depth", "seg_masks", "slots"]
   if input_mode == "seg_masks":
     mask_type = "regular" # ["regular", "colorID", "matID"]
 
@@ -1303,7 +1303,7 @@ elif params["running_type"] == "eval":
             max_aux_mAP = {k: v/n_test_samples for k, v in max_ap.items()}
             logger.info(max_aux_mAP)
           
-          if n_test_samples == 1:
+          if n_test_samples == 200:
             break
   logger.info(f"\ninference ended...")
 
