@@ -859,7 +859,7 @@ elif params["running_type"] == "eval":
       shutil.rmtree(plots_dir)
       os.mkdir(plots_dir)
 
-  input_mode = "RGB" # ["RGB", "depth", "seg_masks", "slots"]
+  input_mode = "depth" # ["RGB", "depth", "seg_masks", "slots"]
   logger.info(f"\ninput_mode = {input_mode}")
   if input_mode == "seg_masks":
     mask_type = "matID" # ["regular", "colorID", "matID"]
