@@ -879,7 +879,7 @@ elif params["running_type"] == "eval":
           logger.info(img.shape)
           logger.info(sigma.shape)
           
-          log_wts = dist.Independent(dist.Normal(output_images, sigma), params["num_inference_particles"]).log_prob(img)
+          log_wts = dist.Independent(dist.Normal(output_images, sigma), params["num_inference_samples"]).log_prob(img)
 
           logger.info(log_wts.shape)
           logger.info(log_wts)
