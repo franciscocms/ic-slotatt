@@ -1,5 +1,6 @@
 import os
 import shutil
+import pyro.distributions
 import torch
 import pyro
 import pyro.distributions as dist
@@ -866,7 +867,14 @@ elif params["running_type"] == "eval":
   def run_inference(img, n, guide, prop_traces, traces, posterior, input_mode, pixel_coords, log_rate):
     
     if input_mode == "RGB":
-      log_wts = posterior.log_weights[0]
+      for name, site in traces.nodes.items():                                  
+        if name == 'image':
+          output_images = site["fn"].mean
+          D = output_images.size(-1)*output_images.size(-2)
+          sigma = torch.sqrt(torch.square(output_images-img) / D)
+          log_wts = pyro.distributions.Normal(output_image, sigma).log_prob(img)
+      
+      #log_wts = posterior.log_weights[0]
       resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
       resampling_id = resampling().item()    
     
@@ -996,10 +1004,14 @@ elif params["running_type"] == "eval":
                   os.path.join(plots_dir, f"depth_image_{n_test_samples}.png"))
       
         log_wts = []
+        D = transform_gen_imgs.size(-1)*transform_gen_imgs.size(-2)
+        sigma = torch.sqrt(torch.square(transform_gen_imgs - transformed_target_tensor) / D)
+        
         for i in range(params["num_inference_samples"]):
-          log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(0.05)).log_prob(torch.tensor(transformed_target_tensor))
-          img_dim = transform_gen_imgs[i].shape[-1]
-          log_p = torch.sum(log_p) / (img_dim**2)
+          # log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(0.05)).log_prob(torch.tensor(transformed_target_tensor))
+          # img_dim = transform_gen_imgs[i].shape[-1]
+          # log_p = torch.sum(log_p) / (img_dim**2)
+          log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(sigma)).log_prob(torch.tensor(transformed_target_tensor))
           log_wts.append(log_p)             
         resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
         resampling_id = resampling().item()      
@@ -1050,10 +1062,14 @@ elif params["running_type"] == "eval":
                   os.path.join(plots_dir, f"transf_image_{n_test_samples}.png"))
 
         log_wts = []
+        D = transform_gen_imgs.size(-1)*transform_gen_imgs.size(-2)
+        sigma = torch.sqrt(torch.square(transform_gen_imgs - transformed_target_tensor) / D)
+
         for i in range(params["num_inference_samples"]):
-          log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(0.05)).log_prob(torch.tensor(transformed_target_tensor))
-          img_dim = transform_gen_imgs[i].shape[-1]
-          log_p = torch.sum(log_p) / (img_dim**2)
+          # log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(0.05)).log_prob(torch.tensor(transformed_target_tensor))
+          # img_dim = transform_gen_imgs[i].shape[-1]
+          # log_p = torch.sum(log_p) / (img_dim**2)
+          log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(sigma)).log_prob(torch.tensor(transformed_target_tensor))
           log_wts.append(log_p)
         resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
         resampling_id = resampling().item()
@@ -1082,10 +1098,12 @@ elif params["running_type"] == "eval":
       assert len(trace_slots.shape) == 3 # 
       batch_idx = torch.arange(trace_slots.size(0)).unsqueeze(1).expand(trace_slots.size(0), trace_slots.size(1))
       trace_slots = trace_slots[batch_idx, indices[:, 1]]
-      
-      log_wts = dist.Normal(trace_slots, torch.tensor(0.5)).log_prob(torch.tensor(target_slots))
+
       slots_dim = trace_slots.shape[-1]
-      log_wts = torch.sum(log_wts, dim=(-1, -2)) / slots_dim
+      sigma = torch.sqrt(torch.square(trace_slots - target_slots) / slots_dim)
+      
+      log_wts = dist.Normal(trace_slots, torch.tensor(sigma)).log_prob(torch.tensor(target_slots))
+      #log_wts = torch.sum(log_wts, dim=(-1, -2))
       resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
       resampling_id = resampling().item()
     
