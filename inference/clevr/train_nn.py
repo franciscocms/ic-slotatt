@@ -871,7 +871,7 @@ elif params["running_type"] == "eval":
         if name == 'image':
           output_images = site["fn"].mean
           D = output_images.size(-1)*output_images.size(-2)
-          sigma = torch.sqrt(torch.square(output_images-img) / D)
+          sigma = torch.sqrt(torch.square(output_images-img) / D)          
           log_wts = pyro.distributions.Normal(output_images, sigma).log_prob(img)
       
       #log_wts = posterior.log_weights[0]
@@ -1100,7 +1100,7 @@ elif params["running_type"] == "eval":
       trace_slots = trace_slots[batch_idx, indices[:, 1]]
 
       slots_dim = trace_slots.shape[-1]
-      sigma = torch.sqrt(torch.square(trace_slots - target_slots) / slots_dim)
+      sigma = torch.sqrt(((trace_slots - target_slots)**2).sum(-1, -2, -3) / slots_dim)
       
       log_wts = dist.Normal(trace_slots, torch.tensor(sigma)).log_prob(torch.tensor(target_slots))
       #log_wts = torch.sum(log_wts, dim=(-1, -2))
