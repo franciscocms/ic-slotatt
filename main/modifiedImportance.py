@@ -289,7 +289,7 @@ class Importance(TracePosterior):
                     log_p = site['fn'].log_prob(site['value'])
                     img_dim = site['fn'].mean.shape[-1]
 
-                    logger.info(f"\nMOD IMP: {site['fn']} - {site['value'].shape}\n")
+                    logger.info(f"\nMOD IMP: {site['fn']} - {site['value'].shape}\n - {log_p.shape}")
 
                     #log_p = log_p / (img_dim**2)
             
