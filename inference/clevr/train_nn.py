@@ -871,7 +871,9 @@ elif params["running_type"] == "eval":
         if name == 'image':
           output_images = site["fn"].mean
           D = output_images.size(-1)*output_images.size(-2)
-          sigma = torch.sqrt(((output_images-img)**2).sum(dim=(-1, -2, -3)) / D)          
+          sigma = torch.sqrt(((output_images-img)**2).sum(dim=(-1, -2, -3)) / D)
+          sigma = sigma[:, None, None, None]  # [D, 1, 1, 1]
+          sigma = sigma.expand(-1, 3, 128, 128)        
           
           logger.info(output_images.shape)
           logger.info(img.shape)
