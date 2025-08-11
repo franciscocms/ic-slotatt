@@ -851,15 +851,250 @@ if params["running_type"] == "train":
   trainer.train(root_folder)
   logger.info("\ntraining ended...")
 
-elif params["running_type"] == "eval":  
+elif params["running_type"] == "eval": 
+
+  def transform_to_depth(img: torch.Tensor):
+    # from [-1., 1.] to [0., 1.] img
+    return img/2 + 0.5 
   
+  def run_inference(guide, prop_traces, traces, posterior, input_mode, pixel_coords):
+    
+    if input_mode == "RGB":
+      log_wts = posterior.log_weights[0]
+      resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
+      resampling_id = resampling().item()    
+    
+    elif input_mode in ["depth", "seg_masks_object", "seg_masks_color", "seg_masks_mat"]: 
+      transform_gen_imgs = []
+
+      for name, site in traces.nodes.items():                                  
+        if name == 'image':
+          for i in range(site["fn"].mean.shape[0]):
+            output_image = site["fn"].mean[i]
+
+            preds = process_preds(prop_traces, i) # get latent predictions related to trace i
+
+            if input_mode == "depth":
+              transformed_tensor = zoe.infer(transform_to_depth(output_image.unsqueeze(0))) # [1, 1, 128, 128]
+              if SAVING_IMG:
+                save_img(transformed_tensor.squeeze().cpu().numpy(),
+                        os.path.join(plots_dir, f"transf_trace_{n_test_samples}_{i}.png"))
+            
+            elif input_mode in ["seg_masks_object", "seg_masks_color", "seg_masks_mat"]:
+              
+              checkpoint = "/nas-ctm01/homes/fcsilva/sam2/checkpoints/sam2.1_hiera_large.pt"
+              model_cfg = "configs/sam2.1/sam2.1_hiera_l.yaml"
+              predictor = SAM2ImagePredictor(build_sam2(model_cfg, checkpoint))
+
+              with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
+                output_image = output_image/2 + 0.5 # [-1., 1.] -> [0., 1.]
+                predictor.set_image(output_image.permute(1, 2, 0).cpu().numpy())
+                
+                # build a 2d grid and get the output masks from SA-MESH to give 2d coordinates for these points
+                slots_attn = guide.attn
+                B, N, d = slots_attn.shape
+                # normalize attn matrices
+                slots_attn = slots_attn / torch.sum(slots_attn, dim=-1, keepdim=True)
+                slots_attn = slots_attn.reshape(B, N, int(np.sqrt(d)), int(np.sqrt(d))).double()
+                grid = torch.from_numpy(build_2d_grid((32, 32)))
+                
+                pred_coords = torch.einsum('nij,ijk->nk', slots_attn[0].cpu(), grid)
+                # logger.info(coords.shape)
+                pred_real_flag = [m for m in range(N) if torch.round(preds[m, -1]) == 1] 
+                
+                # logger.info(f"pred real flag: {pred_real_flag}")
+
+                real_pred_coords = pred_coords[pred_real_flag] * 128. # [#real, 2]
+                
+                # logger.info(f"pred coords shape: {coords.shape}")
+                # logger.info(f"pixel coords shape: {pixel_coords.shape}") # [real_N, 2]
+
+                transformed_tensor = torch.zeros(128, 128)
+
+                for o, obj_coords in enumerate(pixel_coords):
+                  
+                  obj_coords = np.asarray(obj_coords.unsqueeze(0)) # obj_coords [2]
+                  input_point = obj_coords
+                  input_label = np.array([1 for _ in range(obj_coords.shape[0])])
+
+                  input_point = np.concatenate((input_point, np.array([[10, 10]])))
+                  input_label = np.concatenate((input_label, np.array([0])))
+
+                  masks, scores, logits = predictor.predict(
+                      point_coords=input_point,
+                      point_labels=input_label,
+                      multimask_output=True,
+                  )
+                  sorted_ind = np.argsort(scores)[::-1]
+                  masks = masks[sorted_ind]
+                  scores = scores[sorted_ind]
+                  logits = logits[sorted_ind]
+
+                  # taking only the mask with highest score
+                  masks = torch.tensor(masks[0]).unsqueeze(0).cpu().numpy()
+                  
+                  if SAVING_IMG:
+                    fig = plt.figure()
+                    ax = fig.add_subplot(111)
+                    ax.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
+                    for p, point in enumerate(input_point):
+                      if input_label[p]: plt.scatter(point[0], point[1], marker="x")
+                      else: plt.scatter(point[0], point[1], marker="o")
+
+                      #ax.add_patch(Rectangle((box[p][0], box[p][1]), 40, 40, fc ='none',  ec ='r'))
+                    plt.savefig(os.path.join(plots_dir, f"trace_{i}_object_{o}_image_{n_test_samples}.png"))
+                    plt.close()
+
+                  if input_mode == "seg_masks_object":
+                    # mask color is defined by object id 'o'
+                    transformed_tensor += torch.tensor(masks[0]*(o+1))
+                  
+                  else:
+                      
+                    # mask color is defined by the predicted object color
+                    dists = torch.cdist(pixel_coords, real_pred_coords.float(), p=2).cpu().numpy() # [2, real_n, real_n]
+                    row_ind, col_ind = linear_sum_assignment(dists)
+                    
+                    # maybe 'real_n' != 'pred_real_n' and 'o' won't be in row_ind (i.e. the index of pred real objects)
+                    if o in row_ind:
+                      o_idx = list(row_ind).index(o)
+                    
+                      # check, in preds, where 'col_ind[o_idx]' is
+                      pred_abs_idx = torch.where(pred_coords*128. == real_pred_coords[col_ind[o_idx]])[0][0]
+
+                      # logger.info(f"target index {o} in position {o_idx} -> pred object {col_ind[o_idx]} with abs index {pred_abs_idx}...")
+
+                      if input_mode == "seg_masks_color":
+                        color_pred = torch.argmax(preds[pred_abs_idx, 10:18], dim=-1).item()
+                        transformed_tensor += torch.tensor(masks[0]*(color_pred+1))
+                      elif input_mode == "seg_masks_mat":
+                        mat_pred = torch.argmax(preds[pred_abs_idx, 5:7], dim=-1).item()
+                        transformed_tensor += torch.tensor(masks[0]*(mat_pred+1))
+
+                  if SAVING_IMG:
+                    save_img(masks.squeeze(),
+                            os.path.join(plots_dir, f"trace_{i}_mask_{o}_image_{n_test_samples}.png"),
+                            title=f"score: {scores}")
+            if SAVING_IMG:
+              save_img(transformed_tensor.cpu().numpy(),
+                      os.path.join(plots_dir, f"trace_{i}_all_mask_image_{n_test_samples}.png"))
+
+            transform_gen_imgs.append(torch.tensor(transformed_tensor))
+      
+      transform_gen_imgs = torch.stack(transform_gen_imgs)
+
+      if input_mode == "depth":
+        transformed_target_tensor = zoe.infer(transform_to_depth(img)) # [1, 1, 128, 128]
+        if SAVING_IMG:
+          save_img(transformed_target_tensor.squeeze().cpu().numpy(),
+                  os.path.join(plots_dir, f"depth_image_{n_test_samples}.png"))
+      
+        log_wts = []
+        for i in range(params["num_inference_samples"]):
+          log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(0.05)).log_prob(torch.tensor(transformed_target_tensor))
+          img_dim = transform_gen_imgs[i].shape[-1]
+          log_p = torch.sum(log_p) / (img_dim**2)
+          log_wts.append(log_p)             
+        resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
+        resampling_id = resampling().item()      
+      
+      elif input_mode in ["seg_masks_object", "seg_masks_color", "seg_masks_mat"]:
+
+        with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
+          img = img/2 + 0.5 # [-1., 1.] -> [0., 1.]
+          predictor.set_image(img[0].permute(1, 2, 0).cpu().numpy())
+          
+          transformed_target_tensor = torch.zeros(128, 128)
+
+          for o, obj_coords in enumerate(pixel_coords):
+            obj_coords = np.asarray(obj_coords.unsqueeze(0)) # obj_coords [2]
+            input_point = obj_coords
+            input_label = np.array([1 for _ in range(obj_coords.shape[0])])
+
+            input_point = np.concatenate((input_point, np.array([[10, 10]])))
+            input_label = np.concatenate((input_label, np.array([0])))
+
+            masks, scores, logits = predictor.predict(
+                point_coords=input_point,
+                point_labels=input_label,
+                multimask_output=True,
+            )
+            sorted_ind = np.argsort(scores)[::-1]
+            masks = masks[sorted_ind]
+            scores = scores[sorted_ind]
+            logits = logits[sorted_ind]
+
+            # taking only the mask with highest score
+            masks = torch.tensor(masks[0]).unsqueeze(0).cpu().numpy()
+
+            if input_mode == "seg_masks_object":
+              # mask color is defined by object id 'o'
+              transformed_target_tensor += torch.tensor(masks[0]*(o+1))
+            
+            else:
+              if input_mode == "seg_masks_color":
+                color = torch.argmax(target[o, 10:18], dim=-1).item()
+                transformed_target_tensor += torch.tensor(masks[0]*(color+1))
+              elif input_mode == "seg_masks_mat":
+                mat = torch.argmax(target[o, 5:7], dim=-1).item()
+                transformed_target_tensor += torch.tensor(masks[0]*(mat+1))
+        
+        if SAVING_IMG:
+          save_img(transformed_target_tensor.cpu().numpy(),
+                  os.path.join(plots_dir, f"transf_image_{n_test_samples}.png"))
+
+        log_wts = []
+        for i in range(params["num_inference_samples"]):
+          log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(0.05)).log_prob(torch.tensor(transformed_target_tensor))
+          img_dim = transform_gen_imgs[i].shape[-1]
+          log_p = torch.sum(log_p) / (img_dim**2)
+          log_wts.append(log_p)
+        resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
+        resampling_id = resampling().item()
+
+    elif input_mode == "slots":
+        
+      trace_generated_imgs = []
+      for name, site in traces.nodes.items():                                  
+        if name == 'image':
+          for i in range(site["fn"].mean.shape[0]):
+            output_image = site["fn"].mean[i]
+            trace_generated_imgs.append(output_image)
+      trace_generated_imgs = torch.stack(trace_generated_imgs)
+      # logger.info(trace_generated_imgs.shape) # [particles, 3, 128, 128]
+      preds, trace_slots = guide(observations={"image": trace_generated_imgs}, return_slots=True)
+      # logger.info(trace_slots.shape) # [particles, N, 64]
+      # logger.info(target_slots.shape)
+
+      slots_dist = torch.cdist(trace_slots, target_slots)
+      slots_dist = slots_dist.detach().cpu().numpy()
+
+      # logger.info(slots_dist.shape)
+
+      indices = np.array([linear_sum_assignment(d) for d in slots_dist])
+      
+      assert len(trace_slots.shape) == 3 # 
+      batch_idx = torch.arange(trace_slots.size(0)).unsqueeze(1).expand(trace_slots.size(0), trace_slots.size(1))
+      trace_slots = trace_slots[batch_idx, indices[:, 1]]
+      
+      log_wts = dist.Normal(trace_slots, torch.tensor(0.5)).log_prob(torch.tensor(target_slots))
+      slots_dim = trace_slots.shape[-1]
+      log_wts = torch.sum(log_wts, dim=(-1, -2)) / slots_dim
+      resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
+      resampling_id = resampling().item()
+    
+    logger.info(f"\n{input_mode} log_wts: {[l.item() for l in log_wts]} - resampled trace {resampling_id}")
+
+    return resampling_id
+    
+
   plots_dir = os.path.abspath("set_prediction_plots")
   if not os.path.isdir(plots_dir): os.mkdir(plots_dir)
   else: 
       shutil.rmtree(plots_dir)
       os.mkdir(plots_dir)
 
-  input_mode = "slots" # ["RGB", "depth", "seg_masks", "slots"]
+  input_mode = "all" # ["RGB", "depth", "seg_masks", "slots", "all"]
   logger.info(f"\ninput_mode = {input_mode}")
   if input_mode == "seg_masks":
     mask_type = "matID" # ["regular", "colorID", "matID"]
@@ -868,7 +1103,7 @@ elif params["running_type"] == "eval":
 
   SAVING_IMG = False
 
-  if input_mode == "depth":
+  if input_mode in ["depth", "all"]:
     # load pre-trained model
     
     torch.hub.help("intel-isl/MiDaS", "DPT_BEiT_L_384", force_reload=True)  # Triggers fresh download of MiDaS repo
@@ -878,57 +1113,11 @@ elif params["running_type"] == "eval":
     model_zoe_nk = torch.hub.load(repo, "ZoeD_NK", pretrained=True)
     zoe = model_zoe_nk.to(DEVICE)
   
-  elif input_mode == "seg_masks":
+  elif input_mode in ["seg_masks", "all"]:
     import hydra # type: ignore
     from sam2.build_sam import build_sam2 # type: ignore
     from sam2.sam2_image_predictor import SAM2ImagePredictor # type: ignore
 
-    #hydra.core.global_hydra.GlobalHydra.instance().clear()
-    # reinit hydra with a new search path for configs
-    #hydra.initialize_config_module("/nas-ctm01/homes/fcsilva/sam2/sam2/configs/sam2.1")
-
-    def show_mask(mask, ax, random_color=False, borders = True):
-      if random_color:
-          color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
-      else:
-          color = np.array([30/255, 144/255, 255/255, 0.6])
-      h, w = mask.shape[-2:]
-      mask = mask.astype(np.uint8)
-      mask_image =  mask.reshape(h, w, 1) * color.reshape(1, 1, -1)
-      if borders:
-          import cv2
-          contours, _ = cv2.findContours(mask,cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE) 
-          # Try to smooth contours
-          contours = [cv2.approxPolyDP(contour, epsilon=0.01, closed=True) for contour in contours]
-          mask_image = cv2.drawContours(mask_image, contours, -1, (1, 1, 1, 0.5), thickness=2) 
-      ax.imshow(mask_image)
-
-  def show_points(coords, labels, ax, marker_size=375):
-      pos_points = coords[labels==1]
-      neg_points = coords[labels==0]
-      ax.scatter(pos_points[:, 0], pos_points[:, 1], color='green', marker='*', s=marker_size, edgecolor='white', linewidth=1.25)
-      ax.scatter(neg_points[:, 0], neg_points[:, 1], color='red', marker='*', s=marker_size, edgecolor='white', linewidth=1.25)   
-
-  def show_box(box, ax):
-      x0, y0 = box[0], box[1]
-      w, h = box[2] - box[0], box[3] - box[1]
-      ax.add_patch(plt.Rectangle((x0, y0), w, h, edgecolor='green', facecolor=(0, 0, 0, 0), lw=2))    
-
-  def show_masks(image, masks, scores, point_coords=None, box_coords=None, input_labels=None, borders=True):
-      for i, (mask, score) in enumerate(zip(masks, scores)):
-          plt.figure(figsize=(10, 10))
-          plt.imshow(image)
-          show_mask(mask, plt.gca(), borders=borders)
-          if point_coords is not None:
-              assert input_labels is not None
-              show_points(point_coords, input_labels, plt.gca())
-          if box_coords is not None:
-              # boxes
-              show_box(box_coords, plt.gca())
-          if len(scores) > 1:
-              plt.title(f"Mask {i+1}, Score: {score:.3f}", fontsize=18)
-          plt.axis('off')
-          plt.show()
     
   guide = InvSlotAttentionGuide(resolution = params['resolution'],
                                   num_slots = 10,
@@ -1008,21 +1197,27 @@ elif params["running_type"] == "eval":
               if name == 'mask': preds[:, 18] = site['value'][id]
       return preds
     
+    if input_mode == "all":
+      resampled_traces = {}
+    
     n_test_samples = 0
     with torch.no_grad():
       for idx, (img, target, pixel_coords) in enumerate(val_dataloader):
+                 
           img = img.to(DEVICE)   
 
           pixel_coords = pixel_coords[0]  
           target = target[0]   
 
           n_test_samples += 1
-              
+          if input_mode == "all":
+            resampled_traces[n_test_samples] = []
+          
           posterior = csis.run(observations={"image": img})
           prop_traces = posterior.prop_traces[0]
           traces = posterior.exec_traces[0]
 
-          if input_mode == "slots":
+          if input_mode in ["slots", "all"]:
             target_slots = guide.slots
 
           # get the predictions of the first proposal trace
@@ -1032,240 +1227,21 @@ elif params["running_type"] == "eval":
             save_img(visualize(img[0].permute(1, 2, 0).cpu().numpy()),
                      os.path.join(plots_dir, f"image_{n_test_samples}.png"))
           
-          if input_mode == "RGB":
-            log_wts = posterior.log_weights[0]
-            resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
-            resampling_id = resampling().item()
-
-            #logger.info(f"\nlog weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
           
-          elif input_mode in ["depth", "seg_masks"]: 
-            transform_gen_imgs = []
+          for mode in ["RGB", "depth", "seg_masks_object", "seg_masks_color", "seg_masks_mat", "slots"]:
+            resampling_id = run_inference(guide=csis.guide,
+                                          prop_traces=prop_traces,
+                                          traces=traces,
+                                          posterior=posterior,
+                                          input_mode=mode,
+                                          pixel_coords=pixel_coords
+                                          )
+            if input_mode == "all":
+              resampled_traces[n_test_samples].append(resampling_id)
 
-            def transform_to_depth(img: torch.Tensor):
-              # from [-1., 1.] to [0., 1.] img
-              return img/2 + 0.5
-            
-            for name, site in traces.nodes.items():                                  
-              if name == 'image':
-                for i in range(site["fn"].mean.shape[0]):
-                  output_image = site["fn"].mean[i]
-
-                  preds = process_preds(prop_traces, i) # get latent predictions related to trace i
-
-
-                  if input_mode == "depth":
-                    transformed_tensor = zoe.infer(transform_to_depth(output_image.unsqueeze(0))) # [1, 1, 128, 128]
-                    if SAVING_IMG:
-                      save_img(transformed_tensor.squeeze().cpu().numpy(),
-                              os.path.join(plots_dir, f"transf_trace_{n_test_samples}_{i}.png"))
-                  
-                  elif input_mode == "seg_masks":
-                    
-                    checkpoint = "/nas-ctm01/homes/fcsilva/sam2/checkpoints/sam2.1_hiera_large.pt"
-                    model_cfg = "configs/sam2.1/sam2.1_hiera_l.yaml"
-                    predictor = SAM2ImagePredictor(build_sam2(model_cfg, checkpoint))
-
-                    with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
-                      output_image = output_image/2 + 0.5 # [-1., 1.] -> [0., 1.]
-                      predictor.set_image(output_image.permute(1, 2, 0).cpu().numpy())
-                      
-                      # build a 2d grid and get the output masks from SA-MESH to give 2d coordinates for these points
-                      slots_attn = csis.guide.attn
-                      B, N, d = slots_attn.shape
-                      # normalize attn matrices
-                      slots_attn = slots_attn / torch.sum(slots_attn, dim=-1, keepdim=True)
-                      slots_attn = slots_attn.reshape(B, N, int(np.sqrt(d)), int(np.sqrt(d))).double()
-                      grid = torch.from_numpy(build_2d_grid((32, 32)))
-                      
-                      pred_coords = torch.einsum('nij,ijk->nk', slots_attn[0].cpu(), grid)
-                      # logger.info(coords.shape)
-                      pred_real_flag = [m for m in range(N) if torch.round(preds[m, -1]) == 1] 
-                      
-                      # logger.info(f"pred real flag: {pred_real_flag}")
-
-                      real_pred_coords = pred_coords[pred_real_flag] * 128. # [#real, 2]
-                      
-                      # logger.info(f"pred coords shape: {coords.shape}")
-                      # logger.info(f"pixel coords shape: {pixel_coords.shape}") # [real_N, 2]
-
-                      transformed_tensor = torch.zeros(128, 128)
-
-                      for o, obj_coords in enumerate(pixel_coords):
-                        
-                        obj_coords = np.asarray(obj_coords.unsqueeze(0)) # obj_coords [2]
-                        input_point = obj_coords
-                        input_label = np.array([1 for _ in range(obj_coords.shape[0])])
-
-                        input_point = np.concatenate((input_point, np.array([[10, 10]])))
-                        input_label = np.concatenate((input_label, np.array([0])))
-
-                        masks, scores, logits = predictor.predict(
-                            point_coords=input_point,
-                            point_labels=input_label,
-                            multimask_output=True,
-                        )
-                        sorted_ind = np.argsort(scores)[::-1]
-                        masks = masks[sorted_ind]
-                        scores = scores[sorted_ind]
-                        logits = logits[sorted_ind]
-
-                        # taking only the mask with highest score
-                        masks = torch.tensor(masks[0]).unsqueeze(0).cpu().numpy()
-
-                        # logger.info(masks.shape)
-                        # logger.info(scores.shape)
-                        
-                        if SAVING_IMG:
-                          fig = plt.figure()
-                          ax = fig.add_subplot(111)
-                          ax.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
-                          for p, point in enumerate(input_point):
-                            if input_label[p]: plt.scatter(point[0], point[1], marker="x")
-                            else: plt.scatter(point[0], point[1], marker="o")
-
-                            #ax.add_patch(Rectangle((box[p][0], box[p][1]), 40, 40, fc ='none',  ec ='r'))
-                          plt.savefig(os.path.join(plots_dir, f"trace_{i}_object_{o}_image_{n_test_samples}.png"))
-                          plt.close()
-
-                        if mask_type == "regular":
-                          # mask color is defined by object id 'o'
-                          transformed_tensor += torch.tensor(masks[0]*(o+1))
-                        
-                        else:
-                           
-                          # mask color is defined by the predicted object color
-                          dists = torch.cdist(pixel_coords, real_pred_coords.float(), p=2).cpu().numpy() # [2, real_n, real_n]
-                          row_ind, col_ind = linear_sum_assignment(dists)
-                          
-                          # maybe 'real_n' != 'pred_real_n' and 'o' won't be in row_ind (i.e. the index of pred real objects)
-                          if o in row_ind:
-                            o_idx = list(row_ind).index(o)
-                          
-                            # check, in preds, where 'col_ind[o_idx]' is
-                            pred_abs_idx = torch.where(pred_coords*128. == real_pred_coords[col_ind[o_idx]])[0][0]
-
-                            # logger.info(f"target index {o} in position {o_idx} -> pred object {col_ind[o_idx]} with abs index {pred_abs_idx}...")
-
-                            if mask_type == "colorID":
-                              color_pred = torch.argmax(preds[pred_abs_idx, 10:18], dim=-1).item()
-                              transformed_tensor += torch.tensor(masks[0]*(color_pred+1))
-                            elif mask_type == "matID":
-                              mat_pred = torch.argmax(preds[pred_abs_idx, 5:7], dim=-1).item()
-                              transformed_tensor += torch.tensor(masks[0]*(mat_pred+1))
-
-                        if SAVING_IMG:
-                          save_img(masks.squeeze(),
-                                  os.path.join(plots_dir, f"trace_{i}_mask_{o}_image_{n_test_samples}.png"),
-                                  title=f"score: {scores}")
-                  if SAVING_IMG:
-                    save_img(transformed_tensor.cpu().numpy(),
-                            os.path.join(plots_dir, f"trace_{i}_all_mask_image_{n_test_samples}.png"))
-
-                  transform_gen_imgs.append(torch.tensor(transformed_tensor))
-            
-            transform_gen_imgs = torch.stack(transform_gen_imgs)
-
-            if input_mode == "depth":
-              transformed_target_tensor = zoe.infer(transform_to_depth(img)) # [1, 1, 128, 128]
-              if SAVING_IMG:
-                save_img(transformed_target_tensor.squeeze().cpu().numpy(),
-                        os.path.join(plots_dir, f"depth_image_{n_test_samples}.png"))
-            
-            elif input_mode == "seg_masks":
-    
-              with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
-                img = img/2 + 0.5 # [-1., 1.] -> [0., 1.]
-                predictor.set_image(img[0].permute(1, 2, 0).cpu().numpy())
-                
-                transformed_target_tensor = torch.zeros(128, 128)
-
-                for o, obj_coords in enumerate(pixel_coords):
-                  obj_coords = np.asarray(obj_coords.unsqueeze(0)) # obj_coords [2]
-                  input_point = obj_coords
-                  input_label = np.array([1 for _ in range(obj_coords.shape[0])])
-
-                  input_point = np.concatenate((input_point, np.array([[10, 10]])))
-                  input_label = np.concatenate((input_label, np.array([0])))
-
-                  masks, scores, logits = predictor.predict(
-                      point_coords=input_point,
-                      point_labels=input_label,
-                      multimask_output=True,
-                  )
-                  sorted_ind = np.argsort(scores)[::-1]
-                  masks = masks[sorted_ind]
-                  scores = scores[sorted_ind]
-                  logits = logits[sorted_ind]
-
-                  # taking only the mask with highest score
-                  masks = torch.tensor(masks[0]).unsqueeze(0).cpu().numpy()
-
-                  if mask_type == "regular":
-                    # mask color is defined by object id 'o'
-                    transformed_target_tensor += torch.tensor(masks[0]*(o+1))
-                  
-                  else:
-                    if mask_type == "colorID":
-                      color = torch.argmax(target[o, 10:18], dim=-1).item()
-                      transformed_target_tensor += torch.tensor(masks[0]*(color+1))
-                    elif mask_type == "matID":
-                      mat = torch.argmax(target[o, 5:7], dim=-1).item()
-                      transformed_target_tensor += torch.tensor(masks[0]*(mat+1))
-              if SAVING_IMG:
-                save_img(transformed_target_tensor.cpu().numpy(),
-                        os.path.join(plots_dir, f"transf_image_{n_test_samples}.png"))
-
-            log_wts = []
-            for i in range(params["num_inference_samples"]):
-              log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(0.05)).log_prob(torch.tensor(transformed_target_tensor))
-              img_dim = transform_gen_imgs[i].shape[-1]
-              log_p = torch.sum(log_p) / (img_dim**2)
-              log_wts.append(log_p)
-
-            resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
-            resampling_id = resampling().item()
-
-          elif input_mode == "slots":
-             
-            trace_generated_imgs = []
-            for name, site in traces.nodes.items():                                  
-              if name == 'image':
-                for i in range(site["fn"].mean.shape[0]):
-                  output_image = site["fn"].mean[i]
-                  trace_generated_imgs.append(output_image)
-            trace_generated_imgs = torch.stack(trace_generated_imgs)
-            # logger.info(trace_generated_imgs.shape) # [particles, 3, 128, 128]
-            preds, trace_slots = guide(observations={"image": trace_generated_imgs}, return_slots=True)
-            # logger.info(trace_slots.shape) # [particles, N, 64]
-            # logger.info(target_slots.shape)
-
-            slots_dist = torch.cdist(trace_slots, target_slots)
-            slots_dist = slots_dist.detach().cpu().numpy()
-
-            # logger.info(slots_dist.shape)
-
-            indices = np.array([linear_sum_assignment(d) for d in slots_dist])
-            
-            assert len(trace_slots.shape) == 3 # 
-            batch_idx = torch.arange(trace_slots.size(0)).unsqueeze(1).expand(trace_slots.size(0), trace_slots.size(1))
-            trace_slots = trace_slots[batch_idx, indices[:, 1]]
-            
-            log_wts = dist.Normal(trace_slots, torch.tensor(0.5)).log_prob(torch.tensor(target_slots))
-            slots_dim = trace_slots.shape[-1]
-            
-            # logger.info(log_wts)
-            
-            log_wts = torch.sum(log_wts, dim=(-1, -2)) / slots_dim
-
-            # logger.info(log_wts)
-
-            resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
-            resampling_id = resampling().item()
-
-            # logger.info(f"resampled trace: {resampling_id}")         
-
-             
+          
+          
+          logger.info(f"\nall models resampled traces: {resampled_traces}")
           
           preds = process_preds(prop_traces, resampling_id)
           assert len(target.shape) == 2
