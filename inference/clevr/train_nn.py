@@ -855,13 +855,15 @@ if params["running_type"] == "train":
   trainer.train(root_folder)
   logger.info("\ntraining ended...")
 
-elif params["running_type"] == "eval": 
+elif params["running_type"] == "eval":
+
+  log_rate = 50 
 
   def transform_to_depth(img: torch.Tensor):
     # from [-1., 1.] to [0., 1.] img
     return img/2 + 0.5 
   
-  def run_inference(img, guide, prop_traces, traces, posterior, input_mode, pixel_coords):
+  def run_inference(img, n, guide, prop_traces, traces, posterior, input_mode, pixel_coords, log_rate):
     
     if input_mode == "RGB":
       log_wts = posterior.log_weights[0]
@@ -1087,7 +1089,8 @@ elif params["running_type"] == "eval":
       resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
       resampling_id = resampling().item()
     
-    logger.info(f"\n{input_mode} log_wts: {[l.item() for l in log_wts]} - resampled trace {resampling_id}")
+    if n == 1 or n % log_rate == 0:
+      logger.info(f"\n{input_mode} log_wts: {[l.item() for l in log_wts]} - resampled trace {resampling_id}")
 
     return resampling_id
     
@@ -1197,6 +1200,7 @@ elif params["running_type"] == "eval":
     if input_mode == "all":
       resampled_traces = {}
     
+    max_AP_mode = []
     n_test_samples = 0
     with torch.no_grad():
       for idx, (img, target, pixel_coords) in enumerate(val_dataloader):
@@ -1225,21 +1229,24 @@ elif params["running_type"] == "eval":
                      os.path.join(plots_dir, f"image_{n_test_samples}.png"))
           
           
-          for mode in ["RGB", "depth", "seg_masks_object", "seg_masks_color", "seg_masks_mat", "slots"]:
+          modes = ["RGB", "depth", "seg_masks_object", "seg_masks_color", "seg_masks_mat", "slots"]
+          for mode in modes:
             resampling_id = run_inference(img=img,
+                                          n=n_test_samples,
                                           guide=csis.guide,
                                           prop_traces=prop_traces,
                                           traces=traces,
                                           posterior=posterior,
                                           input_mode=mode,
-                                          pixel_coords=pixel_coords
+                                          pixel_coords=pixel_coords,
+                                          log_rate=log_rate
                                           )
             if input_mode == "all":
               resampled_traces[n_test_samples].append(resampling_id)
 
           
-          
-          logger.info(f"\nall models resampled traces: {resampled_traces}")
+          if n_test_samples == 1 or n_test_samples % log_rate == 0:
+            logger.info(f"\nall models resampled traces: {resampled_traces}")
           
           preds = process_preds(prop_traces, resampling_id)
           assert len(target.shape) == 2
@@ -1273,7 +1280,17 @@ elif params["running_type"] == "eval":
                                    target.detach().cpu(),
                                    t)
       
-          if n_test_samples == 1 or n_test_samples % 100 == 0:
+          # find which input mode would give the maxAP 
+          try:
+            max_ap_mode.append(modes[resampled_traces[n_test_samples].index(max_ap_idx)])
+          except:
+            max_ap_mode.append(None)
+          
+
+          if n_test_samples == 1 or n_test_samples % log_rate == 0:
+            logger.info(f"\nMAX AP MODES: {max_ap_mode}")
+             
+          if n_test_samples == 1 or n_test_samples % log_rate == 0:
             logger.info(f"\n{n_test_samples} evaluated...")
             logger.info(f"current stats:")
             aux_mAP = {k: v/n_test_samples for k, v in ap.items()}
