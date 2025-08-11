@@ -880,6 +880,9 @@ elif params["running_type"] == "eval":
           logger.info(sigma.shape)
           
           log_wts = pyro.distributions.Normal(output_images, sigma).log_prob(img)
+
+          logger.info(log_wts.shape)
+          logger.info(log_wts)
       
       #log_wts = posterior.log_weights[0]
       resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
