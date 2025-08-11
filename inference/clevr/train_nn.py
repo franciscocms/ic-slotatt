@@ -857,7 +857,7 @@ elif params["running_type"] == "eval":
     # from [-1., 1.] to [0., 1.] img
     return img/2 + 0.5 
   
-  def run_inference(guide, prop_traces, traces, posterior, input_mode, pixel_coords):
+  def run_inference(img, guide, prop_traces, traces, posterior, input_mode, pixel_coords):
     
     if input_mode == "RGB":
       log_wts = posterior.log_weights[0]
@@ -1229,7 +1229,8 @@ elif params["running_type"] == "eval":
           
           
           for mode in ["RGB", "depth", "seg_masks_object", "seg_masks_color", "seg_masks_mat", "slots"]:
-            resampling_id = run_inference(guide=csis.guide,
+            resampling_id = run_inference(img=img,
+                                          guide=csis.guide,
                                           prop_traces=prop_traces,
                                           traces=traces,
                                           posterior=posterior,
