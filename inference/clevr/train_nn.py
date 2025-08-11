@@ -872,6 +872,11 @@ elif params["running_type"] == "eval":
           output_images = site["fn"].mean
           D = output_images.size(-1)*output_images.size(-2)
           sigma = torch.sqrt(((output_images-img)**2).sum(dim=(-1, -2, -3)) / D)          
+          
+          logger.info(output_images.shape)
+          logger.info(img.shape)
+          logger.info(sigma.shape)
+          
           log_wts = pyro.distributions.Normal(output_images, sigma).log_prob(img)
       
       #log_wts = posterior.log_weights[0]
