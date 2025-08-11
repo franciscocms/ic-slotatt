@@ -15,6 +15,10 @@ from PIL import Image
 from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
 
+import hydra # type: ignore
+from sam2.build_sam import build_sam2 # type: ignore
+from sam2.sam2_image_predictor import SAM2ImagePredictor # type: ignore
+
 
 # add project path to sys to import relative modules
 import sys
@@ -1105,19 +1109,12 @@ elif params["running_type"] == "eval":
 
   if input_mode in ["depth", "all"]:
     # load pre-trained model
-    
     torch.hub.help("intel-isl/MiDaS", "DPT_BEiT_L_384", force_reload=True)  # Triggers fresh download of MiDaS repo
 
     repo = "isl-org/ZoeDepth"
     # Zoe_NK
     model_zoe_nk = torch.hub.load(repo, "ZoeD_NK", pretrained=True)
-    zoe = model_zoe_nk.to(DEVICE)
-  
-  elif input_mode in ["seg_masks", "all"]:
-    import hydra # type: ignore
-    from sam2.build_sam import build_sam2 # type: ignore
-    from sam2.sam2_image_predictor import SAM2ImagePredictor # type: ignore
-
+    zoe = model_zoe_nk.to(DEVICE)   
     
   guide = InvSlotAttentionGuide(resolution = params['resolution'],
                                   num_slots = 10,
