@@ -882,7 +882,7 @@ elif params["running_type"] == "eval":
           log_wts = pyro.distributions.Normal(output_images, sigma).log_prob(img)
       
       #log_wts = posterior.log_weights[0]
-      resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
+      resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
       resampling_id = resampling().item()    
     
     elif input_mode in ["depth", "seg_masks_object", "seg_masks_color", "seg_masks_mat"]: 
