@@ -872,7 +872,7 @@ elif params["running_type"] == "eval":
           output_images = site["fn"].mean
           D = output_images.size(-1)*output_images.size(-2)
           sigma = torch.sqrt(torch.square(output_images-img) / D)
-          log_wts = pyro.distributions.Normal(output_image, sigma).log_prob(img)
+          log_wts = pyro.distributions.Normal(output_images, sigma).log_prob(img)
       
       #log_wts = posterior.log_weights[0]
       resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
