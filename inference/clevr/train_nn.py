@@ -1282,13 +1282,13 @@ elif params["running_type"] == "eval":
       
           # find which input mode would give the maxAP 
           try:
-            max_ap_mode.append(modes[resampled_traces[n_test_samples].index(max_ap_idx)])
+            max_AP_mode.append(modes[resampled_traces[n_test_samples].index(max_ap_idx)])
           except:
-            max_ap_mode.append(None)
+            max_AP_mode.append(None)
           
 
           if n_test_samples == 1 or n_test_samples % log_rate == 0:
-            logger.info(f"\nMAX AP MODES: {max_ap_mode}")
+            logger.info(f"\nMAX AP MODES: {max_AP_mode}")
              
           if n_test_samples == 1 or n_test_samples % log_rate == 0:
             logger.info(f"\n{n_test_samples} evaluated...")
