@@ -871,7 +871,7 @@ elif params["running_type"] == "eval":
         if name == 'image':
           output_images = site["fn"].mean
           D = output_images.size(-1)*output_images.size(-2)
-          sigma = torch.sqrt(((output_images-img)**2).sum(-1, -2, -3) / D)          
+          sigma = torch.sqrt(((output_images-img)**2).sum(dim=(-1, -2, -3)) / D)          
           log_wts = pyro.distributions.Normal(output_images, sigma).log_prob(img)
       
       #log_wts = posterior.log_weights[0]
@@ -1005,7 +1005,7 @@ elif params["running_type"] == "eval":
       
         log_wts = []
         D = transform_gen_imgs.size(-1)*transform_gen_imgs.size(-2)
-        sigma = torch.sqrt(torch.square(transform_gen_imgs - transformed_target_tensor) / D)
+        sigma = torch.sqrt(((transform_gen_imgs - transformed_target_tensor)**2).sum(dim=(-1, -2, -3)) / D)
         
         for i in range(params["num_inference_samples"]):
           # log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(0.05)).log_prob(torch.tensor(transformed_target_tensor))
@@ -1063,7 +1063,7 @@ elif params["running_type"] == "eval":
 
         log_wts = []
         D = transform_gen_imgs.size(-1)*transform_gen_imgs.size(-2)
-        sigma = torch.sqrt(torch.square(transform_gen_imgs - transformed_target_tensor) / D)
+        sigma = torch.sqrt(((transform_gen_imgs - transformed_target_tensor)**2).sum(dim=(-1, -2, -3)) / D)
 
         for i in range(params["num_inference_samples"]):
           # log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(0.05)).log_prob(torch.tensor(transformed_target_tensor))
@@ -1100,7 +1100,7 @@ elif params["running_type"] == "eval":
       trace_slots = trace_slots[batch_idx, indices[:, 1]]
 
       slots_dim = trace_slots.shape[-1]
-      sigma = torch.sqrt(((trace_slots - target_slots)**2).sum(-1, -2, -3) / slots_dim)     
+      sigma = torch.sqrt(((trace_slots - target_slots)**2).sum(dim=(-1, -2)) / slots_dim)     
       log_wts = dist.Normal(trace_slots, torch.tensor(sigma)).log_prob(torch.tensor(target_slots))
       #log_wts = torch.sum(log_wts, dim=(-1, -2))
       resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
