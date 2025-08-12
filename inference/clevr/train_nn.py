@@ -870,18 +870,18 @@ elif params["running_type"] == "eval":
       for name, site in traces.nodes.items():                                  
         if name == 'image':
           output_images = site["fn"].mean
-          D = output_images.size(-1)*output_images.size(-2)
-          sigma = torch.mean(torch.sqrt(((output_images-img)**2).sum(dim=(-1, -2, -3)) / D))
+          #D = output_images.size(-1)*output_images.size(-2)
+          #sigma = torch.mean(torch.sqrt(((output_images-img)**2).sum(dim=(-1, -2, -3)) / D))
           # sigma = sigma[:, None, None, None]  # [D, 1, 1, 1]
           # sigma = sigma.expand(-1, 3, 128, 128)        
           
-          logger.info(output_images.shape)
-          logger.info(img.shape)
-          logger.info(f"sigma: {sigma} with shape: {sigma.shape}")
+          #logger.info(output_images.shape)
+          #logger.info(img.shape)
+          #logger.info(f"sigma: {sigma} with shape: {sigma.shape}")
           
 
           """  SHOULD I USE BERNOULLI INSTEAD?? HOW TO HAVE REASONABLE LOG_WTS HERE AND IN THE REST OF THE APPROACHES??? """
-
+          sigma = 0.05 
           log_wts = dist.Normal(output_images, sigma).log_prob(img)
 
           logger.info(log_wts.shape)
