@@ -15,6 +15,7 @@ from scipy.optimize import linear_sum_assignment
 from PIL import Image
 from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
+from statistics import mode as stats_mode
 
 import hydra # type: ignore
 from sam2.build_sam import build_sam2 # type: ignore
@@ -867,27 +868,22 @@ elif params["running_type"] == "eval":
   def run_inference(img, n, guide, prop_traces, traces, posterior, input_mode, pixel_coords, log_rate):
     
     if input_mode == "RGB":
-      for name, site in traces.nodes.items():                                  
-        if name == 'image':
-          output_images = site["fn"].mean
-          #D = output_images.size(-1)*output_images.size(-2)
-          #sigma = torch.mean(torch.sqrt(((output_images-img)**2).sum(dim=(-1, -2, -3)) / D))
-          # sigma = sigma[:, None, None, None]  # [D, 1, 1, 1]
-          # sigma = sigma.expand(-1, 3, 128, 128)        
+      # for name, site in traces.nodes.items():                                  
+      #   if name == 'image':
+      #     output_images = site["fn"].mean
+      #     D = output_images.size(-1)*output_images.size(-2)
+      #     sigma = torch.mean(torch.sqrt(((output_images-img)**2).sum(dim=(-1, -2, -3)) / D))
+      #     sigma = sigma[:, None, None, None]  # [D, 1, 1, 1]
+      #     sigma = sigma.expand(-1, 3, 128, 128)        
           
-          #logger.info(output_images.shape)
-          #logger.info(img.shape)
-          #logger.info(f"sigma: {sigma} with shape: {sigma.shape}")
+      #     logger.info(output_images.shape)
+      #     logger.info(img.shape)
+      #     logger.info(f"sigma: {sigma} with shape: {sigma.shape}")
           
-
-          """  SHOULD I USE BERNOULLI INSTEAD?? HOW TO HAVE REASONABLE LOG_WTS HERE AND IN THE REST OF THE APPROACHES??? """
-          sigma = 0.1
-          log_wts = dist.Independent(dist.Normal(output_images, sigma), 3).log_prob(img)
-
-          logger.info(log_wts.shape)
-          logger.info(log_wts)
+      #     sigma = 0.05
+      #     log_wts = dist.Independent(dist.Normal(output_images, sigma), 3).log_prob(img)
       
-      #log_wts = posterior.log_weights[0]
+      log_wts = posterior.log_weights[0]
       resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
       resampling_id = resampling().item()    
     
@@ -1277,6 +1273,8 @@ elif params["running_type"] == "eval":
           
           if n_test_samples == 1 or n_test_samples % log_rate == 0:
             logger.info(f"\nall models resampled traces: {resampled_traces}")
+          
+          resampling_id = stats_mode(resampled_traces[n_test_samples])
           
           preds = process_preds(prop_traces, resampling_id)
           assert len(target.shape) == 2
