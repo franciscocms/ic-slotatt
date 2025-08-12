@@ -865,6 +865,11 @@ elif params["running_type"] == "eval":
     # from [-1., 1.] to [0., 1.] img
     return img/2 + 0.5 
   
+  def get_ESS(log_wts):
+    log_w_norm = log_wts - torch.logsumexp(log_wts, 0)
+    ess = torch.exp(-torch.logsumexp(2 * log_w_norm, 0))
+    return ess
+     
   def run_inference(img, n, guide, prop_traces, traces, posterior, input_mode, pixel_coords, log_rate):
     
     if input_mode == "RGB":
@@ -1116,7 +1121,7 @@ elif params["running_type"] == "eval":
       resampling_id = resampling().item()
     
     if n == 1 or n % log_rate == 0:
-      logger.info(f"\n{input_mode} log_wts: {[l.item() for l in log_wts]} - resampled trace {resampling_id}")
+      logger.info(f"\n{input_mode} log_wts: {[l.item() for l in log_wts]} - ESS: {get_ESS(log_wts)} - resampled trace {resampling_id}")
 
     return resampling_id
     
@@ -1222,9 +1227,10 @@ elif params["running_type"] == "eval":
               if name == 'color': preds[:, 10:18] = F.one_hot(site['value'][id], len(colors))
               if name == 'mask': preds[:, 18] = site['value'][id]
       return preds
-    
-    if input_mode == "all":
-      resampled_traces = {}
+
+
+    resampled_traces = {}
+    all_log_wts = {}
     
     max_AP_mode = []
     n_test_samples = 0
@@ -1256,25 +1262,38 @@ elif params["running_type"] == "eval":
           
           
           modes = ["RGB", "depth", "seg_masks_object", "seg_masks_color", "seg_masks_mat", "slots"]
+          resampling_mode = "ensemble" # ["majority_vote", "ensemble"]
           for mode in modes:
-            resampling_id = run_inference(img=img,
-                                          n=n_test_samples,
-                                          guide=csis.guide,
-                                          prop_traces=prop_traces,
-                                          traces=traces,
-                                          posterior=posterior,
-                                          input_mode=mode,
-                                          pixel_coords=pixel_coords,
-                                          log_rate=log_rate
-                                          )
-            if input_mode == "all":
-              resampled_traces[n_test_samples].append(resampling_id)
+            resampling_id, log_wts = run_inference(img=img,
+                                                   n=n_test_samples,
+                                                   guide=csis.guide,
+                                                   prop_traces=prop_traces,
+                                                   traces=traces,
+                                                   posterior=posterior,
+                                                   input_mode=mode,
+                                                   pixel_coords=pixel_coords,
+                                                   log_rate=log_rate
+                                                   )
+            
+            resampled_traces[n_test_samples].append(resampling_id)
+            all_log_wts[n_test_samples].append(log_wts)
 
-          
           if n_test_samples == 1 or n_test_samples % log_rate == 0:
             logger.info(f"\nall models resampled traces: {resampled_traces}")
           
-          resampling_id = stats_mode(resampled_traces[n_test_samples])
+          if resampling_mode == "majority_vote":
+            resampling_id = stats_mode(resampled_traces[n_test_samples])
+          elif resampling_mode == "ensemble":
+            log_wts = 0.
+
+            
+            for s in range(len(modes)):
+
+              # normalize the log_wts 
+
+              log_wts += all_log_wts[n_test_samples]
+            log_wts = log_wts / len(modes)
+             
           
           preds = process_preds(prop_traces, resampling_id)
           assert len(target.shape) == 2
@@ -1328,7 +1347,7 @@ elif params["running_type"] == "eval":
             max_aux_mAP = {k: v/n_test_samples for k, v in max_ap.items()}
             logger.info(max_aux_mAP)
           
-          if n_test_samples == 200:
+          if n_test_samples == 1:
             break
   logger.info(f"\ninference ended...")
 
