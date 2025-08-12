@@ -881,7 +881,7 @@ elif params["running_type"] == "eval":
           
 
           """  SHOULD I USE BERNOULLI INSTEAD?? HOW TO HAVE REASONABLE LOG_WTS HERE AND IN THE REST OF THE APPROACHES??? """
-          sigma = 0.05 
+          sigma = 0.1
           log_wts = dist.Independent(dist.Normal(output_images, sigma), 3).log_prob(img)
 
           logger.info(log_wts.shape)
