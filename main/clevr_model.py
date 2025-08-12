@@ -573,7 +573,7 @@ def clevr_gen_model(step=0, observations={"image": torch.zeros((1, 3, 128, 128))
     # Call Blender to render the scene
     #with mp.Pool(processes=mp.cpu_count()) as pool:
     init_time = time.time()
-    with mp.Pool(processes=10) as pool:
+    with mp.Pool(processes=int(mp.cpu_count()/2)) as pool: # processes=10 before
       pool.map(render_scene_in_blender, blender_scripts)
     batch_time = time.time() - init_time
     if params["running_type"] == "train" and step % params["step_size"]: logger.info(f"Batch generation duration: {batch_time} - {batch_time/B} per sample")
