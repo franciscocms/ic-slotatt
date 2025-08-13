@@ -876,7 +876,7 @@ elif params["running_type"] == "eval":
       for name, site in traces.nodes.items():                                  
         if name == 'image':
           output_images = site["fn"].mean
-          # D = output_images.size(-1)*output_images.size(-2)
+          D = output_images.size(-1)*output_images.size(-2)
           # sigma = torch.mean(torch.sqrt(((output_images-img)**2).sum(dim=(-1, -2, -3)) / D))
           # sigma = sigma[:, None, None, None]  # [D, 1, 1, 1]
           # sigma = sigma.expand(-1, 3, 128, 128)        
@@ -888,6 +888,8 @@ elif params["running_type"] == "eval":
           sigma = 0.01
           for it in range(100):
             log_wts = dist.Independent(dist.Normal(output_images, sigma), 3).log_prob(img)
+            log_wts /= D
+            
             if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - 0.3) <= 0.05:
               logger.info(f"broke in it {it}")
               break
