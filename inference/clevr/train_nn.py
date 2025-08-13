@@ -1314,7 +1314,7 @@ elif params["running_type"] == "eval":
             resampled_traces[n_test_samples].append(resampling_id)
             all_log_wts[n_test_samples][mode] = log_wts
 
-          logger.info(all_log_wts)
+          #logger.info(all_log_wts)
           
           if n_test_samples == 1 or n_test_samples % log_rate == 0:
             logger.info(f"\nall models resampled traces: {resampled_traces}")
@@ -1326,12 +1326,12 @@ elif params["running_type"] == "eval":
             for mode in modes:
               log_wts += all_log_wts[n_test_samples][mode]
             
-            logger.info(log_wts)
+            #logger.info(log_wts)
 
-            resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.from_numpy(log_wts))
+            resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
             resampling_id = resampling().item()
             if n_test_samples == 1 or n_test_samples % log_rate == 0:
-              logger.info(f"\nfinal log_wts = {[l.item() for l in log_wts]} - resampled trace {resampling_id}")
+              logger.info(f"\nfinal log_wts = {[l.item() for l in log_wts]} - ESS/N = {get_ESS(log_wts)/params['num_inference_samples']} - resampled trace {resampling_id}")
              
           preds = process_preds(prop_traces, resampling_id)
           assert len(target.shape) == 2
