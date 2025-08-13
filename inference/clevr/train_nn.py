@@ -1298,7 +1298,7 @@ elif params["running_type"] == "eval":
           
           
           modes = ["RGB", "depth", "seg_masks_object", "seg_masks_color", "seg_masks_mat", "slots"]
-          resampling_mode = "majority_vote" # ["majority_vote", "ensemble"]
+          resampling_mode = "ensemble" # ["majority_vote", "ensemble"]
           for mode in modes:
             resampling_id, log_wts = run_inference(img=img,
                                                    n=n_test_samples,
@@ -1321,16 +1321,16 @@ elif params["running_type"] == "eval":
             resampling_id = stats_mode(resampled_traces[n_test_samples])
           elif resampling_mode == "ensemble":
             log_wts = 0.
-
-            
             for s in range(len(modes)):
 
               # normalize the log_wts 
 
-              log_wts += all_log_wts[n_test_samples]
-            log_wts = log_wts / len(modes)
+              log_wts += np.array(all_log_wts[n_test_samples])
+            resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.from_numpy(log_wts))
+            resampling_id = resampling().item()
+            if n_test_samples == 1 or n_test_samples % log_rate == 0:
+              logger.info(f"\nfinal log_wts = {[l.item() for l in log_wts]} - resampled trace {resampling_id}")
              
-          
           preds = process_preds(prop_traces, resampling_id)
           assert len(target.shape) == 2
           for t in threshold: 
