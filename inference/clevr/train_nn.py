@@ -1280,7 +1280,7 @@ elif params["running_type"] == "eval":
           n_test_samples += 1
           #if input_mode == "all":
           resampled_traces[n_test_samples] = []
-          all_log_wts[n_test_samples] = []
+          all_log_wts[n_test_samples] = {}
           
           posterior = csis.run(observations={"image": img})
           prop_traces = posterior.prop_traces[0]
@@ -1300,7 +1300,6 @@ elif params["running_type"] == "eval":
           modes = ["RGB", "depth", "seg_masks_object", "seg_masks_color", "seg_masks_mat", "slots"]
           resampling_mode = "ensemble" # ["majority_vote", "ensemble"]
           for mode in modes:
-            all_log_wts[n_test_samples] = {}
             resampling_id, log_wts = run_inference(img=img,
                                                    n=n_test_samples,
                                                    guide=csis.guide,
