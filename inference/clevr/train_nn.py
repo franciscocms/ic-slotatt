@@ -1315,6 +1315,8 @@ elif params["running_type"] == "eval":
             resampled_traces[n_test_samples].append(resampling_id)
             all_log_wts[n_test_samples][mode] = log_wts
 
+          logger.info(all_log_wts)
+          
           if n_test_samples == 1 or n_test_samples % log_rate == 0:
             logger.info(f"\nall models resampled traces: {resampled_traces}")
           
@@ -1326,7 +1328,7 @@ elif params["running_type"] == "eval":
               log_wts += all_log_wts[n_test_samples][mode]
             
             logger.info(log_wts)
-            
+
             resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.from_numpy(log_wts))
             resampling_id = resampling().item()
             if n_test_samples == 1 or n_test_samples % log_rate == 0:
