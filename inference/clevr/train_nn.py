@@ -1312,7 +1312,7 @@ elif params["running_type"] == "eval":
                                                    )
             
             resampled_traces[n_test_samples].append(resampling_id)
-            all_log_wts[n_test_samples].append(log_wts)
+            all_log_wts[n_test_samples].append(log_wts.cpu().numpy())
 
           if n_test_samples == 1 or n_test_samples % log_rate == 0:
             logger.info(f"\nall models resampled traces: {resampled_traces}")
@@ -1324,8 +1324,9 @@ elif params["running_type"] == "eval":
             for s in range(len(modes)):
 
               # normalize the log_wts 
-
-              log_wts += np.array(all_log_wts[n_test_samples].cpu())
+              logger.info(np.array(all_log_wts[n_test_samples][s]))
+              
+              log_wts += np.array(all_log_wts[n_test_samples][s])
             resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.from_numpy(log_wts))
             resampling_id = resampling().item()
             if n_test_samples == 1 or n_test_samples % log_rate == 0:
