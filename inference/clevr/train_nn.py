@@ -1146,10 +1146,10 @@ elif params["running_type"] == "eval":
       batch_idx = torch.arange(trace_slots.size(0)).unsqueeze(1).expand(trace_slots.size(0), trace_slots.size(1))
       trace_slots = trace_slots[batch_idx, indices[:, 1]]
 
-      #slots_dim = trace_slots.shape[-1]
+      slots_dim = trace_slots.shape[-1]
       sigma = 1.    
       log_wts = dist.Normal(trace_slots, sigma).log_prob(torch.tensor(target_slots))
-      log_wts = torch.sum(log_wts, dim=(-1, -2))
+      log_wts = torch.sum(log_wts, dim=(-1, -2))/slots_dim
       resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
       resampling_id = resampling().item()
     
