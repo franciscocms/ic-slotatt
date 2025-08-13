@@ -885,17 +885,21 @@ elif params["running_type"] == "eval":
           # logger.info(img.shape)
           # logger.info(f"sigma: {sigma} with shape: {sigma.shape}")
           
-          sigma = 0.01
-          for it in range(100):
-            log_wts = dist.Independent(dist.Normal(output_images, sigma), 3).log_prob(img)
-            log_wts /= D
+          # sigma = 0.01
+          # for it in range(100):
+          #   log_wts = dist.Independent(dist.Normal(output_images, sigma), 3).log_prob(img)
+          #   log_wts /= D
             
-            if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - 0.3) <= 0.05:
-              logger.info(f"broke in it {it}")
-              break
-            else:
-              logger.info(f"it {it} - sigma = {sigma} - ESS/N = {get_ESS(log_wts)/params['num_inference_samples']}")
-              sigma += sigma*0.5
+          #   if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - 0.3) <= 0.05:
+          #     logger.info(f"broke in it {it}")
+          #     break
+          #   else:
+          #     logger.info(f"it {it} - sigma = {sigma} - ESS/N = {get_ESS(log_wts)/params['num_inference_samples']}")
+          #     sigma += sigma*0.5
+
+          sigma = 0.05
+          log_wts = dist.Independent(dist.Normal(output_images, sigma), 3).log_prob(img)
+          log_wts /= D
           
           logger.info(f"RGB sigma search: ended with sigma = {sigma} with ESS/N = {get_ESS(log_wts)/params['num_inference_samples']}")
           
