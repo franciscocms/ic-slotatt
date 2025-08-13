@@ -1123,7 +1123,7 @@ elif params["running_type"] == "eval":
     if n == 1 or n % log_rate == 0:
       logger.info(f"\n{input_mode} log_wts: {[l.item() for l in log_wts]} - ESS: {get_ESS(torch.stack(log_wts))} - resampled trace {resampling_id}")
 
-    return resampling_id
+    return resampling_id, log_wts
     
 
   plots_dir = os.path.abspath("set_prediction_plots")
@@ -1262,7 +1262,7 @@ elif params["running_type"] == "eval":
           
           
           modes = ["RGB", "depth", "seg_masks_object", "seg_masks_color", "seg_masks_mat", "slots"]
-          resampling_mode = "ensemble" # ["majority_vote", "ensemble"]
+          resampling_mode = "majority_vote" # ["majority_vote", "ensemble"]
           for mode in modes:
             resampling_id, log_wts = run_inference(img=img,
                                                    n=n_test_samples,
