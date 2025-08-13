@@ -291,7 +291,7 @@ class Importance(TracePosterior):
 
                     #logger.info(f"\nMOD IMP: {site['fn']} - {site['value'].shape}\n - {log_p.shape} - {log_p}")
 
-                    #log_p = log_p / (img_dim**2)
+                    log_p = log_p / (img_dim**2)
             
             log_p_sum += log_p
 
