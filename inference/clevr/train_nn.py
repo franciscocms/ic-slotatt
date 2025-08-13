@@ -1121,7 +1121,7 @@ elif params["running_type"] == "eval":
       resampling_id = resampling().item()
     
     if n == 1 or n % log_rate == 0:
-      logger.info(f"\n{input_mode} log_wts: {[l.item() for l in log_wts]} - ESS: {get_ESS(log_wts)} - resampled trace {resampling_id}")
+      logger.info(f"\n{input_mode} log_wts: {[l.item() for l in log_wts]} - ESS: {get_ESS(torch.stack(log_wts))} - resampled trace {resampling_id}")
 
     return resampling_id
     
