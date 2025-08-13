@@ -1106,8 +1106,6 @@ elif params["running_type"] == "eval":
         sigma = 0.05
         log_wts = dist.Independent(dist.Normal(transform_gen_imgs, sigma), 2).log_prob(transformed_target_tensor)
         log_wts /= D
-
-        logger.info
         
         if not isinstance(log_wts, torch.Tensor): log_wts = torch.stack(log_wts)
         resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
