@@ -1300,6 +1300,7 @@ elif params["running_type"] == "eval":
           modes = ["RGB", "depth", "seg_masks_object", "seg_masks_color", "seg_masks_mat", "slots"]
           resampling_mode = "ensemble" # ["majority_vote", "ensemble"]
           for mode in modes:
+            all_log_wts[n_test_samples] = {}
             resampling_id, log_wts = run_inference(img=img,
                                                    n=n_test_samples,
                                                    guide=csis.guide,
@@ -1312,7 +1313,7 @@ elif params["running_type"] == "eval":
                                                    )
             
             resampled_traces[n_test_samples].append(resampling_id)
-            all_log_wts[n_test_samples].append(log_wts.cpu().numpy())
+            all_log_wts[n_test_samples][mode] = log_wts
 
           if n_test_samples == 1 or n_test_samples % log_rate == 0:
             logger.info(f"\nall models resampled traces: {resampled_traces}")
@@ -1321,12 +1322,11 @@ elif params["running_type"] == "eval":
             resampling_id = stats_mode(resampled_traces[n_test_samples])
           elif resampling_mode == "ensemble":
             log_wts = 0.
-            for s in range(len(modes)):
-
-              # normalize the log_wts 
-              logger.info(np.array(all_log_wts[n_test_samples][s]))
-              
-              log_wts += np.array(all_log_wts[n_test_samples][s])
+            for mode in modes:
+              log_wts += all_log_wts[n_test_samples][mode]
+            
+            logger.info(log_wts)
+            
             resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.from_numpy(log_wts))
             resampling_id = resampling().item()
             if n_test_samples == 1 or n_test_samples % log_rate == 0:
