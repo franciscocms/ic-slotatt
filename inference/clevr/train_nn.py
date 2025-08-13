@@ -1324,6 +1324,8 @@ elif params["running_type"] == "eval":
           elif resampling_mode == "ensemble":
             log_wts = 0.
             for mode in modes:
+              if isinstance(all_log_wts[n_test_samples][mode], list):
+                all_log_wts[n_test_samples][mode] = torch.tensor(all_log_wts[n_test_samples][mode])
               log_wts += all_log_wts[n_test_samples][mode]
             
             #logger.info(log_wts)
