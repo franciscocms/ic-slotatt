@@ -900,9 +900,7 @@ elif params["running_type"] == "eval":
           sigma = 0.05
           log_wts = dist.Independent(dist.Normal(output_images, sigma), 3).log_prob(img)
           log_wts /= D
-          
-          logger.info(f"RGB sigma search: ended with sigma = {sigma} with ESS/N = {get_ESS(log_wts)/params['num_inference_samples']}")
-          
+                    
       #log_wts = posterior.log_weights[0]
       if not isinstance(log_wts, torch.Tensor): log_wts = torch.stack(log_wts)
       resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
@@ -1102,13 +1100,17 @@ elif params["running_type"] == "eval":
         #   # log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(sigma)).log_prob(torch.tensor(transformed_target_tensor))
         #   log_wts.append(log_p)
 
+        logger.info(transform_gen_imgs.shape)
+        
         D = transform_gen_imgs.size(-1)*transform_gen_imgs.size(-2)
         sigma = 0.05
         log_wts = dist.Independent(dist.Normal(transform_gen_imgs, sigma), 3).log_prob(transformed_target_tensor)
         log_wts /= D
         
-        resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
+        if not isinstance(log_wts, torch.Tensor): log_wts = torch.stack(log_wts)
+        resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
         resampling_id = resampling().item()
+        
 
     elif input_mode == "slots":
         
