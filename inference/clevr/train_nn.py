@@ -1095,12 +1095,18 @@ elif params["running_type"] == "eval":
         # D = transform_gen_imgs.size(-1)*transform_gen_imgs.size(-2)
         # sigma = torch.sqrt(((transform_gen_imgs - transformed_target_tensor)**2).sum(dim=(-1, -2, -3)) / D)
 
-        for i in range(params["num_inference_samples"]):
-          log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(0.05)).log_prob(torch.tensor(transformed_target_tensor))
-          img_dim = transform_gen_imgs[i].shape[-1]
-          log_p = torch.sum(log_p) / (img_dim**2)
-          # log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(sigma)).log_prob(torch.tensor(transformed_target_tensor))
-          log_wts.append(log_p)
+        # for i in range(params["num_inference_samples"]):
+        #   log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(0.05)).log_prob(torch.tensor(transformed_target_tensor))
+        #   img_dim = transform_gen_imgs[i].shape[-1]
+        #   log_p = torch.sum(log_p) / (img_dim**2)
+        #   # log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(sigma)).log_prob(torch.tensor(transformed_target_tensor))
+        #   log_wts.append(log_p)
+
+        D = transform_gen_imgs.size(-1)*transform_gen_imgs.size(-2)
+        sigma = 0.05
+        log_wts = dist.Independent(dist.Normal(transform_gen_imgs, sigma), 3).log_prob(transformed_target_tensor)
+        log_wts /= D
+        
         resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
         resampling_id = resampling().item()
 
