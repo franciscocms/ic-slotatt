@@ -891,6 +891,7 @@ elif params["running_type"] == "eval":
             if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - 5e-1) <= 0.3:
               break
             else:
+              logger.info(f"sigma: {sigma} - ESS/N: {get_ESS(log_wts)/params['num_inference_samples']}")
               sigma += sigma*0.5
           
           logger.info(f"RGB sigma search: ended with sigma = {sigma} with ESS/N = {get_ESS(log_wts)/params['num_inference_samples']}")
