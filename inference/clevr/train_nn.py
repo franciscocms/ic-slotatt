@@ -893,10 +893,11 @@ elif params["running_type"] == "eval":
             else:
               sigma += sigma*0.5
           
-          logger.info(f"RGB sigma search: ended with sigma = {sigma} with ESS/N = {get_ESS(torch.stack(log_wts))/params['num_inference_samples']}")
+          logger.info(f"RGB sigma search: ended with sigma = {sigma} with ESS/N = {get_ESS(log_wts)/params['num_inference_samples']}")
           
       #log_wts = posterior.log_weights[0]
-      resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
+      if not isinstance(log_wts, torch.Tensor): log_wts = torch.stack(log_wts)
+      resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
       resampling_id = resampling().item()    
     
     elif input_mode in ["depth", "seg_masks_object", "seg_masks_color", "seg_masks_mat"]: 
