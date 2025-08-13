@@ -1101,23 +1101,21 @@ elif params["running_type"] == "eval":
         #   log_wts.append(log_p)
         
         D = transform_gen_imgs.size(-1)*transform_gen_imgs.size(-2)
-        sigma = 0.1
-        log_wts = dist.Independent(dist.Normal(transform_gen_imgs, sigma), 2).log_prob(transformed_target_tensor)
-        log_wts /= D
+        # sigma = 0.1
+        # log_wts = dist.Independent(dist.Normal(transform_gen_imgs, sigma), 2).log_prob(transformed_target_tensor)
+        # log_wts /= D
 
-        # sigma = 0.01
-        # for it in range(100):
-        #   log_wts = dist.Independent(dist.Normal(transform_gen_imgs, sigma), 2).log_prob(transformed_target_tensor)
-        #   log_wts /= D
+        sigma = 0.05
+        for it in range(100):
+          log_wts = dist.Independent(dist.Normal(transform_gen_imgs, sigma), 2).log_prob(transformed_target_tensor)
+          log_wts /= D
           
-        #   if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - 0.3) <= 0.05:
-        #     logger.info(f"broke in it {it}")
-        #     break
-        #   else:
-        #     logger.info(f"it {it} - sigma = {sigma} - ESS/N = {get_ESS(log_wts)/params['num_inference_samples']}")
-        #     sigma += sigma*0.5
+          if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - 0.3) <= 0.05:
+            break
+          else:
+            #logger.info(f"it {it} - sigma = {sigma} - ESS/N = {get_ESS(log_wts)/params['num_inference_samples']}")
+            sigma += sigma*0.05
 
-        
         if not isinstance(log_wts, torch.Tensor): log_wts = torch.stack(log_wts)
         resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
         resampling_id = resampling().item()
@@ -1158,7 +1156,7 @@ elif params["running_type"] == "eval":
     if n == 1 or n % log_rate == 0:
       if not isinstance(log_wts, torch.Tensor):
         log_wts = torch.stack(log_wts)
-      logger.info(f"\n{input_mode} log_wts: {[l.item() for l in log_wts]} - ESS/N: {get_ESS(log_wts)/params['num_inference_samples']} - resampled trace {resampling_id}")
+      logger.info(f"\n{input_mode} - log_wts = {[l.item() for l in log_wts]} - sigma = {sigma} - ESS/N = {get_ESS(log_wts)/params['num_inference_samples']} - resampled trace {resampling_id}")
 
     return resampling_id, log_wts
     
