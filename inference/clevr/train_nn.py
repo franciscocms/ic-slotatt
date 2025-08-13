@@ -1243,8 +1243,9 @@ elif params["running_type"] == "eval":
           target = target[0]   
 
           n_test_samples += 1
-          if input_mode == "all":
-            resampled_traces[n_test_samples] = []
+          #if input_mode == "all":
+          resampled_traces[n_test_samples] = []
+          all_log_wts[n_test_samples] = []
           
           posterior = csis.run(observations={"image": img})
           prop_traces = posterior.prop_traces[0]
