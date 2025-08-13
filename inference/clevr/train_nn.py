@@ -873,22 +873,29 @@ elif params["running_type"] == "eval":
   def run_inference(img, n, guide, prop_traces, traces, posterior, input_mode, pixel_coords, log_rate):
     
     if input_mode == "RGB":
-      # for name, site in traces.nodes.items():                                  
-      #   if name == 'image':
-      #     output_images = site["fn"].mean
-      #     D = output_images.size(-1)*output_images.size(-2)
-      #     sigma = torch.mean(torch.sqrt(((output_images-img)**2).sum(dim=(-1, -2, -3)) / D))
-      #     sigma = sigma[:, None, None, None]  # [D, 1, 1, 1]
-      #     sigma = sigma.expand(-1, 3, 128, 128)        
+      for name, site in traces.nodes.items():                                  
+        if name == 'image':
+          output_images = site["fn"].mean
+          # D = output_images.size(-1)*output_images.size(-2)
+          # sigma = torch.mean(torch.sqrt(((output_images-img)**2).sum(dim=(-1, -2, -3)) / D))
+          # sigma = sigma[:, None, None, None]  # [D, 1, 1, 1]
+          # sigma = sigma.expand(-1, 3, 128, 128)        
           
-      #     logger.info(output_images.shape)
-      #     logger.info(img.shape)
-      #     logger.info(f"sigma: {sigma} with shape: {sigma.shape}")
+          # logger.info(output_images.shape)
+          # logger.info(img.shape)
+          # logger.info(f"sigma: {sigma} with shape: {sigma.shape}")
           
-      #     sigma = 0.05
-      #     log_wts = dist.Independent(dist.Normal(output_images, sigma), 3).log_prob(img)
-      
-      log_wts = posterior.log_weights[0]
+          sigma = 0.05
+          for it in range(10):
+            log_wts = dist.Independent(dist.Normal(output_images, sigma), 3).log_prob(img)
+            if torch.abs(get_ESS(torch.stack(log_wts))/params['num_inference_samples'] - 5e-1) <= 0.3:
+              break
+            else:
+              sigma += sigma*0.5
+          
+          logger.info(f"RGB sigma search: ended with sigma = {sigma} with ESS/N = {get_ESS(torch.stack(log_wts))/params['num_inference_samples']}")
+          
+      #log_wts = posterior.log_weights[0]
       resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
       resampling_id = resampling().item()    
     
