@@ -1326,7 +1326,7 @@ elif params["running_type"] == "eval":
             for mode in modes:
               if isinstance(all_log_wts[n_test_samples][mode], list):
                 all_log_wts[n_test_samples][mode] = torch.tensor(all_log_wts[n_test_samples][mode])
-              log_wts += all_log_wts[n_test_samples][mode]
+              log_wts += 0.5 * all_log_wts[n_test_samples][mode]
             
             #logger.info(log_wts)
 
@@ -1371,7 +1371,7 @@ elif params["running_type"] == "eval":
           try:
             max_AP_mode.append(modes[resampled_traces[n_test_samples].index(max_ap_idx)])
           except:
-            max_AP_mode.append(None)
+            max_AP_mode.append(str(max_ap_idx))
           
 
           if n_test_samples == 1 or n_test_samples % log_rate == 0:
