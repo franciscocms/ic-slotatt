@@ -1263,7 +1263,7 @@ elif params["running_type"] == "eval":
               if name == 'mask': preds[:, 18] = site['value'][id]
       return preds
 
-
+    prob_best_particle = []
     resampled_traces = {}
     all_log_wts = {}
     
@@ -1372,10 +1372,12 @@ elif params["running_type"] == "eval":
             max_AP_mode.append(modes[resampled_traces[n_test_samples].index(max_ap_idx)])
           except:
             max_AP_mode.append(str(max_ap_idx))
-          
+          log_w_norm = log_wts - torch.logsumexp(log_wts, 0)
+          prob_best_particle.append(torch.exp(log_w_norm[max_ap_idx]))
 
           if n_test_samples == 1 or n_test_samples % log_rate == 0:
             logger.info(f"\nMAX AP MODES: {max_AP_mode}")
+            logger.info(f"probability of resampling the best particle: {prob_best_particle}")
              
           if n_test_samples == 1 or n_test_samples % log_rate == 0:
             logger.info(f"\n{n_test_samples} evaluated...")
