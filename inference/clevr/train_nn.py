@@ -883,8 +883,8 @@ elif params["running_type"] == "eval":
           # sigma = sigma[:, None, None, None]  # [D, 1, 1, 1]
           # sigma = sigma.expand(-1, 3, 128, 128)        
           
-          logger.info(output_images.shape)
-          logger.info(img.shape)
+          # logger.info(output_images.shape)
+          # logger.info(img.shape)
           # logger.info(f"sigma: {sigma} with shape: {sigma.shape}")
           
 
@@ -1034,11 +1034,13 @@ elif params["running_type"] == "eval":
         D = transform_gen_imgs.size(-1)*transform_gen_imgs.size(-2)
         # sigma = 0.05
 
-        logger.info(transform_gen_imgs.shape)
-        logger.info(transformed_target_tensor.shape)
+        # logger.info(transform_gen_imgs.shape)
+        # logger.info(transformed_target_tensor.shape)
+
+        transform_gen_imgs = transform_gen_imgs.squeeze(1)
         
         for sigma in np.arange(0.01, 0.06, 0.01):
-          log_wts = dist.Independent(dist.Normal(transform_gen_imgs, sigma), 2).log_prob(transformed_target_tensor)
+          log_wts = dist.Independent(dist.Normal(transform_gen_imgs, sigma), 3).log_prob(transformed_target_tensor)
           log_wts /= D
           if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - target_ESS) <= 0.05:
             break
