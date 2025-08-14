@@ -1266,7 +1266,7 @@ elif params["running_type"] == "eval":
     prob_best_particle = []
     resampled_traces = {}
     all_log_wts = {}
-    
+    joint_max_ap = []
     max_AP_mode = []
     n_test_samples = 0
     with torch.no_grad():
@@ -1281,7 +1281,7 @@ elif params["running_type"] == "eval":
           #if input_mode == "all":
           resampled_traces[n_test_samples] = []
           all_log_wts[n_test_samples] = {}
-          joint_max_ap = []
+          
           
           posterior = csis.run(observations={"image": img})
           prop_traces = posterior.prop_traces[0]
@@ -1327,7 +1327,7 @@ elif params["running_type"] == "eval":
             for mode in modes:
               if isinstance(all_log_wts[n_test_samples][mode], list):
                 all_log_wts[n_test_samples][mode] = torch.tensor(all_log_wts[n_test_samples][mode])
-              log_wts += 0.5 * all_log_wts[n_test_samples][mode]
+              log_wts += 0.25 * all_log_wts[n_test_samples][mode]
             
             #logger.info(log_wts)
 
