@@ -883,10 +883,12 @@ elif params["running_type"] == "eval":
           # sigma = sigma[:, None, None, None]  # [D, 1, 1, 1]
           # sigma = sigma.expand(-1, 3, 128, 128)        
           
-          # logger.info(output_images.shape)
-          # logger.info(img.shape)
+          logger.info(output_images.shape)
+          logger.info(img.shape)
           # logger.info(f"sigma: {sigma} with shape: {sigma.shape}")
           
+
+
           #sigma = 0.01
           for sigma in np.arange(0.01, 0.06, 0.01):
             log_wts = dist.Independent(dist.Normal(output_images, sigma), 3).log_prob(img)
