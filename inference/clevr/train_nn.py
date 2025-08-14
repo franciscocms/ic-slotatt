@@ -1281,6 +1281,7 @@ elif params["running_type"] == "eval":
           #if input_mode == "all":
           resampled_traces[n_test_samples] = []
           all_log_wts[n_test_samples] = {}
+          joint_max_ap = []
           
           posterior = csis.run(observations={"image": img})
           prop_traces = posterior.prop_traces[0]
@@ -1367,13 +1368,21 @@ elif params["running_type"] == "eval":
                                    target.detach().cpu(),
                                    t)
       
+          
+          # find how often the max AP particle was resampled from the joint mode
+          if max_ap_idx == resampling_id:
+            joint_max_ap.append(1)
+          else:
+            joint_max_ap.append(0)
+          
+          
           # find which input mode would give the maxAP 
           try:
             max_AP_mode.append(modes[resampled_traces[n_test_samples].index(max_ap_idx)])
           except:
             max_AP_mode.append(str(max_ap_idx))
           log_w_norm = log_wts - torch.logsumexp(log_wts, 0)
-          prob_best_particle.append(torch.exp(log_w_norm[max_ap_idx]))
+          prob_best_particle.append(torch.exp(log_w_norm[max_ap_idx]).item())
 
           if n_test_samples == 1 or n_test_samples % log_rate == 0:
             logger.info(f"\nMAX AP MODES: {max_AP_mode}")
