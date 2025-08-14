@@ -1374,6 +1374,8 @@ elif params["running_type"] == "eval":
             joint_max_ap.append(1)
           else:
             joint_max_ap.append(0)
+          if n_test_samples == 1 or n_test_samples % log_rate == 0:
+            logger.info(f"\nwas the best particle chosen from the joint? {joint_max_ap}")
           
           
           # find which input mode would give the maxAP 
