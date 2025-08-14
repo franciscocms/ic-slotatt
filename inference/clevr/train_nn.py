@@ -872,6 +872,8 @@ elif params["running_type"] == "eval":
      
   def run_inference(img, n, guide, prop_traces, traces, posterior, input_mode, pixel_coords, log_rate):
     
+    target_ESS = 0.3
+
     if input_mode == "RGB":
       for name, site in traces.nodes.items():                                  
         if name == 'image':
@@ -885,21 +887,17 @@ elif params["running_type"] == "eval":
           # logger.info(img.shape)
           # logger.info(f"sigma: {sigma} with shape: {sigma.shape}")
           
-          # sigma = 0.01
-          # for it in range(100):
-          #   log_wts = dist.Independent(dist.Normal(output_images, sigma), 3).log_prob(img)
-          #   log_wts /= D
+          #sigma = 0.01
+          for sigma in range(0.01, 0.05, 0.01):
+            log_wts = dist.Independent(dist.Normal(output_images, sigma), 3).log_prob(img)
+            log_wts /= D
             
-          #   if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - 0.3) <= 0.05:
-          #     logger.info(f"broke in it {it}")
-          #     break
-          #   else:
-          #     logger.info(f"it {it} - sigma = {sigma} - ESS/N = {get_ESS(log_wts)/params['num_inference_samples']}")
-          #     sigma += sigma*0.5
+            if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - target_ESS) <= 0.05:
+              break
 
-          sigma = 0.05
-          log_wts = dist.Independent(dist.Normal(output_images, sigma), 3).log_prob(img)
-          log_wts /= D
+          # sigma = 0.05
+          # log_wts = dist.Independent(dist.Normal(output_images, sigma), 3).log_prob(img)
+          # log_wts /= D
                     
       #log_wts = posterior.log_weights[0]
       if not isinstance(log_wts, torch.Tensor): log_wts = torch.stack(log_wts)
@@ -1031,17 +1029,24 @@ elif params["running_type"] == "eval":
           save_img(transformed_target_tensor.squeeze().cpu().numpy(),
                   os.path.join(plots_dir, f"depth_image_{n_test_samples}.png"))
       
-        log_wts = []
-        # D = transform_gen_imgs.size(-1)*transform_gen_imgs.size(-2)
-        sigma = 0.05
+        D = transform_gen_imgs.size(-1)*transform_gen_imgs.size(-2)
+        # sigma = 0.05
         
-        for i in range(params["num_inference_samples"]):
-          log_p = dist.Normal(transform_gen_imgs[i], sigma).log_prob(torch.tensor(transformed_target_tensor))
-          img_dim = transform_gen_imgs[i].shape[-1]
-          log_p = torch.sum(log_p) / (img_dim**2)
-          # log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(sigma)).log_prob(torch.tensor(transformed_target_tensor))
-          log_wts.append(log_p)             
-        resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), torch.stack(log_wts))
+        for sigma in range(0.01, 0.05, 0.01):
+          log_wts = dist.Independent(dist.Normal(transform_gen_imgs, sigma), 2).log_prob(transformed_target_tensor)
+          log_wts /= D
+          if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - target_ESS) <= 0.05:
+            break
+
+        # for i in range(params["num_inference_samples"]):
+        #   log_p = dist.Normal(transform_gen_imgs[i], sigma).log_prob(torch.tensor(transformed_target_tensor))
+        #   img_dim = transform_gen_imgs[i].shape[-1]
+        #   log_p = torch.sum(log_p) / (img_dim**2)
+        #   # log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(sigma)).log_prob(torch.tensor(transformed_target_tensor))
+        #   log_wts.append(log_p)  
+
+        if not isinstance(log_wts, torch.Tensor): log_wts = torch.stack(log_wts)
+        resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
         resampling_id = resampling().item()      
       
       elif input_mode in ["seg_masks_object", "seg_masks_color", "seg_masks_mat"]:
@@ -1105,16 +1110,12 @@ elif params["running_type"] == "eval":
         # log_wts = dist.Independent(dist.Normal(transform_gen_imgs, sigma), 2).log_prob(transformed_target_tensor)
         # log_wts /= D
 
-        sigma = 0.05
-        for it in range(100):
+        
+        for sigma in range(0.05, 0.2, 0.01):
           log_wts = dist.Independent(dist.Normal(transform_gen_imgs, sigma), 2).log_prob(transformed_target_tensor)
           log_wts /= D
-          
-          if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - 0.3) <= 0.05:
+          if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - target_ESS) <= 0.05:
             break
-          else:
-            #logger.info(f"it {it} - sigma = {sigma} - ESS/N = {get_ESS(log_wts)/params['num_inference_samples']}")
-            sigma += sigma*0.05
 
         if not isinstance(log_wts, torch.Tensor): log_wts = torch.stack(log_wts)
         resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
@@ -1148,8 +1149,16 @@ elif params["running_type"] == "eval":
 
       slots_dim = trace_slots.shape[-1]
       sigma = 1.5    
-      log_wts = dist.Normal(trace_slots, sigma).log_prob(torch.tensor(target_slots))
-      log_wts = torch.sum(log_wts, dim=(-1, -2))/slots_dim
+
+      for sigma in range(0.5, 0.1, 2.):
+        log_wts = dist.Normal(trace_slots, sigma).log_prob(torch.tensor(target_slots))
+        log_wts = torch.sum(log_wts, dim=(-1, -2))/slots_dim
+        if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - target_ESS) <= 0.05:
+          break
+        
+      # log_wts = dist.Normal(trace_slots, sigma).log_prob(torch.tensor(target_slots))
+      # log_wts = torch.sum(log_wts, dim=(-1, -2))/slots_dim
+
       resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
       resampling_id = resampling().item()
     
@@ -1263,6 +1272,8 @@ elif params["running_type"] == "eval":
               if name == 'mask': preds[:, 18] = site['value'][id]
       return preds
 
+    target_ESS = 0.3
+    
     prob_best_particle = []
     resampled_traces = {}
     all_log_wts = {}
@@ -1323,18 +1334,22 @@ elif params["running_type"] == "eval":
           if resampling_mode == "majority_vote":
             resampling_id = stats_mode(resampled_traces[n_test_samples])
           elif resampling_mode == "ensemble":
-            log_wts = 0.
-            for mode in modes:
-              if isinstance(all_log_wts[n_test_samples][mode], list):
-                all_log_wts[n_test_samples][mode] = torch.tensor(all_log_wts[n_test_samples][mode])
-              log_wts += 0.25 * all_log_wts[n_test_samples][mode]
-            
-            #logger.info(log_wts)
+
+            for alpha in range(0.1, 1., 0.05):
+              log_wts = 0.
+              for mode in modes:
+                if isinstance(all_log_wts[n_test_samples][mode], list):
+                  all_log_wts[n_test_samples][mode] = torch.tensor(all_log_wts[n_test_samples][mode])
+                
+                log_wts += alpha * all_log_wts[n_test_samples][mode]
+
+              if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - target_ESS) <= 0.05: 
+                break
 
             resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
             resampling_id = resampling().item()
             if n_test_samples == 1 or n_test_samples % log_rate == 0:
-              logger.info(f"\nfinal log_wts = {[l.item() for l in log_wts]} - ESS/N = {get_ESS(log_wts)/params['num_inference_samples']} - resampled trace {resampling_id}")
+              logger.info(f"\nfinal log_wts with alpha {alpha} = {[l.item() for l in log_wts]} - ESS/N = {get_ESS(log_wts)/params['num_inference_samples']} - resampled trace {resampling_id}")
              
           preds = process_preds(prop_traces, resampling_id)
           assert len(target.shape) == 2
