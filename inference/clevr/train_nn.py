@@ -1335,7 +1335,7 @@ elif params["running_type"] == "eval":
             resampling_id = stats_mode(resampled_traces[n_test_samples])
           elif resampling_mode == "ensemble":
 
-            for alpha in range(0.1, 1., 0.05):
+            for alpha in np.arange(0.1, 1.05, 0.05):
               log_wts = 0.
               for mode in modes:
                 if isinstance(all_log_wts[n_test_samples][mode], list):
