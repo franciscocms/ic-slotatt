@@ -888,7 +888,7 @@ elif params["running_type"] == "eval":
           # logger.info(f"sigma: {sigma} with shape: {sigma.shape}")
           
           #sigma = 0.01
-          for sigma in range(0.01, 0.05, 0.01):
+          for sigma in np.arange(0.01, 0.06, 0.01):
             log_wts = dist.Independent(dist.Normal(output_images, sigma), 3).log_prob(img)
             log_wts /= D
             
@@ -1032,7 +1032,7 @@ elif params["running_type"] == "eval":
         D = transform_gen_imgs.size(-1)*transform_gen_imgs.size(-2)
         # sigma = 0.05
         
-        for sigma in range(0.01, 0.05, 0.01):
+        for sigma in np.arange(0.01, 0.06, 0.01):
           log_wts = dist.Independent(dist.Normal(transform_gen_imgs, sigma), 2).log_prob(transformed_target_tensor)
           log_wts /= D
           if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - target_ESS) <= 0.05:
@@ -1111,7 +1111,7 @@ elif params["running_type"] == "eval":
         # log_wts /= D
 
         
-        for sigma in range(0.05, 0.2, 0.01):
+        for sigma in np.arange(0.05, 0.2, 0.01):
           log_wts = dist.Independent(dist.Normal(transform_gen_imgs, sigma), 2).log_prob(transformed_target_tensor)
           log_wts /= D
           if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - target_ESS) <= 0.05:
@@ -1148,9 +1148,9 @@ elif params["running_type"] == "eval":
       trace_slots = trace_slots[batch_idx, indices[:, 1]]
 
       slots_dim = trace_slots.shape[-1]
-      sigma = 1.5    
+      #sigma = 1.5    
 
-      for sigma in range(0.5, 0.1, 2.):
+      for sigma in np.arange(0.5, 2.5, 0.1):
         log_wts = dist.Normal(trace_slots, sigma).log_prob(torch.tensor(target_slots))
         log_wts = torch.sum(log_wts, dim=(-1, -2))/slots_dim
         if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - target_ESS) <= 0.05:
