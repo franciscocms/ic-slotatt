@@ -1031,6 +1031,9 @@ elif params["running_type"] == "eval":
       
         D = transform_gen_imgs.size(-1)*transform_gen_imgs.size(-2)
         # sigma = 0.05
+
+        logger.info(transform_gen_imgs.shape)
+        logger.info(transformed_target_tensor.shape)
         
         for sigma in np.arange(0.01, 0.06, 0.01):
           log_wts = dist.Independent(dist.Normal(transform_gen_imgs, sigma), 2).log_prob(transformed_target_tensor)
