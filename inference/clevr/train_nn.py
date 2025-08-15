@@ -1100,25 +1100,9 @@ elif params["running_type"] == "eval":
         if SAVING_IMG:
           save_img(transformed_target_tensor.cpu().numpy(),
                   os.path.join(plots_dir, f"transf_image_{n_test_samples}.png"))
-
-        # log_wts = []
-        # D = transform_gen_imgs.size(-1)*transform_gen_imgs.size(-2)
-        # sigma = torch.sqrt(((transform_gen_imgs - transformed_target_tensor)**2).sum(dim=(-1, -2, -3)) / D)
-
-        # for i in range(params["num_inference_samples"]):
-        #   log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(0.05)).log_prob(torch.tensor(transformed_target_tensor))
-        #   img_dim = transform_gen_imgs[i].shape[-1]
-        #   log_p = torch.sum(log_p) / (img_dim**2)
-        #   # log_p = dist.Normal(transform_gen_imgs[i], torch.tensor(sigma)).log_prob(torch.tensor(transformed_target_tensor))
-        #   log_wts.append(log_p)
         
-        D = transform_gen_imgs.size(-1)*transform_gen_imgs.size(-2)
-        # sigma = 0.1
-        # log_wts = dist.Independent(dist.Normal(transform_gen_imgs, sigma), 2).log_prob(transformed_target_tensor)
-        # log_wts /= D
-
-        
-        for sigma in np.arange(0.05, 0.2, 0.01):
+        D = transform_gen_imgs.size(-1)*transform_gen_imgs.size(-2)        
+        for sigma in np.arange(0.01, 0.2, 0.01):
           log_wts = dist.Independent(dist.Normal(transform_gen_imgs, sigma), 2).log_prob(transformed_target_tensor)
           log_wts /= D
           if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - target_ESS) <= 0.05:
@@ -1290,7 +1274,7 @@ elif params["running_type"] == "eval":
               if name == 'mask': preds[:, 18] = site['value'][id]
       return preds
 
-    target_ESS = 0.3
+    target_ESS = 0.15
     
     prob_best_particle = []
     resampled_traces = {}
@@ -1329,7 +1313,7 @@ elif params["running_type"] == "eval":
           
           
           #modes = ["RGB", "depth", "seg_masks_object", "seg_masks_color", "seg_masks_mat", "slots"]
-          modes = ["seg_masks_object"]
+          modes = ["seg_masks_object", "seg_masks_color", "seg_masks_mat"]
           resampling_mode = "ensemble" # ["majority_vote", "ensemble"]
           for mode in modes:
             resampling_id, log_wts = run_inference(img=img,
