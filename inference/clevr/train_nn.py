@@ -1316,7 +1316,8 @@ elif params["running_type"] == "eval":
                      os.path.join(plots_dir, f"image_{n_test_samples}.png"))
           
           
-          modes = ["RGB", "depth", "seg_masks_object", "seg_masks_color", "seg_masks_mat", "slots"]
+          #modes = ["RGB", "depth", "seg_masks_object", "seg_masks_color", "seg_masks_mat", "slots"]
+          modes = ["RGB"]
           resampling_mode = "ensemble" # ["majority_vote", "ensemble"]
           for mode in modes:
             resampling_id, log_wts = run_inference(img=img,
@@ -1336,27 +1337,28 @@ elif params["running_type"] == "eval":
           #logger.info(all_log_wts)
           
           if n_test_samples == 1 or n_test_samples % log_rate == 0:
-            logger.info(f"\nall models resampled traces: {resampled_traces}")
+            logger.info(f"\nall modes resampled traces: {resampled_traces}")
           
-          if resampling_mode == "majority_vote":
-            resampling_id = stats_mode(resampled_traces[n_test_samples])
-          elif resampling_mode == "ensemble":
+          if len(modes) > 1:
+            if resampling_mode == "majority_vote":
+              resampling_id = stats_mode(resampled_traces[n_test_samples])
+            elif resampling_mode == "ensemble":
 
-            for alpha in np.arange(0.1, 1.05, 0.05):
-              log_wts = 0.
-              for mode in modes:
-                if isinstance(all_log_wts[n_test_samples][mode], list):
-                  all_log_wts[n_test_samples][mode] = torch.tensor(all_log_wts[n_test_samples][mode])
-                
-                log_wts += alpha * all_log_wts[n_test_samples][mode]
+              for alpha in np.arange(0.1, 1.05, 0.05):
+                log_wts = 0.
+                for mode in modes:
+                  if isinstance(all_log_wts[n_test_samples][mode], list):
+                    all_log_wts[n_test_samples][mode] = torch.tensor(all_log_wts[n_test_samples][mode])
+                  
+                  log_wts += alpha * all_log_wts[n_test_samples][mode]
 
-              if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - target_ESS) <= 0.05: 
-                break
+                if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - target_ESS) <= 0.05: 
+                  break
 
-            resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
-            resampling_id = resampling().item()
-            if n_test_samples == 1 or n_test_samples % log_rate == 0:
-              logger.info(f"\nfinal log_wts with alpha {alpha} = {[l.item() for l in log_wts]} - ESS/N = {get_ESS(log_wts)/params['num_inference_samples']} - resampled trace {resampling_id}")
+              resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
+              resampling_id = resampling().item()
+              if n_test_samples == 1 or n_test_samples % log_rate == 0:
+                logger.info(f"\nfinal log_wts with alpha {alpha} = {[l.item() for l in log_wts]} - ESS/N = {get_ESS(log_wts)/params['num_inference_samples']} - resampled trace {resampling_id}")
              
           preds = process_preds(prop_traces, resampling_id)
           assert len(target.shape) == 2
