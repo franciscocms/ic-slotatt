@@ -1158,8 +1158,8 @@ elif params["running_type"] == "eval":
       #sigma = 1.5    
 
       for sigma in np.arange(0.5, 2.5, 0.1):
-        log_wts = dist.Normal(trace_slots, sigma).log_prob(torch.tensor(target_slots))
-        log_wts = torch.sum(log_wts, dim=(-1, -2))/slots_dim
+        log_wts = dist.Independent(dist.Normal(trace_slots, sigma), 2).log_prob(torch.tensor(target_slots))
+        log_wts /= slots_dim
         if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - target_ESS) <= 0.05:
           break
         
@@ -1317,7 +1317,7 @@ elif params["running_type"] == "eval":
           
           
           #modes = ["RGB", "depth", "seg_masks_object", "seg_masks_color", "seg_masks_mat", "slots"]
-          modes = ["RGB"]
+          modes = ["slots"]
           resampling_mode = "ensemble" # ["majority_vote", "ensemble"]
           for mode in modes:
             resampling_id, log_wts = run_inference(img=img,
