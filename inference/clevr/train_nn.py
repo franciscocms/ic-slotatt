@@ -872,7 +872,7 @@ elif params["running_type"] == "eval":
      
   def run_inference(img, n, guide, prop_traces, traces, posterior, input_mode, pixel_coords, target_slots, target_preds, log_rate):
     
-    target_ESS = 0.2
+    target_ESS = 0.1
 
     if input_mode == "RGB":
       for name, site in traces.nodes.items():                                  
