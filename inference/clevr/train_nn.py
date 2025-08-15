@@ -890,11 +890,11 @@ elif params["running_type"] == "eval":
 
 
           #sigma = 0.01
-          for sigma in np.arange(0.01, 0.06, 0.01):
+          for sigma in np.arange(0.01, 0.06, 0.005):
             log_wts = dist.Independent(dist.Normal(output_images, sigma), 3).log_prob(img)
             log_wts /= D
             
-            if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - target_ESS) <= 0.05:
+            if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - target_ESS) <= 0.1:
               break
 
           # sigma = 0.05
