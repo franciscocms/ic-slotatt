@@ -872,7 +872,7 @@ elif params["running_type"] == "eval":
      
   def run_inference(img, n, guide, prop_traces, traces, posterior, input_mode, pixel_coords, target_slots, target_preds, log_rate):
     
-    target_ESS = 0.1
+    target_ESS = 0.2
 
     if input_mode == "RGB":
       for name, site in traces.nodes.items():                                  
@@ -1329,7 +1329,7 @@ elif params["running_type"] == "eval":
           
           
           #modes = ["RGB", "depth", "seg_masks_object", "seg_masks_color", "seg_masks_mat", "slots"]
-          modes = ["slots"]
+          modes = ["seg_masks_object"]
           resampling_mode = "ensemble" # ["majority_vote", "ensemble"]
           for mode in modes:
             resampling_id, log_wts = run_inference(img=img,
@@ -1443,7 +1443,7 @@ elif params["running_type"] == "eval":
             max_aux_mAP = {k: v/n_test_samples for k, v in max_ap.items()}
             logger.info(max_aux_mAP)
           
-          if n_test_samples == 200:
+          if n_test_samples == 1:
             break
   logger.info(f"\ninference ended...")
 
