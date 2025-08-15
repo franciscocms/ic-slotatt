@@ -305,28 +305,28 @@ class InvSlotAttentionGuide(nn.Module):
         plt.savefig(f"{params['check_attn_folder']}/attn-step-{self.epoch}/img.png")
         plt.close()
     
-    preds = self.mlp_preds(self.slots)
-    preds[:, :, 0:3] = self.sigmoid(preds[:, :, 0:3].clone())       # coords
-    preds[:, :, 3:5] = self.softmax(preds[:, :, 3:5].clone())       # size
-    preds[:, :, 5:7] = self.softmax(preds[:, :, 5:7].clone())       # material
-    preds[:, :, 7:10] = self.softmax(preds[:, :, 7:10].clone())     # shape
-    preds[:, :, 10:18] = self.softmax(preds[:, :, 10:18].clone())   # color
-    preds[:, :, 18] = self.sigmoid(preds[:, :, 18].clone())         # real object
+    self.preds = self.mlp_preds(self.slots)
+    self.preds[:, :, 0:3] = self.sigmoid(self.preds[:, :, 0:3].clone())       # coords
+    self.preds[:, :, 3:5] = self.softmax(self.preds[:, :, 3:5].clone())       # size
+    self.preds[:, :, 5:7] = self.softmax(self.preds[:, :, 5:7].clone())       # material
+    self.preds[:, :, 7:10] = self.softmax(self.preds[:, :, 7:10].clone())     # shape
+    self.preds[:, :, 10:18] = self.softmax(self.preds[:, :, 10:18].clone())   # color
+    self.preds[:, :, 18] = self.sigmoid(self.preds[:, :, 18].clone())         # real object
 
     #logger.info(f"\nnetwork predicted coords and real flag: {torch.cat((preds[:, :, :3], preds[:, :, -1].unsqueeze(-1)), dim=-1)}")
 
     if params["running_type"] == "eval":
-      pyro.sample("mask", dist.Bernoulli(preds[:, :, 18].expand([params["num_inference_samples"], -1, -1])))
-      pyro.sample("size", dist.Categorical(probs=preds[:, :, 3:5].expand([params["num_inference_samples"], -1, -1])))
-      pyro.sample("mat", dist.Categorical(probs=preds[:, :, 5:7].expand([params["num_inference_samples"], -1, -1])))
-      pyro.sample("shape", dist.Categorical(probs=preds[:, :, 7:10].expand([params["num_inference_samples"], -1, -1])))
-      pyro.sample("color", dist.Categorical(probs=preds[:, :, 10:18].expand([params["num_inference_samples"], -1, -1])))
-      pyro.sample("coords", dist.Normal(preds[:, :, :3].expand([params["num_inference_samples"], -1, -1]), torch.tensor(0.01)))
+      pyro.sample("mask", dist.Bernoulli(self.preds[:, :, 18].expand([params["num_inference_samples"], -1, -1])))
+      pyro.sample("size", dist.Categorical(probs=self.preds[:, :, 3:5].expand([params["num_inference_samples"], -1, -1])))
+      pyro.sample("mat", dist.Categorical(probs=self.preds[:, :, 5:7].expand([params["num_inference_samples"], -1, -1])))
+      pyro.sample("shape", dist.Categorical(probs=self.preds[:, :, 7:10].expand([params["num_inference_samples"], -1, -1])))
+      pyro.sample("color", dist.Categorical(probs=self.preds[:, :, 10:18].expand([params["num_inference_samples"], -1, -1])))
+      pyro.sample("coords", dist.Normal(self.preds[:, :, :3].expand([params["num_inference_samples"], -1, -1]), torch.tensor(0.01)))
     
     if not return_slots:
-      return preds
+      return self.preds
     else:
-      return preds, self.slots
+      return self.preds, self.slots
 
 
 def hungarian_loss(pred, target, loss_fn=F.smooth_l1_loss):
@@ -870,7 +870,7 @@ elif params["running_type"] == "eval":
     ess = torch.exp(-torch.logsumexp(2 * log_w_norm, 0))
     return ess
      
-  def run_inference(img, n, guide, prop_traces, traces, posterior, input_mode, pixel_coords, log_rate):
+  def run_inference(img, n, guide, prop_traces, traces, posterior, input_mode, pixel_coords, target_slots, target_preds, log_rate):
     
     target_ESS = 0.2
 
@@ -1143,7 +1143,17 @@ elif params["running_type"] == "eval":
       # logger.info(trace_slots.shape) # [particles, N, 64]
       # logger.info(target_slots.shape)
 
-      slots_dist = torch.cdist(trace_slots, target_slots)
+      # only compare using real objects
+      mask = torch.round(preds[:, :, -1]).int().nonzero()
+      real_trace_slots = torch.stack([trace_slots[b, [mask[i][-1] for i in range(mask.shape[0]) if mask[i][0] == b]] for b in range(trace_slots.shape[0])])
+      logger.info(real_trace_slots.shape)
+      
+      target_mask = torch.round(target_preds[:, :, -1]).int().nonzero()
+      real_target_slots = torch.stack([target_slots[b, [target_mask[i][-1] for i in range(target_mask.shape[0]) if target_mask[i][0] == b]] for b in range(target_slots.shape[0])])
+      logger.info(real_target_slots.shape)
+
+      #slots_dist = torch.cdist(trace_slots, target_slots)
+      slots_dist = torch.cdist(real_trace_slots, real_target_slots)
       slots_dist = slots_dist.detach().cpu().numpy()
 
       # logger.info(slots_dist.shape)
@@ -1307,6 +1317,7 @@ elif params["running_type"] == "eval":
 
           if input_mode in ["slots", "all"]:
             target_slots = guide.slots
+            target_preds = guide.preds
 
           # get the predictions of the first proposal trace
           preds = process_preds(prop_traces, 0) 
@@ -1328,6 +1339,8 @@ elif params["running_type"] == "eval":
                                                    posterior=posterior,
                                                    input_mode=mode,
                                                    pixel_coords=pixel_coords,
+                                                   target_slots=target_slots,
+                                                   target_preds=target_preds,
                                                    log_rate=log_rate
                                                    )
             
