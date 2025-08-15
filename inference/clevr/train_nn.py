@@ -872,7 +872,7 @@ elif params["running_type"] == "eval":
      
   def run_inference(img, n, guide, prop_traces, traces, posterior, input_mode, pixel_coords, log_rate):
     
-    target_ESS = 0.3
+    target_ESS = 0.2
 
     if input_mode == "RGB":
       for name, site in traces.nodes.items():                                  
@@ -894,7 +894,7 @@ elif params["running_type"] == "eval":
             log_wts = dist.Independent(dist.Normal(output_images, sigma), 3).log_prob(img)
             log_wts /= D
             
-            if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - target_ESS) <= 0.1:
+            if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - target_ESS) <= 0.05:
               break
 
           # sigma = 0.05
