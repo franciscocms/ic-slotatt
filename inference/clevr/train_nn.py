@@ -872,7 +872,7 @@ elif params["running_type"] == "eval":
      
   def run_inference(img, n, guide, prop_traces, traces, posterior, input_mode, pixel_coords, target_slots, target_preds, log_rate):
     
-    target_ESS = 0.2
+    target_ESS = 0.25
 
     if input_mode == "RGB":
       for name, site in traces.nodes.items():                                  
@@ -1274,7 +1274,7 @@ elif params["running_type"] == "eval":
               if name == 'mask': preds[:, 18] = site['value'][id]
       return preds
 
-    target_ESS = 0.2
+    target_ESS = 0.25
     
     prob_best_particle = []
     resampled_traces = {}
