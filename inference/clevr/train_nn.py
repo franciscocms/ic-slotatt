@@ -1369,6 +1369,7 @@ elif params["running_type"] == "eval":
 
           max_ap_idx = 0
           best_overall_ap = 0.   
+          all_overall_ap = []
           for i in range(params["num_inference_samples"]):
             aux_ap = {k: 0 for k in threshold}
             preds = process_preds(prop_traces, i)
@@ -1377,7 +1378,7 @@ elif params["running_type"] == "eval":
                                      target.detach().cpu(),
                                      t)
             overall_ap = np.mean(list(aux_ap.values()))
-
+            all_overall_ap.append(overall_ap)
 
             #logger.info(f"trace {i} - {aux_ap} with overall AP {overall_ap} ")
 
@@ -1393,14 +1394,18 @@ elif params["running_type"] == "eval":
                                    t)
       
           
-          # find how often the max AP particle was resampled from the joint mode
-          if max_ap_idx == resampling_id:
-            joint_max_ap.append(1)
-          else:
-            joint_max_ap.append(0)
           if n_test_samples == 1 or n_test_samples % log_rate == 0:
-            logger.info(f"\nwas the best particle chosen from the joint? {joint_max_ap}")
+            logger.info(f"\noverall AP for each particle: {all_overall_ap}")
           
+          # find how often the max AP particle was resampled from the joint mode
+          if len(modes) > 1:
+            if max_ap_idx == resampling_id:
+              joint_max_ap.append(1)
+            else:
+              joint_max_ap.append(0)  
+            if n_test_samples == 1 or n_test_samples % log_rate == 0:
+              logger.info(f"\nwas the best particle chosen from the joint? {joint_max_ap}")
+            
           
           # find which input mode would give the maxAP 
           try:
