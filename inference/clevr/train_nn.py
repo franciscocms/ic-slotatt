@@ -1146,11 +1146,11 @@ elif params["running_type"] == "eval":
       # only compare using real objects
       mask = torch.round(preds[:, :, -1]).int().nonzero()
       real_trace_slots = torch.stack([trace_slots[b, [mask[i][-1] for i in range(mask.shape[0]) if mask[i][0] == b]] for b in range(trace_slots.shape[0])])
-      logger.info(real_trace_slots.shape)
+      #logger.info(real_trace_slots.shape)
       
       target_mask = torch.round(target_preds[:, :, -1]).int().nonzero()
       real_target_slots = torch.stack([target_slots[b, [target_mask[i][-1] for i in range(target_mask.shape[0]) if target_mask[i][0] == b]] for b in range(target_slots.shape[0])])
-      logger.info(real_target_slots.shape)
+      #logger.info(real_target_slots.shape)
 
       #slots_dist = torch.cdist(trace_slots, target_slots)
       slots_dist = torch.cdist(real_trace_slots, real_target_slots)
@@ -1160,15 +1160,15 @@ elif params["running_type"] == "eval":
 
       indices = np.array([linear_sum_assignment(d) for d in slots_dist])
       
-      assert len(trace_slots.shape) == 3 # 
-      batch_idx = torch.arange(trace_slots.size(0)).unsqueeze(1).expand(trace_slots.size(0), trace_slots.size(1))
-      trace_slots = trace_slots[batch_idx, indices[:, 1]]
+      assert len(real_trace_slots.shape) == 3 # 
+      batch_idx = torch.arange(real_trace_slots.size(0)).unsqueeze(1).expand(real_trace_slots.size(0), real_trace_slots.size(1))
+      trace_slots = real_trace_slots[batch_idx, indices[:, 1]]
 
-      slots_dim = trace_slots.shape[-1]
+      slots_dim = real_trace_slots.shape[-1]
       #sigma = 1.5    
 
       for sigma in np.arange(0.5, 2.5, 0.1):
-        log_wts = dist.Independent(dist.Normal(trace_slots, sigma), 2).log_prob(torch.tensor(target_slots))
+        log_wts = dist.Independent(dist.Normal(real_trace_slots, sigma), 2).log_prob(torch.tensor(real_target_slots))
         log_wts /= slots_dim
         if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - target_ESS) <= 0.05:
           break
