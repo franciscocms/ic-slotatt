@@ -872,22 +872,13 @@ elif params["running_type"] == "eval":
      
   def run_inference(img, n, guide, prop_traces, traces, posterior, input_mode, pixel_coords, target_slots, target_preds, log_rate):
     
-    target_ESS = 0.25
+    target_ESS = 0.15
 
     if input_mode == "RGB":
       for name, site in traces.nodes.items():                                  
         if name == 'image':
           output_images = site["fn"].mean
           D = output_images.size(-1)*output_images.size(-2)
-          # sigma = torch.mean(torch.sqrt(((output_images-img)**2).sum(dim=(-1, -2, -3)) / D))
-          # sigma = sigma[:, None, None, None]  # [D, 1, 1, 1]
-          # sigma = sigma.expand(-1, 3, 128, 128)        
-          
-          # logger.info(output_images.shape)
-          # logger.info(img.shape)
-          # logger.info(f"sigma: {sigma} with shape: {sigma.shape}")
-          
-
 
           #sigma = 0.01
           for sigma in np.arange(0.01, 0.06, 0.005):
@@ -896,11 +887,7 @@ elif params["running_type"] == "eval":
             
             if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - target_ESS) <= 0.05:
               break
-
-          # sigma = 0.05
-          # log_wts = dist.Independent(dist.Normal(output_images, sigma), 3).log_prob(img)
-          # log_wts /= D
-                    
+                                
       #log_wts = posterior.log_weights[0]
       if not isinstance(log_wts, torch.Tensor): log_wts = torch.stack(log_wts)
       resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
@@ -1274,7 +1261,7 @@ elif params["running_type"] == "eval":
               if name == 'mask': preds[:, 18] = site['value'][id]
       return preds
 
-    target_ESS = 0.25
+    target_ESS = 0.15
     
     prob_best_particle = []
     resampled_traces = {}
@@ -1313,7 +1300,7 @@ elif params["running_type"] == "eval":
           
           
           #modes = ["RGB", "depth", "seg_masks_object", "seg_masks_color", "seg_masks_mat", "slots"]
-          modes = ["seg_masks_object", "seg_masks_color", "seg_masks_mat"]
+          modes = ["RGB"]
           resampling_mode = "ensemble" # ["majority_vote", "ensemble"]
           for mode in modes:
             resampling_id, log_wts = run_inference(img=img,
