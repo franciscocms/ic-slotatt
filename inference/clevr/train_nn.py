@@ -872,7 +872,7 @@ elif params["running_type"] == "eval":
      
   def run_inference(img, n, guide, prop_traces, traces, posterior, input_mode, pixel_coords, target_slots, target_preds, log_rate):
     
-    target_ESS = 0.15
+    target_ESS = 0.20
 
     if input_mode == "RGB":
       for name, site in traces.nodes.items():                                  
@@ -887,7 +887,7 @@ elif params["running_type"] == "eval":
             
             if torch.abs(get_ESS(log_wts)/params['num_inference_samples'] - target_ESS) <= 0.05:
               break
-                                
+
       #log_wts = posterior.log_weights[0]
       if not isinstance(log_wts, torch.Tensor): log_wts = torch.stack(log_wts)
       resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
