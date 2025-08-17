@@ -2,7 +2,7 @@
 #
 #SBATCH --partition=gpu_min80gb   # Debug partition
 #SBATCH --qos=gpu_min80gb         # Debug QoS level
-#SBATCH --job-name=p100es10         # Job name
+#SBATCH --job-name=S100_10         # Job name
 #SBATCH -o slurm.%N.%j.out       # File containing STDOUT output
 #SBATCH -e slurm.%N.%j.err       # File containing STDERR output
 
