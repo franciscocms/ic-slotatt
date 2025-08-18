@@ -123,8 +123,6 @@ def sample_clevr_scene(llh_uncertainty, pixel_coords=None):
     
     # Sample the mask to predict real objects
     objects_mask = pyro.sample(f"mask", dist.Bernoulli(0.5).expand([B, M])).to(torch.bool)
-    
-    logger.info(f"mask shape: {objects_mask.shape}")
 
     if params['running_type'] == 'eval': 
         if objects_mask.dim() > 2: objects_mask = torch.flatten(objects_mask, 0, 1)
@@ -143,7 +141,7 @@ def sample_clevr_scene(llh_uncertainty, pixel_coords=None):
         else:
             theta = pyro.sample(f"pose", dist.Uniform(0., 1.).expand([B, M])) 
         
-        logger.info(theta.shape)
+        logger.info(theta)
 
         mat = pyro.sample(f"mat", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([B, M]))
         size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])).expand([B, M]))

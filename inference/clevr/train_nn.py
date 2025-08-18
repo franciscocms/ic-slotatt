@@ -936,7 +936,8 @@ elif params["running_type"] == "eval":
           output_images = site["fn"].mean
           D = output_images.size(-1)*output_images.size(-2)
 
-          if SAVING_IMG:
+          #if SAVING_IMG:
+          if True:
             for output_image in output_images:
               fig = plt.figure()
               ax = fig.add_subplot(111)
@@ -1349,7 +1350,8 @@ elif params["running_type"] == "eval":
           # get the predictions of the first proposal trace
           preds = process_preds(prop_traces, 0) 
 
-          if SAVING_IMG:
+          #if SAVING_IMG:
+          if True:
             save_img(visualize(img[0].permute(1, 2, 0).cpu().numpy()),
                      os.path.join(plots_dir, f"image_{n_test_samples}.png"))
           
