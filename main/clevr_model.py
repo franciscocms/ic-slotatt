@@ -363,8 +363,8 @@ plane = bpy.context.object
 def rand(L):
     return 2.0 * L * (random.random() - 0.5)
 
-for i in range(3):
-    bpy.data.objects['Camera'].location[i] += rand(0.5)
+# for i in range(3):
+#     bpy.data.objects['Camera'].location[i] += rand(0.5)
 
 # Figure out the left, up, and behind directions along the plane and record
 # them in the scene structure
