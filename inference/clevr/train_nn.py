@@ -350,9 +350,7 @@ class InvSlotAttentionGuide(nn.Module):
       for i, real_idx in enumerate(pred_real_flag):
         pose[:, real_idx, :] = target_pose[:, col_ind[i], :]
 
-      logger.info(pred_real_flag)
-
-      logger.info(pose)
+      pose = pose.permute(0, 2, 1)
 
       pyro.sample("pose", dist.Normal(pose.expand([params["num_inference_samples"], -1, -1]), 0.01))
 
