@@ -680,8 +680,7 @@ class CLEVR(Dataset):
                 target.append(torch.zeros(19, device='cpu'))
             target = torch.stack(target)  
             pixel_coords = torch.stack(pixel_coords)  
-            if self.get_pose:
-              pose = torch.stack(pose)   
+            pose = torch.stack(pose)   
         
         return img*2 - 1, target, pixel_coords, pose
 
