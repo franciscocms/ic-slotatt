@@ -278,7 +278,11 @@ class InvSlotAttentionGuide(nn.Module):
     self.sigmoid = nn.Sigmoid()
     self.tanh = nn.Tanh()
 
-  def forward(self, observations={"image": torch.zeros(1, 3, 128, 128)}, save_masks=False, return_slots=False, pixel_coords=None):
+  def forward(self, observations={"image": torch.zeros(1, 3, 128, 128)},
+              save_masks=False,
+              return_slots=False,
+              pixel_coords=None,
+              target_pose=None):
     
     img = observations["image"]
     img = img.to(DEVICE)
@@ -340,8 +344,11 @@ class InvSlotAttentionGuide(nn.Module):
       logger.info(row_ind)
       logger.info(col_ind)
 
+      logger.info(target_pose.shape)
 
+      pose = target_pose[:, col_ind, :]
 
+      pyro.sample("pose", dist.Normal(pose.expand([params["num_inference_samples"], -1, -1]), 0.01))
 
       pyro.sample("mask", dist.Bernoulli(self.preds[:, :, 18].expand([params["num_inference_samples"], -1, -1])))
       pyro.sample("size", dist.Categorical(probs=self.preds[:, :, 3:5].expand([params["num_inference_samples"], -1, -1])))
@@ -349,6 +356,7 @@ class InvSlotAttentionGuide(nn.Module):
       pyro.sample("shape", dist.Categorical(probs=self.preds[:, :, 7:10].expand([params["num_inference_samples"], -1, -1])))
       pyro.sample("color", dist.Categorical(probs=self.preds[:, :, 10:18].expand([params["num_inference_samples"], -1, -1])))
       pyro.sample("coords", dist.Normal(self.preds[:, :, :3].expand([params["num_inference_samples"], -1, -1]), torch.tensor(0.01)))
+      
     
     if not return_slots:
       return self.preds
@@ -624,10 +632,9 @@ color2id = list2dict(colors)
 
 
 class CLEVR(Dataset):
-    def __init__(self, images_path, scenes_path, max_objs=6, get_target=True, get_pixel_coords=False):
+    def __init__(self, images_path, scenes_path, max_objs=6, get_target=True):
         self.max_objs = max_objs
         self.get_target = get_target
-        self.get_pixel_coords = get_pixel_coords
         self.images_path = images_path
         
         with open(scenes_path, 'r') as f:
@@ -651,6 +658,7 @@ class CLEVR(Dataset):
         img = self.transform(img)
         target = []
         pixel_coords = []
+        pose = []
         if self.get_target:
             for obj in scene['objects']:
                 coords = ((torch.Tensor(obj['3d_coords']) + 3.) / 6.).view(1, 3)
@@ -665,13 +673,18 @@ class CLEVR(Dataset):
                 resize_factor = np.array([128/480, 128/320])
                 pixel_coords.append(torch.Tensor([obj['pixel_coords'][0]*resize_factor[0], obj['pixel_coords'][1]*resize_factor[1]])) # 320x240 -> 128x128
 
+                pose.append(torch.Tensor(obj['rotation']))
+
+
             while len(target) < self.max_objs:
                 target.append(torch.zeros(19, device='cpu'))
             target = torch.stack(target)  
-            pixel_coords = torch.stack(pixel_coords)     
-        if not self.get_pixel_coords:
-          return img*2 - 1, target 
-        else: return img*2 - 1, target, pixel_coords
+            pixel_coords = torch.stack(pixel_coords)  
+            if self.get_pose:
+              pose = torch.stack(pose)   
+        
+        return img*2 - 1, target, pixel_coords, pose
+
 
 
 def average_precision_clevr(pred, attributes, distance_threshold):
@@ -1252,8 +1265,8 @@ elif params["running_type"] == "eval":
 
   val_data = CLEVR(images_path = os.path.join(dataset_path, 'images/val'),
                    scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json'),
-                   max_objs=10,
-                   get_pixel_coords = True)
+                   max_objs=10
+                   )
   
   val_dataloader = DataLoader(val_data, batch_size = 1,
                                 shuffle=False, num_workers=8, generator=torch.Generator(device='cuda'))
@@ -1307,7 +1320,7 @@ elif params["running_type"] == "eval":
     max_AP_mode = []
     n_test_samples = 0
     with torch.no_grad():
-      for idx, (img, target, pixel_coords) in enumerate(val_dataloader):
+      for idx, (img, target, pixel_coords, target_pose) in enumerate(val_dataloader):
                  
           img = img.to(DEVICE)   
 
@@ -1321,7 +1334,8 @@ elif params["running_type"] == "eval":
           
           
           posterior = csis.run(observations={"image": img},
-                               pixel_coords=pixel_coords)
+                               pixel_coords=pixel_coords,
+                               target_pose=target_pose)
           prop_traces = posterior.prop_traces[0]
           traces = posterior.exec_traces[0]
 

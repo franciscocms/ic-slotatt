@@ -135,10 +135,10 @@ def sample_clevr_scene(llh_uncertainty, pixel_coords=None):
         shape = pyro.sample(f"shape", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([B, M]))
         color = pyro.sample(f"color", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])).expand([B, M]))
         with pyro.poutine.block():
-            if pixel_coords is None:
-                theta = pyro.sample(f"pose", dist.Uniform(0., 1.).expand([B, M])) * 360. 
-            else:
-                theta = pixel_coords
+            theta = pyro.sample(f"pose", dist.Uniform(0., 1.).expand([B, M])) * 360. 
+            
+            logger.info(theta)
+
         mat = pyro.sample(f"mat", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([B, M]))
         size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])).expand([B, M]))
         
