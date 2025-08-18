@@ -348,6 +348,10 @@ class InvSlotAttentionGuide(nn.Module):
 
       pose = target_pose[:, col_ind, :]
 
+      logger.info(pred_real_flag)
+
+      logger.info(pose)
+
       pyro.sample("pose", dist.Normal(pose.expand([params["num_inference_samples"], -1, -1]), 0.01))
 
       pyro.sample("mask", dist.Bernoulli(self.preds[:, :, 18].expand([params["num_inference_samples"], -1, -1])))
