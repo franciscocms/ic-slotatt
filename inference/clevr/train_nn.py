@@ -337,14 +337,14 @@ class InvSlotAttentionGuide(nn.Module):
 
       dists = torch.cdist(pixel_coords, real_pred_coords.float(), p=2).cpu().numpy() # [2, real_n, pred_real_n]
       
-      logger.info(dists.shape)
+      # logger.info(dists.shape)
 
       row_ind, col_ind = linear_sum_assignment(dists)
 
-      logger.info(row_ind)
-      logger.info(col_ind)
+      # logger.info(row_ind)
+      # logger.info(col_ind)
 
-      logger.info(target_pose.shape) # [1, 5, 1]
+      # logger.info(target_pose.shape) # [1, 5, 1]
 
       pose = torch.rand(B, N, 1)
       for i, real_idx in enumerate(pred_real_flag):
@@ -936,8 +936,8 @@ elif params["running_type"] == "eval":
           output_images = site["fn"].mean
           D = output_images.size(-1)*output_images.size(-2)
 
-          #if SAVING_IMG:
-          if True:
+          if SAVING_IMG:
+          #if True:
             for i, output_image in enumerate(output_images):
               fig = plt.figure()
               ax = fig.add_subplot(111)
@@ -1350,8 +1350,8 @@ elif params["running_type"] == "eval":
           # get the predictions of the first proposal trace
           preds = process_preds(prop_traces, 0) 
 
-          #if SAVING_IMG:
-          if True:
+          if SAVING_IMG:
+          #if True:
             save_img(visualize(img[0].permute(1, 2, 0).cpu().numpy()),
                      os.path.join(plots_dir, f"image_{n_test_samples}.png"))
           

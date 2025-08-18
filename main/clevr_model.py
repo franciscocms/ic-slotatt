@@ -140,8 +140,6 @@ def sample_clevr_scene(llh_uncertainty, pixel_coords=None):
                 theta = pyro.sample(f"pose", dist.Uniform(0., 1.).expand([B, M])) * 360
         else:
             theta = pyro.sample(f"pose", dist.Uniform(0., 1.).expand([B, M])) 
-        
-        logger.info(theta)
 
         mat = pyro.sample(f"mat", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([B, M]))
         size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])).expand([B, M]))
@@ -363,8 +361,8 @@ plane = bpy.context.object
 def rand(L):
     return 2.0 * L * (random.random() - 0.5)
 
-# for i in range(3):
-#     bpy.data.objects['Camera'].location[i] += rand(0.5)
+for i in range(3):
+    bpy.data.objects['Camera'].location[i] += rand(0.5)
 
 # Figure out the left, up, and behind directions along the plane and record
 # them in the scene structure
