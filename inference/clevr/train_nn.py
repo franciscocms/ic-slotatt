@@ -1002,7 +1002,9 @@ elif params["running_type"] == "eval":
                     save_img(masks.squeeze(),
                             os.path.join(plots_dir, f"trace_{i}_mask_{o}_image_{n_test_samples}.png"),
                             title=f"score: {scores}")
-            if SAVING_IMG:
+            
+            #if SAVING_IMG:
+            if True:
               save_img(transformed_tensor.cpu().numpy(),
                       os.path.join(plots_dir, f"trace_{i}_all_mask_image_{n_test_samples}.png"))
 
@@ -1082,7 +1084,8 @@ elif params["running_type"] == "eval":
                 mat = torch.argmax(target[o, 5:7], dim=-1).item()
                 transformed_target_tensor += torch.tensor(masks[0]*(mat+1))
         
-        if SAVING_IMG:
+        #if SAVING_IMG:
+        if True:
           save_img(transformed_target_tensor.cpu().numpy(),
                   os.path.join(plots_dir, f"transf_image_{n_test_samples}.png"))
         
@@ -1300,7 +1303,7 @@ elif params["running_type"] == "eval":
           
           
           #modes = ["RGB", "depth", "seg_masks_object", "seg_masks_color", "seg_masks_mat", "slots"]
-          modes = ["RGB"]
+          modes = ["seg_masks_object"]
           resampling_mode = "ensemble" # ["majority_vote", "ensemble"]
           for mode in modes:
             resampling_id, log_wts = run_inference(img=img,
@@ -1415,7 +1418,7 @@ elif params["running_type"] == "eval":
             max_aux_mAP = {k: v/n_test_samples for k, v in max_ap.items()}
             logger.info(max_aux_mAP)
           
-          if n_test_samples == 200:
+          if n_test_samples == 1:
             break
   logger.info(f"\ninference ended...")
 
