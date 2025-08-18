@@ -97,7 +97,7 @@ def get_color_mapping(color):
 def get_mat_mapping(mat):
     return material_mapping[int(mat)]
 
-def sample_clevr_scene(llh_uncertainty):
+def sample_clevr_scene(llh_uncertainty, pixel_coords=None):
     
     # Assuming the default camera position
     cam_default_pos = [7.358891487121582, -6.925790786743164, 4.958309173583984]
@@ -135,7 +135,10 @@ def sample_clevr_scene(llh_uncertainty):
         shape = pyro.sample(f"shape", dist.Categorical(probs=torch.tensor([1/len(object_mapping) for _ in range(len(object_mapping))])).expand([B, M]))
         color = pyro.sample(f"color", dist.Categorical(probs=torch.tensor([1/len(color_mapping) for _ in range(len(color_mapping))])).expand([B, M]))
         with pyro.poutine.block():
-            theta = pyro.sample(f"pose", dist.Uniform(0., 1.).expand([B, M])) * 360. 
+            if pixel_coords is None:
+                theta = pyro.sample(f"pose", dist.Uniform(0., 1.).expand([B, M])) * 360. 
+            else:
+                theta = pixel_coords
         mat = pyro.sample(f"mat", dist.Categorical(probs=torch.tensor([1/len(material_mapping) for _ in range(len(material_mapping))])).expand([B, M]))
         size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_mapping) for _ in range(len(size_mapping))])).expand([B, M]))
         
@@ -519,7 +522,7 @@ def render_scene_in_blender(blender_script):
 
 
 
-def clevr_gen_model(step=0, observations={"image": torch.zeros((1, 3, 128, 128))}):
+def clevr_gen_model(step=0, observations={"image": torch.zeros((1, 3, 128, 128))}, pixel_coords=None):
 
     if params['running_type'] == 'train': llh_uncertainty = 0.001
     elif params['running_type'] == 'eval': llh_uncertainty = 0.05
@@ -552,7 +555,7 @@ def clevr_gen_model(step=0, observations={"image": torch.zeros((1, 3, 128, 128))
     
     #init_time = time.time()
     # Sample a CLEVR-like scene using Pyro
-    clevr_scenes = sample_clevr_scene(llh_uncertainty)
+    clevr_scenes = sample_clevr_scene(llh_uncertainty, pixel_coords)
     #sample_time = time.time() - init_time
     #if params["running_type"] == "train": logger.info(f"Scene sampling time: {sample_time}")
 
