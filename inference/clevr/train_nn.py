@@ -673,7 +673,7 @@ class CLEVR(Dataset):
                 resize_factor = np.array([128/480, 128/320])
                 pixel_coords.append(torch.Tensor([obj['pixel_coords'][0]*resize_factor[0], obj['pixel_coords'][1]*resize_factor[1]])) # 320x240 -> 128x128
 
-                pose.append(torch.Tensor(obj['rotation']))
+                pose.append(torch.Tensor([obj['rotation']]))
 
 
             while len(target) < self.max_objs:
