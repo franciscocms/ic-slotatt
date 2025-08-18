@@ -522,7 +522,7 @@ def render_scene_in_blender(blender_script):
 
 
 
-def clevr_gen_model(step=0, observations={"image": torch.zeros((1, 3, 128, 128))}, pixel_coords=None):
+def clevr_gen_model(step=0, observations={"image": torch.zeros((1, 3, 128, 128))}, pixel_coords=None, target_pose=None):
 
     if params['running_type'] == 'train': llh_uncertainty = 0.001
     elif params['running_type'] == 'eval': llh_uncertainty = 0.05
