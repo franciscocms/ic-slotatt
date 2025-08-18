@@ -1313,7 +1313,7 @@ elif params["running_type"] == "eval":
     optimiser = pyro.optim.Adam({'lr': 1e-4})
     csis = CSIS(model, guide, optimiser, training_batch_size=256, num_inference_samples=params["num_inference_samples"])
 
-    target_ESS = 0.05
+    target_ESS = 0.075
 
     logger.info(f"\ntarget ess/n: {target_ESS}\n")
     
@@ -1472,7 +1472,7 @@ elif params["running_type"] == "eval":
             max_aux_mAP = {k: v/n_test_samples for k, v in max_ap.items()}
             logger.info(max_aux_mAP)
           
-          if n_test_samples == 1:
+          if n_test_samples == 200:
             break
   logger.info(f"\ninference ended...")
 
