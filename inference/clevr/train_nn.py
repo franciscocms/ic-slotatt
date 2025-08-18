@@ -870,9 +870,7 @@ elif params["running_type"] == "eval":
     ess = torch.exp(-torch.logsumexp(2 * log_w_norm, 0))
     return ess
      
-  def run_inference(img, n, guide, prop_traces, traces, posterior, input_mode, pixel_coords, target_slots, target_preds, log_rate):
-    
-    target_ESS = 0.10
+  def run_inference(img, n, guide, prop_traces, traces, posterior, input_mode, pixel_coords, target_slots, target_preds, target_ESS, log_rate):
 
     if input_mode == "RGB":
       for name, site in traces.nodes.items():                                  
@@ -1261,7 +1259,7 @@ elif params["running_type"] == "eval":
               if name == 'mask': preds[:, 18] = site['value'][id]
       return preds
 
-    target_ESS = 0.10
+    target_ESS = 0.05
 
     logger.info(f"\ntarget ess/n: {target_ESS}\n")
     
@@ -1315,6 +1313,7 @@ elif params["running_type"] == "eval":
                                                    pixel_coords=pixel_coords,
                                                    target_slots=target_slots,
                                                    target_preds=target_preds,
+                                                   target_ESS=target_ESS,
                                                    log_rate=log_rate
                                                    )
             
