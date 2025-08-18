@@ -938,7 +938,7 @@ elif params["running_type"] == "eval":
 
           #if SAVING_IMG:
           if True:
-            for output_image in output_images:
+            for i, output_image in enumerate(output_images):
               fig = plt.figure()
               ax = fig.add_subplot(111)
               ax.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
