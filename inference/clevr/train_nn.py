@@ -328,7 +328,7 @@ class InvSlotAttentionGuide(nn.Module):
 
       pred_coords = torch.einsum('nij,ijk->nk', slots_attn[0].cpu(), grid)
       # logger.info(coords.shape)
-      pred_real_flag = [m for m in range(N) if torch.round(eval_preds_real_flag[m, -1]) == 1] 
+      pred_real_flag = [m for m in range(N) if torch.round(eval_preds_real_flag[m]) == 1] 
       real_pred_coords = pred_coords[pred_real_flag] * 128
 
       dists = torch.cdist(pixel_coords, real_pred_coords.float(), p=2).cpu().numpy() # [2, real_n, pred_real_n]
