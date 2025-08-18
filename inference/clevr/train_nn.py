@@ -278,7 +278,7 @@ class InvSlotAttentionGuide(nn.Module):
     self.sigmoid = nn.Sigmoid()
     self.tanh = nn.Tanh()
 
-  def forward(self, observations={"image": torch.zeros(1, 3, 128, 128)}, save_masks=False, return_slots=False):
+  def forward(self, observations={"image": torch.zeros(1, 3, 128, 128)}, save_masks=False, return_slots=False, pixel_coords=None):
     
     img = observations["image"]
     img = img.to(DEVICE)
@@ -316,6 +316,33 @@ class InvSlotAttentionGuide(nn.Module):
     #logger.info(f"\nnetwork predicted coords and real flag: {torch.cat((preds[:, :, :3], preds[:, :, -1].unsqueeze(-1)), dim=-1)}")
 
     if params["running_type"] == "eval":
+      
+      eval_preds_real_flag = self.preds[0, :, -1]
+
+      slots_attn = self.attn
+      B, N, d = slots_attn.shape
+      # normalize attn matrices
+      slots_attn = slots_attn / torch.sum(slots_attn, dim=-1, keepdim=True)
+      slots_attn = slots_attn.reshape(B, N, int(np.sqrt(d)), int(np.sqrt(d))).double()
+      grid = torch.from_numpy(build_2d_grid((32, 32)))
+
+      pred_coords = torch.einsum('nij,ijk->nk', slots_attn[0].cpu(), grid)
+      # logger.info(coords.shape)
+      pred_real_flag = [m for m in range(N) if torch.round(eval_preds_real_flag[m, -1]) == 1] 
+      real_pred_coords = pred_coords[pred_real_flag] * 128
+
+      dists = torch.cdist(pixel_coords, real_pred_coords.float(), p=2).cpu().numpy() # [2, real_n, pred_real_n]
+      
+      logger.info(dists.shape)
+
+      row_ind, col_ind = linear_sum_assignment(dists)
+
+      logger.info(row_ind)
+      logger.info(col_ind)
+
+
+
+
       pyro.sample("mask", dist.Bernoulli(self.preds[:, :, 18].expand([params["num_inference_samples"], -1, -1])))
       pyro.sample("size", dist.Categorical(probs=self.preds[:, :, 3:5].expand([params["num_inference_samples"], -1, -1])))
       pyro.sample("mat", dist.Categorical(probs=self.preds[:, :, 5:7].expand([params["num_inference_samples"], -1, -1])))
@@ -865,6 +892,21 @@ elif params["running_type"] == "eval":
     # from [-1., 1.] to [0., 1.] img
     return img/2 + 0.5 
   
+  def process_preds(trace, id):
+    max_obj = max(params['max_objects'], params['num_slots'])
+    
+    features_dim = 19
+    preds = torch.zeros(max_obj, features_dim)
+    for name, site in trace.nodes.items():
+      if site['type'] == 'sample':
+        if name == 'coords': preds[:, :3] = site['value'][id] # [-3., 3.]
+        if name == 'size': preds[:, 3:5] = F.one_hot(site['value'][id], len(sizes))
+        if name == 'mat': preds[:, 5:7] = F.one_hot(site['value'][id], len(materials))
+        if name == 'shape': preds[:, 7:10] = F.one_hot(site['value'][id], len(shapes))
+        if name == 'color': preds[:, 10:18] = F.one_hot(site['value'][id], len(colors))
+        if name == 'mask': preds[:, 18] = site['value'][id]
+    return preds
+  
   def get_ESS(log_wts):
     log_w_norm = log_wts - torch.logsumexp(log_wts, 0)
     ess = torch.exp(-torch.logsumexp(2 * log_w_norm, 0))
@@ -878,6 +920,14 @@ elif params["running_type"] == "eval":
           output_images = site["fn"].mean
           D = output_images.size(-1)*output_images.size(-2)
 
+          if SAVING_IMG:
+            for output_image in output_images:
+              fig = plt.figure()
+              ax = fig.add_subplot(111)
+              ax.imshow(visualize(output_image.permute(1, 2, 0).cpu().numpy()))
+              plt.savefig(os.path.join(plots_dir, f"trace_{i}_image_{n_test_samples}.png"))
+              plt.close()
+          
           #sigma = 0.01
           for sigma in np.arange(0.01, 0.06, 0.005):
             log_wts = dist.Independent(dist.Normal(output_images, sigma), 3).log_prob(img)
@@ -1003,8 +1053,8 @@ elif params["running_type"] == "eval":
                             os.path.join(plots_dir, f"trace_{i}_mask_{o}_image_{n_test_samples}.png"),
                             title=f"score: {scores}")
             
-            #if SAVING_IMG:
-            if True:
+            if SAVING_IMG:
+            #if True:
               save_img(transformed_tensor.cpu().numpy(),
                       os.path.join(plots_dir, f"trace_{i}_all_mask_image_{n_test_samples}.png"))
 
@@ -1084,8 +1134,8 @@ elif params["running_type"] == "eval":
                 mat = torch.argmax(target[o, 5:7], dim=-1).item()
                 transformed_target_tensor += torch.tensor(masks[0]*(mat+1))
         
-        #if SAVING_IMG:
-        if True:
+        if SAVING_IMG:
+        #if True:
           save_img(transformed_target_tensor.cpu().numpy(),
                   os.path.join(plots_dir, f"transf_image_{n_test_samples}.png"))
         
@@ -1100,7 +1150,6 @@ elif params["running_type"] == "eval":
         resampling = Empirical(torch.stack([torch.tensor(i) for i in range(len(log_wts))]), log_wts)
         resampling_id = resampling().item()
         
-
     elif input_mode == "slots":
         
       trace_generated_imgs = []
@@ -1247,21 +1296,6 @@ elif params["running_type"] == "eval":
     optimiser = pyro.optim.Adam({'lr': 1e-4})
     csis = CSIS(model, guide, optimiser, training_batch_size=256, num_inference_samples=params["num_inference_samples"])
 
-    def process_preds(trace, id):
-      max_obj = max(params['max_objects'], params['num_slots'])
-      
-      features_dim = 19
-      preds = torch.zeros(max_obj, features_dim)
-      for name, site in trace.nodes.items():
-          if site['type'] == 'sample':
-              if name == 'coords': preds[:, :3] = site['value'][id] # [-3., 3.]
-              if name == 'size': preds[:, 3:5] = F.one_hot(site['value'][id], len(sizes))
-              if name == 'mat': preds[:, 5:7] = F.one_hot(site['value'][id], len(materials))
-              if name == 'shape': preds[:, 7:10] = F.one_hot(site['value'][id], len(shapes))
-              if name == 'color': preds[:, 10:18] = F.one_hot(site['value'][id], len(colors))
-              if name == 'mask': preds[:, 18] = site['value'][id]
-      return preds
-
     target_ESS = 0.05
 
     logger.info(f"\ntarget ess/n: {target_ESS}\n")
@@ -1286,7 +1320,8 @@ elif params["running_type"] == "eval":
           all_log_wts[n_test_samples] = {}
           
           
-          posterior = csis.run(observations={"image": img})
+          posterior = csis.run(observations={"image": img},
+                               pixel_coords=pixel_coords)
           prop_traces = posterior.prop_traces[0]
           traces = posterior.exec_traces[0]
 
@@ -1303,7 +1338,7 @@ elif params["running_type"] == "eval":
           
           
           #modes = ["RGB", "depth", "seg_masks_object", "seg_masks_color", "seg_masks_mat", "slots"]
-          modes = ["seg_masks_object"]
+          modes = ["RGB"]
           resampling_mode = "ensemble" # ["majority_vote", "ensemble"]
           for mode in modes:
             resampling_id, log_wts = run_inference(img=img,
