@@ -344,9 +344,11 @@ class InvSlotAttentionGuide(nn.Module):
       logger.info(row_ind)
       logger.info(col_ind)
 
-      logger.info(target_pose.shape)
+      logger.info(target_pose.shape) # [1, 5, 1]
 
-      pose = target_pose[:, col_ind, :]
+      pose = torch.rand(B, N, 1)
+      for i, real_idx in enumerate(pred_real_flag):
+        pose[:, real_idx, :] = target_pose[:, col_ind[i], :]
 
       logger.info(pred_real_flag)
 
