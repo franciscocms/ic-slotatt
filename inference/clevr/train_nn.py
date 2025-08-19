@@ -644,7 +644,7 @@ color2id = list2dict(colors)
 
 
 class CLEVR(Dataset):
-    def __init__(self, images_path, scenes_path, max_objs=6, get_target=True):
+    def __init__(self, images_path, scenes_path, max_objs=6, get_target=True, split=1):
         self.max_objs = max_objs
         self.get_target = get_target
         self.images_path = images_path
@@ -653,7 +653,12 @@ class CLEVR(Dataset):
             self.scenes = json.load(f)['scenes']
         self.scenes = [x for x in self.scenes if len(x['objects']) <= max_objs]
 
-        logger.info(f"{len(self.scenes)} scenes in the dataset!")
+        if split != None:
+          split_init = split*1000
+          split_end = (split+1)*1000
+          self.scenes = self.scenes[split_init:split_end]
+          
+          logger.info(f"split {split} -> {len(self.scenes)} scenes ({split_init} - {split_end-1}) in the dataset!")
         
         transform = [transforms.CenterCrop((256, 256))] if not get_target else []
         self.transform = transforms.Compose(
@@ -892,20 +897,22 @@ if CHECK_ATTN and TRAINING_FROM_SCRATCH:
 
 
 dataset_path = "/nas-ctm01/datasets/public/CLEVR/CLEVR_v1.0"
-train_data = CLEVR(images_path = os.path.join(dataset_path, 'images/train'),
-                   scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_train_scenes.json'),
-                   max_objs=10)
-train_dataloader = DataLoader(train_data, batch_size = 512,
-                              shuffle=True, num_workers=8, generator=torch.Generator(device='cuda'))
 val_images_path = os.path.join(dataset_path, 'images/val')
-val_data = CLEVR(images_path = os.path.join(dataset_path, 'images/val'),
-                   scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json'),
-                   max_objs=10)
-val_dataloader = DataLoader(val_data, batch_size = 512,
-                              shuffle=False, num_workers=8, generator=torch.Generator(device='cuda'))
-
 
 if params["running_type"] == "train":  
+  train_data = CLEVR(images_path = os.path.join(dataset_path, 'images/train'),
+                    scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_train_scenes.json'),
+                    max_objs=10)
+  train_dataloader = DataLoader(train_data, batch_size = 512,
+                                shuffle=True, num_workers=8, generator=torch.Generator(device='cuda'))
+  val_images_path = os.path.join(dataset_path, 'images/val')
+  val_data = CLEVR(images_path = os.path.join(dataset_path, 'images/val'),
+                    scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json'),
+                    max_objs=10,
+                    split=None)
+  val_dataloader = DataLoader(val_data, batch_size = 512,
+                                shuffle=False, num_workers=8, generator=torch.Generator(device='cuda'))
+
   trainer = Trainer(guide, {"train": train_dataloader, "validation": val_dataloader}, params, run, log_rate=10)
   trainer.train(root_folder)
   logger.info("\ntraining ended...")
@@ -1279,7 +1286,8 @@ elif params["running_type"] == "eval":
 
   val_data = CLEVR(images_path = os.path.join(dataset_path, 'images/val'),
                    scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json'),
-                   max_objs=10
+                   max_objs=10,
+                   split=JOB_SPLIT['id']
                    )
   
   val_dataloader = DataLoader(val_data, batch_size = 1,
@@ -1482,8 +1490,9 @@ elif params["running_type"] == "eval":
             max_aux_mAP = {k: v/n_test_samples for k, v in max_ap.items()}
             logger.info(max_aux_mAP)
           
-          if n_test_samples == 1:
-            break
+          # if n_test_samples == 1:
+          #   break
+          
   logger.info(f"\ninference ended...")
 
 if params["running_type"] == "train": wandb.finish()
