@@ -944,8 +944,8 @@ elif params["running_type"] == "eval":
           output_images = site["fn"].mean
           D = output_images.size(-1)*output_images.size(-2)
 
-          if SAVING_IMG:
-          #if True:
+          #if SAVING_IMG:
+          if True:
             for i, output_image in enumerate(output_images):
               fig = plt.figure()
               ax = fig.add_subplot(111)
@@ -1358,8 +1358,8 @@ elif params["running_type"] == "eval":
           # get the predictions of the first proposal trace
           preds = process_preds(prop_traces, 0) 
 
-          if SAVING_IMG:
-          #if True:
+          #if SAVING_IMG:
+          if True:
             save_img(visualize(img[0].permute(1, 2, 0).cpu().numpy()),
                      os.path.join(plots_dir, f"image_{n_test_samples}.png"))
           
@@ -1480,7 +1480,7 @@ elif params["running_type"] == "eval":
             max_aux_mAP = {k: v/n_test_samples for k, v in max_ap.items()}
             logger.info(max_aux_mAP)
           
-          if n_test_samples == 200:
+          if n_test_samples == 1:
             break
   logger.info(f"\ninference ended...")
 
