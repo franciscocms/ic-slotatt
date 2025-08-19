@@ -349,7 +349,14 @@ class InvSlotAttentionGuide(nn.Module):
       pose = torch.rand(B, N, 1)
       for i, real_idx in enumerate(pred_real_flag):
         if len(col_ind) > i:
-          pose[:, real_idx, :] = target_pose[:, col_ind[i], :]
+          try:
+            pose[:, real_idx, :] = target_pose[:, col_ind[i], :]
+          except:
+            logger.info(pose.shape)
+            logger.info(real_idx)
+            logger.info(target_pose.shape)
+            logger.info(col_ind)
+            logger.info(col_ind[i])
 
       pose = pose.permute(0, 2, 1)
 
