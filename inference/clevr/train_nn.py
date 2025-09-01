@@ -44,7 +44,7 @@ params["lr"] = 4e-4
 
 import logging
 if params["running_type"] == "train": logfile_name = f"log-{params['jobID']}.log"
-elif params["running_type"] == "eval": logfile_name = f"eval-{params['jobID']}-{JOB_SPLIT['id']}.log"
+elif params["running_type"] == "eval": logfile_name = f"eval-{params['jobID']}-{JOB_SPLIT['id']}-{params['num_inference_samples']}.log"
 logger = logging.getLogger(params["running_type"])
 logger.setLevel(logging.INFO)
 fh = logging.FileHandler(logfile_name, mode='w')
