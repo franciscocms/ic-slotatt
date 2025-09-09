@@ -362,7 +362,7 @@ class InvSlotAttentionGuide(nn.Module):
 
         pose = pose.permute(0, 2, 1)
       else:
-        B, N, d = slots_attn.shape
+        B, N, d = self.attn.shape
         pose = torch.rand(B, N, 1)
 
       pyro.sample("pose", dist.Normal(pose.expand([params["num_inference_samples"], -1, -1]), 0.01))
