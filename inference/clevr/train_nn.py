@@ -1328,8 +1328,8 @@ elif params["running_type"] == "eval":
           aux_mAP = {k: v/n_test_samples for k, v in ap.items()}
           logger.info(aux_mAP)
         
-        if n_test_samples == 200:
-          break
+        # if n_test_samples == 200:
+        #   break
 
     
   else:
