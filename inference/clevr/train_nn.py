@@ -1300,9 +1300,11 @@ elif params["running_type"] == "eval":
      
     n_test_samples = 0
     with torch.no_grad():
-      for img, target, _, _ in val_dataloader:
+      for img, target, pixel_coords, target_pose in val_dataloader:
         img = img.to(DEVICE) 
-        preds = guide(observations={"image": img})
+        preds = guide(observations={"image": img},
+                      pixel_coords=pixel_coords,
+                      target_pose=target_pose)
 
         n_test_samples += 1
 
