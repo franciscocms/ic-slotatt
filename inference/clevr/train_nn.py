@@ -320,45 +320,49 @@ class InvSlotAttentionGuide(nn.Module):
     #logger.info(f"\nnetwork predicted coords and real flag: {torch.cat((preds[:, :, :3], preds[:, :, -1].unsqueeze(-1)), dim=-1)}")
 
     if params["running_type"] == "eval":
+
+      if params["num_inference_samples"] > 1:
       
-      eval_preds_real_flag = self.preds[0, :, -1]
+        eval_preds_real_flag = self.preds[0, :, -1]
 
-      slots_attn = self.attn
-      B, N, d = slots_attn.shape
-      # normalize attn matrices
-      slots_attn = slots_attn / torch.sum(slots_attn, dim=-1, keepdim=True)
-      slots_attn = slots_attn.reshape(B, N, int(np.sqrt(d)), int(np.sqrt(d))).double()
-      grid = torch.from_numpy(build_2d_grid((32, 32)))
+        slots_attn = self.attn
+        B, N, d = slots_attn.shape
+        # normalize attn matrices
+        slots_attn = slots_attn / torch.sum(slots_attn, dim=-1, keepdim=True)
+        slots_attn = slots_attn.reshape(B, N, int(np.sqrt(d)), int(np.sqrt(d))).double()
+        grid = torch.from_numpy(build_2d_grid((32, 32)))
 
-      pred_coords = torch.einsum('nij,ijk->nk', slots_attn[0].cpu(), grid)
-      # logger.info(coords.shape)
-      pred_real_flag = [m for m in range(N) if torch.round(eval_preds_real_flag[m]) == 1] 
-      real_pred_coords = pred_coords[pred_real_flag] * 128
+        pred_coords = torch.einsum('nij,ijk->nk', slots_attn[0].cpu(), grid)
+        # logger.info(coords.shape)
+        pred_real_flag = [m for m in range(N) if torch.round(eval_preds_real_flag[m]) == 1] 
+        real_pred_coords = pred_coords[pred_real_flag] * 128
 
-      dists = torch.cdist(pixel_coords, real_pred_coords.float(), p=2).cpu().numpy() # [2, real_n, pred_real_n]
-      
-      # logger.info(dists.shape)
+        dists = torch.cdist(pixel_coords, real_pred_coords.float(), p=2).cpu().numpy() # [2, real_n, pred_real_n]
+        
+        # logger.info(dists.shape)
 
-      row_ind, col_ind = linear_sum_assignment(dists)
+        row_ind, col_ind = linear_sum_assignment(dists)
 
-      # logger.info(row_ind)
-      # logger.info(col_ind)
+        # logger.info(row_ind)
+        # logger.info(col_ind)
 
-      # logger.info(target_pose.shape) # [1, 5, 1]
+        # logger.info(target_pose.shape) # [1, 5, 1]
 
-      pose = torch.rand(B, N, 1)
-      for i, real_idx in enumerate(pred_real_flag):
-        if len(col_ind) > i:
-          try:
-            pose[:, real_idx, :] = target_pose[:, col_ind[i], :]
-          except:
-            logger.info(pose.shape)
-            logger.info(real_idx)
-            logger.info(target_pose.shape)
-            logger.info(col_ind)
-            logger.info(col_ind[i])
+        pose = torch.rand(B, N, 1)
+        for i, real_idx in enumerate(pred_real_flag):
+          if len(col_ind) > i:
+            try:
+              pose[:, real_idx, :] = target_pose[:, col_ind[i], :]
+            except:
+              logger.info(pose.shape)
+              logger.info(real_idx)
+              logger.info(target_pose.shape)
+              logger.info(col_ind)
+              logger.info(col_ind[i])
 
-      pose = pose.permute(0, 2, 1)
+        pose = pose.permute(0, 2, 1)
+      else:
+        pose = torch.rand(B, N, 1)
 
       pyro.sample("pose", dist.Normal(pose.expand([params["num_inference_samples"], -1, -1]), 0.01))
 
