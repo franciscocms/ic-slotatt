@@ -1300,7 +1300,7 @@ elif params["running_type"] == "eval":
      
     n_test_samples = 0
     with torch.no_grad():
-      for img, target in val_dataloader:
+      for img, target, _, _ in val_dataloader:
         img = img.to(DEVICE) 
         preds = guide(observations={"image": img})
 
