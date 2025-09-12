@@ -753,6 +753,9 @@ class CLEVR(Dataset):
             pixel_coords = torch.stack(pixel_coords)  
             pose = torch.stack(pose)   
         
+        logger.info(img.shape)
+        logger.info(target.shape)
+        
         return img*2 - 1, target, pixel_coords, pose
 
 
