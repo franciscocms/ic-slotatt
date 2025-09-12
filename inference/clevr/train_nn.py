@@ -267,10 +267,17 @@ class InvSlotAttentionGuide(nn.Module):
         iters = self.num_iterations,
         eps = 1e-8, 
         hidden_dim = 128)
-    self.mlp_preds = nn.Sequential(
-       nn.Linear(self.slot_dim, self.slot_dim), nn.ReLU(),
-       nn.Linear(self.slot_dim, 19),
-    )
+    
+    if params["jobID"] == 103:
+      self.mlp_preds = nn.Sequential(
+        nn.Linear(self.slot_dim, self.slot_dim), nn.ReLU(),
+        nn.Linear(self.slot_dim, 20),
+      )
+    else:
+      self.mlp_preds = nn.Sequential(
+        nn.Linear(self.slot_dim, self.slot_dim), nn.ReLU(),
+        nn.Linear(self.slot_dim, 19),
+      )
 
     self.batch_idx = 0
     self.epoch = 0
@@ -310,12 +317,21 @@ class InvSlotAttentionGuide(nn.Module):
         plt.close()
     
     self.preds = self.mlp_preds(self.slots)
-    self.preds[:, :, 0:3] = self.sigmoid(self.preds[:, :, 0:3].clone())       # coords
-    self.preds[:, :, 3:5] = self.softmax(self.preds[:, :, 3:5].clone())       # size
-    self.preds[:, :, 5:7] = self.softmax(self.preds[:, :, 5:7].clone())       # material
-    self.preds[:, :, 7:10] = self.softmax(self.preds[:, :, 7:10].clone())     # shape
-    self.preds[:, :, 10:18] = self.softmax(self.preds[:, :, 10:18].clone())   # color
-    self.preds[:, :, 18] = self.sigmoid(self.preds[:, :, 18].clone())         # real object
+    if params["jobID"] == 103:
+      self.preds[:, :, 0:3] = self.sigmoid(self.preds[:, :, 0:3].clone())       # coords
+      self.preds[:, :, 3:4] = self.sigmoid(self.preds[:, :, 0:3].clone())       # rotation
+      self.preds[:, :, 4:6] = self.softmax(self.preds[:, :, 3:5].clone())       # size
+      self.preds[:, :, 6:8] = self.softmax(self.preds[:, :, 5:7].clone())       # material
+      self.preds[:, :, 8:11] = self.softmax(self.preds[:, :, 7:10].clone())     # shape
+      self.preds[:, :, 11:19] = self.softmax(self.preds[:, :, 10:18].clone())   # color
+      self.preds[:, :, 19] = self.sigmoid(self.preds[:, :, 18].clone())         # real object
+    else:
+      self.preds[:, :, 0:3] = self.sigmoid(self.preds[:, :, 0:3].clone())       # coords
+      self.preds[:, :, 3:5] = self.softmax(self.preds[:, :, 3:5].clone())       # size
+      self.preds[:, :, 5:7] = self.softmax(self.preds[:, :, 5:7].clone())       # material
+      self.preds[:, :, 7:10] = self.softmax(self.preds[:, :, 7:10].clone())     # shape
+      self.preds[:, :, 10:18] = self.softmax(self.preds[:, :, 10:18].clone())   # color
+      self.preds[:, :, 18] = self.sigmoid(self.preds[:, :, 18].clone())         # real object
 
     #logger.info(f"\nnetwork predicted coords and real flag: {torch.cat((preds[:, :, :3], preds[:, :, -1].unsqueeze(-1)), dim=-1)}")
 
@@ -454,7 +470,10 @@ def hungarian_loss_inclusive_KL(pred, target, loss_fn=F.smooth_l1_loss):
     # pred is [B, N, 19]
     # target is [B, N, 19]   
 
-    k_vars = {"coords": 3, "size": 5, "material": 7, "shape": 10, "color": 18, "mask": 19}
+    if params["jobID"] == 103:
+      k_vars = {"coords": 3, "rot": 4, "size": 6, "material": 8, "shape": 11, "color": 19, "mask": 20}
+    else:
+      k_vars = {"coords": 3, "size": 5, "material": 7, "shape": 10, "color": 18, "mask": 19}
 
     # pdist_coords = loss_fn(
     #     pred[:, :, :3].unsqueeze(1).expand(-1, target.size(1), -1, -1), 
@@ -478,6 +497,12 @@ def hungarian_loss_inclusive_KL(pred, target, loss_fn=F.smooth_l1_loss):
             if var == "coords":
               aux_dist = torch.distributions.Normal(pred[:, :, i:k], torch.tensor(0.01))
               log_prob = -aux_dist.log_prob(target[:, o, i:k].unsqueeze(-2).expand(-1, pred.size(1), -1)).mean(-1)
+
+            if params["jobID"] == 103:
+              if var == "rot":
+                aux_dist = torch.distributions.Normal(pred[:, :, i:k], torch.tensor(0.01))
+                log_prob = -aux_dist.log_prob(target[:, o, i:k].unsqueeze(-2).expand(-1, pred.size(1), -1)).mean(-1)
+            
             elif var == "mask":
               aux_dist = torch.distributions.Bernoulli(pred[:, :, i:k].squeeze(-1))
               log_prob = -aux_dist.log_prob(target[:, o, i:k].expand(-1, pred.size(1)))
@@ -542,7 +567,7 @@ class Trainer:
             
             if params["jobID"] == 101:
               batch_loss, _ = hungarian_loss(preds, target)
-            elif params["jobID"] == 102:
+            elif params["jobID"] >= 102:
               batch_loss, _ = hungarian_loss_inclusive_KL(preds, target)
 
             self.optimizer.zero_grad()
@@ -569,13 +594,20 @@ class Trainer:
                 img, target = img.to(self.device), target.to(self.device)
                 preds = self.model(observations={"image": img})
                 if params["jobID"] == 101: batch_loss, _ = hungarian_loss(preds, target)
-                elif params["jobID"] == 102: batch_loss, _ = hungarian_loss_inclusive_KL(preds, target)
+                elif params["jobID"] >= 102: batch_loss, _ = hungarian_loss_inclusive_KL(preds, target)
 
-                preds[:, :, 3:5] = F.one_hot(torch.argmax(preds[:, :, 3:5], dim=-1), len(sizes))       # size
-                preds[:, :, 5:7] = F.one_hot(torch.argmax(preds[:, :, 5:7], dim=-1), len(materials))       # material
-                preds[:, :, 7:10] = F.one_hot(torch.argmax(preds[:, :, 7:10], dim=-1), len(shapes))     # shape
-                preds[:, :, 10:18] = F.one_hot(torch.argmax(preds[:, :, 10:18], dim=-1), len(colors))   # color
-                preds[:, :, 18] = torch.distributions.Bernoulli(preds[:, :, 18]).sample()         # real object
+                if params["jobID"] == 103:
+                  preds[:, :, 4:6] = F.one_hot(torch.argmax(preds[:, :, 3:5], dim=-1), len(sizes))       # size
+                  preds[:, :, 6:8] = F.one_hot(torch.argmax(preds[:, :, 5:7], dim=-1), len(materials))       # material
+                  preds[:, :, 8:11] = F.one_hot(torch.argmax(preds[:, :, 7:10], dim=-1), len(shapes))     # shape
+                  preds[:, :, 11:19] = F.one_hot(torch.argmax(preds[:, :, 10:18], dim=-1), len(colors))   # color
+                  preds[:, :, 19] = torch.distributions.Bernoulli(preds[:, :, 18]).sample()         # real object
+                else:
+                  preds[:, :, 3:5] = F.one_hot(torch.argmax(preds[:, :, 3:5], dim=-1), len(sizes))       # size
+                  preds[:, :, 5:7] = F.one_hot(torch.argmax(preds[:, :, 5:7], dim=-1), len(materials))       # material
+                  preds[:, :, 7:10] = F.one_hot(torch.argmax(preds[:, :, 7:10], dim=-1), len(shapes))     # shape
+                  preds[:, :, 10:18] = F.one_hot(torch.argmax(preds[:, :, 10:18], dim=-1), len(colors))   # color
+                  preds[:, :, 18] = torch.distributions.Bernoulli(preds[:, :, 18]).sample()         # real object
                 
                 
                 for i in range(preds.shape[0]):
@@ -687,11 +719,18 @@ class CLEVR(Dataset):
             for obj in scene['objects']:
                 coords = ((torch.Tensor(obj['3d_coords']) + 3.) / 6.).view(1, 3)
                 #coords = (torch.tensor(obj['3d_coords']) / 3.).view(1, 3)
+                
+                if params["jobID"] == 103:
+                  rot = (torch.Tensor(obj['rotation'])/ 360.).view(1, 1)
+
                 size = F.one_hot(torch.LongTensor([size2id[obj['size']]]), 2)
                 material = F.one_hot(torch.LongTensor([mat2id[obj['material']]]), 2)
                 shape = F.one_hot(torch.LongTensor([shape2id[obj['shape']]]), 3)
                 color = F.one_hot(torch.LongTensor([color2id[obj['color']]]), 8)
-                obj_vec = torch.cat((coords, size, material, shape, color, torch.Tensor([[1.]])), dim=1)[0]
+                if params["jobID"] == 103:
+                  obj_vec = torch.cat((coords, rot, size, material, shape, color, torch.Tensor([[1.]])), dim=1)[0]
+                else:
+                  obj_vec = torch.cat((coords, size, material, shape, color, torch.Tensor([[1.]])), dim=1)[0]
                 target.append(obj_vec)
 
                 resize_factor = np.array([128/480, 128/320])

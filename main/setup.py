@@ -34,7 +34,7 @@ params = {
     "training_from_scratch" : True,
     "training_iters": 20000, # 10k
     "step_size": 100,
-    "running_type": "eval", # train, debug, eval, inspect
+    "running_type": "train", # train, debug, eval, inspect
     "ood_eval": False,
     "slot_dim" : 64, 
     "infer_background": False,
@@ -42,7 +42,7 @@ params = {
     "softmax_temperature": 1.0,
     "strided_convs": True,
     "check_attn": True,
-    "jobID": 102, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects (95 for 10 slots/objects)
+    "jobID": 103, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects (95 for 10 slots/objects)
     "mesh_iters": 4,
     "mesh_lr": 5, # 76: 3, 77: 5
     "logprob_coeff": 1.,
