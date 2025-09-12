@@ -681,7 +681,7 @@ color2id = list2dict(colors)
 
 
 class CLEVR(Dataset):
-    def __init__(self, images_path, scenes_path, max_objs=6, get_target=True, split=1):
+    def __init__(self, images_path, scenes_path, max_objs=6, get_target=True, split=None):
         self.max_objs = max_objs
         self.get_target = get_target
         self.images_path = images_path
@@ -954,17 +954,17 @@ val_images_path = os.path.join(dataset_path, 'images/val')
 if params["running_type"] == "train":  
   train_data = CLEVR(images_path = os.path.join(dataset_path, 'images/train'),
                     scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_train_scenes.json'),
-                    max_objs=10,
-                    split=None)
+                    max_objs=10
+                    )
   train_dataloader = DataLoader(train_data, batch_size = 512,
-                                shuffle=True, num_workers=1, generator=torch.Generator(device='cuda'))
+                                shuffle=True, num_workers=8, generator=torch.Generator(device='cuda'))
   val_images_path = os.path.join(dataset_path, 'images/val')
   val_data = CLEVR(images_path = os.path.join(dataset_path, 'images/val'),
                     scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json'),
-                    max_objs=10,
-                    split=None)
+                    max_objs=10
+                    )
   val_dataloader = DataLoader(val_data, batch_size = 512,
-                                shuffle=False, num_workers=1, generator=torch.Generator(device='cuda'))
+                                shuffle=False, num_workers=8, generator=torch.Generator(device='cuda'))
 
   trainer = Trainer(guide, {"train": train_dataloader, "validation": val_dataloader}, params, run, log_rate=10)
   trainer.train(root_folder)
