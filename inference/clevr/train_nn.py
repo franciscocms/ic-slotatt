@@ -719,9 +719,13 @@ class CLEVR(Dataset):
             for obj in scene['objects']:
                 coords = ((torch.Tensor(obj['3d_coords']) + 3.) / 6.).view(1, 3)
                 #coords = (torch.tensor(obj['3d_coords']) / 3.).view(1, 3)
+
+                logger.info(coords.shape)
                 
                 if params["jobID"] == 103:
                   rot = (torch.Tensor([obj['rotation']])/ 360.).view(1, 1)
+
+                  logger.info(rot.shape)
 
                 size = F.one_hot(torch.LongTensor([size2id[obj['size']]]), 2)
                 material = F.one_hot(torch.LongTensor([mat2id[obj['material']]]), 2)
