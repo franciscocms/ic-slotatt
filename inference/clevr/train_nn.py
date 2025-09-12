@@ -957,14 +957,14 @@ if params["running_type"] == "train":
                     max_objs=10,
                     split=None)
   train_dataloader = DataLoader(train_data, batch_size = 512,
-                                shuffle=True, num_workers=8, generator=torch.Generator(device='cuda'))
+                                shuffle=True, num_workers=1, generator=torch.Generator(device='cuda'))
   val_images_path = os.path.join(dataset_path, 'images/val')
   val_data = CLEVR(images_path = os.path.join(dataset_path, 'images/val'),
                     scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_val_scenes.json'),
                     max_objs=10,
                     split=None)
   val_dataloader = DataLoader(val_data, batch_size = 512,
-                                shuffle=False, num_workers=8, generator=torch.Generator(device='cuda'))
+                                shuffle=False, num_workers=1, generator=torch.Generator(device='cuda'))
 
   trainer = Trainer(guide, {"train": train_dataloader, "validation": val_dataloader}, params, run, log_rate=10)
   trainer.train(root_folder)
