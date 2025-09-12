@@ -319,12 +319,12 @@ class InvSlotAttentionGuide(nn.Module):
     self.preds = self.mlp_preds(self.slots)
     if params["jobID"] == 103:
       self.preds[:, :, 0:3] = self.sigmoid(self.preds[:, :, 0:3].clone())       # coords
-      self.preds[:, :, 3:4] = self.sigmoid(self.preds[:, :, 0:3].clone())       # rotation
-      self.preds[:, :, 4:6] = self.softmax(self.preds[:, :, 3:5].clone())       # size
-      self.preds[:, :, 6:8] = self.softmax(self.preds[:, :, 5:7].clone())       # material
-      self.preds[:, :, 8:11] = self.softmax(self.preds[:, :, 7:10].clone())     # shape
-      self.preds[:, :, 11:19] = self.softmax(self.preds[:, :, 10:18].clone())   # color
-      self.preds[:, :, 19] = self.sigmoid(self.preds[:, :, 18].clone())         # real object
+      self.preds[:, :, 3:4] = self.sigmoid(self.preds[:, :, 3:4].clone())       # rotation
+      self.preds[:, :, 4:6] = self.softmax(self.preds[:, :, 4:6].clone())       # size
+      self.preds[:, :, 6:8] = self.softmax(self.preds[:, :, 6:8].clone())       # material
+      self.preds[:, :, 8:11] = self.softmax(self.preds[:, :, 8:11].clone())     # shape
+      self.preds[:, :, 11:19] = self.softmax(self.preds[:, :, 11:19].clone())   # color
+      self.preds[:, :, 19] = self.sigmoid(self.preds[:, :, 19].clone())         # real object
     else:
       self.preds[:, :, 0:3] = self.sigmoid(self.preds[:, :, 0:3].clone())       # coords
       self.preds[:, :, 3:5] = self.softmax(self.preds[:, :, 3:5].clone())       # size
@@ -740,7 +740,11 @@ class CLEVR(Dataset):
 
 
             while len(target) < self.max_objs:
+              if params["jobID"] == 103:
+                target.append(torch.zeros(20, device='cpu'))
+              else:
                 target.append(torch.zeros(19, device='cpu'))
+            
             target = torch.stack(target)  
             pixel_coords = torch.stack(pixel_coords)  
             pose = torch.stack(pose)   
@@ -946,7 +950,8 @@ val_images_path = os.path.join(dataset_path, 'images/val')
 if params["running_type"] == "train":  
   train_data = CLEVR(images_path = os.path.join(dataset_path, 'images/train'),
                     scenes_path = os.path.join(dataset_path, 'scenes/CLEVR_train_scenes.json'),
-                    max_objs=10)
+                    max_objs=10,
+                    split=None)
   train_dataloader = DataLoader(train_data, batch_size = 512,
                                 shuffle=True, num_workers=8, generator=torch.Generator(device='cuda'))
   val_images_path = os.path.join(dataset_path, 'images/val')
