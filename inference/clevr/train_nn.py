@@ -500,7 +500,7 @@ def hungarian_loss_inclusive_KL(pred, target, loss_fn=F.smooth_l1_loss):
 
             if params["jobID"] == 103:
               if var == "rot":
-                aux_dist = torch.distributions.Normal(pred[:, :, i:k], torch.tensor(0.01))
+                aux_dist = torch.distributions.Normal(pred[:, :, i:k], torch.tensor(0.1))
                 log_prob = -aux_dist.log_prob(target[:, o, i:k].unsqueeze(-2).expand(-1, pred.size(1), -1)).mean(-1)
             
             elif var == "mask":
