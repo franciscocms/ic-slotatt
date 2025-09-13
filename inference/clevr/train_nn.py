@@ -754,9 +754,6 @@ class CLEVR(Dataset):
             target = torch.stack(target)  
             pixel_coords = torch.stack(pixel_coords)  
             pose = torch.stack(pose)   
-        
-        logger.info(img.shape)
-        logger.info(target.shape)
 
         if params["running_type"] == "train":
           return img*2 - 1, target
