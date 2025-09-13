@@ -557,7 +557,7 @@ class Trainer:
         loss = 0.
         num_iters = 0
         self.model.train() 
-        for img, target, _, _ in self.trainloader:
+        for img, target in self.trainloader:
             img, target = img.to(self.device), target.to(self.device)
             preds = self.model(observations={"image": img}, save_masks=save_masks)
             
@@ -590,7 +590,7 @@ class Trainer:
 
         self.model.eval()
         with torch.no_grad(): 
-            for img, target, _, _ in self.validloader:
+            for img, target in self.validloader:
                 img, target = img.to(self.device), target.to(self.device)
                 preds = self.model(observations={"image": img})
                 if params["jobID"] == 101: batch_loss, _ = hungarian_loss(preds, target)
@@ -755,8 +755,11 @@ class CLEVR(Dataset):
         
         logger.info(img.shape)
         logger.info(target.shape)
-        
-        return img*2 - 1, target, pixel_coords, pose
+
+        if params["running_type"] == "train":
+          return img*2 - 1, target
+        else:
+          return img*2 - 1, target, pixel_coords, pose
 
 
 
