@@ -25,50 +25,122 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 img_transform = transforms.Compose([transforms.ToTensor()])
 
-def occlusion(new_object, object):
-  new_object_loc_x, new_object_loc_y, new_object_size = new_object
-  object_loc_x, object_loc_y, object_size = object
+shape_vals = ["ball", "square"]
+size_vals = ["small", "medium", "large"]
+size_mapping_int = {'small': 5, 'medium': 10, 'large': 15}
+color_vals = ["red", "green", "blue"]
 
-  if object_size == 'small': s = 10
-  if object_size == 'medium': s = 15
-  if object_size == 'large': s = 20
+def check_occlusion(check_dict, locx, locy, sizes):
+
+  """
+  check_dict: dictionary with locations and sizes of all sampled objects so far
+  locx: x-location for the proposed object
+  locy: y-location for the proposed object
+  sizes: size for the proposed object
+  """
+
+  flag = False
+  w, h = (128, 128)
+  eps = 10
   
-  if new_object_size == 'small': new_s = 10
-  if new_object_size == 'medium': new_s = 15
-  if new_object_size == 'large': new_s = 20
+  for o, _ in check_dict.items():
+    x_cond = abs(locx*w - check_dict[o]['locX']*w) <= (size_mapping_int[sizes]//2 + size_mapping_int[check_dict[o]['size']]//2 + eps)
+    y_cond = abs(locy*h - check_dict[o]['locY']*h) <= (size_mapping_int[sizes]//2 + size_mapping_int[check_dict[o]['size']]//2 + eps)
 
-  x_cond = abs(new_object_loc_x*127 - object_loc_x*127) <= (new_s//2 + s//2)
-  y_cond = abs(new_object_loc_y*127 - object_loc_y*127) <= (new_s//2 + s//2)
-  if x_cond and y_cond: return True
-  else: return False
+    if x_cond and y_cond: flag = True
+  
+  return flag
+
+def sample_loc(i):
+    with pyro.poutine.block(): 
+        locX_mu = pyro.sample(f"locX_{i}", dist.Uniform(0.15, 0.85))
+        locY_mu = pyro.sample(f"locY_{i}", dist.Uniform(0.15, 0.85))
+    return locX_mu, locY_mu
+
+def sample_size(i):
+    if len(size_vals) > 1:
+      size_probs = torch.tensor([1/len(size_vals) for _ in range(len(size_vals))], device=device)
+      with pyro.poutine.block(): 
+          size = pyro.sample(f"size_{i}", dist.Categorical(probs=size_probs))
+    
+    else:
+      size = torch.tensor(0)
+    return size
 
 def sample_scenes():
   B = params['batch_size'] if params["running_type"] == "train" else params['num_inference_samples']
   M = params['max_objects']
-  
-  shape_vals = ["ball", "square"]
-  size_vals = ["small", "medium", "large"]
-  color_vals = ["red", "green", "blue"]
-
-  shape_to_color_probs = {
-        0: torch.tensor([0.5, 0.5, 0.]), 
-        1: torch.tensor([0., 0.5, 0.5]),
-    }
 
   objects_mask = pyro.sample(f"mask", dist.Bernoulli(0.5).expand([B, M])).to(torch.bool)
 
   with pyro.poutine.mask(mask=objects_mask):
     shape = pyro.sample(f"shape", dist.Categorical(probs=torch.tensor([1/len(shape_vals) for _ in range(len(shape_vals))])).expand([B, M]))
-    
-    if not params["ood_eval"]:
-      color = pyro.sample(f"color", dist.Categorical(probs=torch.tensor([1/len(color_vals) for _ in range(len(color_vals))])).expand([B, M]))
-    else:
-      color_probs = torch.stack([shape_to_color_probs[idx.item()] for idx in shape.flatten()]).view(B, M, -1)
-      color = pyro.sample(f"color", dist.Categorical(probs=color_probs))
-                        
-    size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_vals) for _ in range(len(size_vals))])).expand([B, M]))
-    locx, locy = pyro.sample(f"locX", dist.Uniform(0.15, 0.85).expand([B, M])), pyro.sample(f"locY", dist.Uniform(0.15, 0.85).expand([B, M]))
+    color = pyro.sample(f"color", dist.Categorical(probs=torch.tensor([1/len(color_vals) for _ in range(len(color_vals))])).expand([B, M]))                        
+    # size = pyro.sample(f"size", dist.Categorical(probs=torch.tensor([1/len(size_vals) for _ in range(len(size_vals))])).expand([B, M]))
+    # locx, locy = pyro.sample(f"locX", dist.Uniform(0.15, 0.85).expand([B, M])), pyro.sample(f"locY", dist.Uniform(0.15, 0.85).expand([B, M]))
   
+  locX_mu_, locY_mu_ = torch.ones(B, M)*0.5, torch.ones(B, M)*0.5
+  size_b_ = torch.zeros(B, M)
+  i = 0
+
+  for b in range(B):
+      check_dict = {} # stores locations and sizes for all objects within a scene
+      for n in range(M):
+        if objects_mask[b, n]:
+            # if objects have been sampled already, we need to check for overlaps 
+            # while sampling new objects to add to the scene
+            if n > 0:
+              # sample proposed locations
+              locX_mu, locY_mu = sample_loc(i) 
+              size = sample_size(i)
+              
+              # check if proposed object violates occlusion
+              # 'check_dict' holds the properties of all previously accepted objects  
+              #occlusion_flag = check_occlusion(check_dict, locX_mu.item(), locY_mu.item(), size_mapping[size[b, n].item()])                    
+              occlusion_flag = check_occlusion(check_dict, locX_mu.item(), locY_mu.item(), size_vals[size.item()])                    
+              
+              while occlusion_flag:
+
+                  #logger.info(f"{b} - {n} - {occlusion_flag} - {i}")
+                  
+                  i += 1
+                  # sample proposed locations
+                  locX_mu, locY_mu = sample_loc(i)
+                  size = sample_size(i)
+                  #occlusion_flag = check_occlusion(check_dict, locX_mu.item(), locY_mu.item(), size_mapping[size[b, n].item()]) 
+                  occlusion_flag = check_occlusion(check_dict, locX_mu.item(), locY_mu.item(), size_vals[size.item()])
+              
+              check_dict[n] = {} # init dict for object 'n'
+              check_dict[n]['locX'] = locX_mu.item()
+              check_dict[n]['locY'] = locY_mu.item()
+              #check_dict[n]['size'] = size_mapping[size[b, n].item()]
+              check_dict[n]['size'] = size_vals[size.item()]
+            
+            # if n == 0, then just add the sampled locations and correspondent object's size to 'check_dict'
+            else:
+              locX_mu, locY_mu = sample_loc(i)
+              size = sample_size(i)
+              
+              check_dict[n] = {} # init dict for object 'n'
+              check_dict[n]['locX'] = locX_mu.item()
+              check_dict[n]['locY'] = locY_mu.item()
+              check_dict[n]['size'] = size_vals[size.item()]
+            
+            locX_mu_[b, n] = locX_mu
+            locY_mu_[b, n] = locY_mu
+            size_b_[b, n] = size
+    
+  locXfn = MyNormal(locX_mu_, torch.tensor(0.01)).get_dist()
+  locYfn = MyNormal(locY_mu_, torch.tensor(0.01)).get_dist()
+  with pyro.poutine.mask(mask=objects_mask):
+      locX = pyro.sample(f"locX", locXfn)
+      locY = pyro.sample(f"locY", locYfn)
+      
+      if len(size_vals) > 1:
+        size = pyro.sample(f"size", dist.Delta(size_b_))
+      else:
+        size = torch.zeros(B, M)
+
   scenes = []
   for b in range(B):
     objects = []
@@ -78,7 +150,7 @@ def sample_scenes():
             "shape": shape_vals[shape[b][m].item()],
             "color": color_vals[color[b][m].item()],
             "size": size_vals[size[b][m].item()],
-            "position": (locx[b, m].item(), locy[b, m].item())
+            "position": (locX[b, m].item(), locY[b, m].item())
         })
 
     scenes.append(objects)

@@ -331,7 +331,6 @@ class CSIS(Importance):
     loss, _ = hungarian_loss(preds, target)
     return loss
 
-  
   def _differentiable_loss_particle_inclusive_KL(self, guide_trace):
     
     B = self.batch_size
