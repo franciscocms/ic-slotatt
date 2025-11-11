@@ -11,4 +11,4 @@
 
 ml  OpenMPI/5.0.3-GCC-13.3.0 CUDA/11.8.0 NCCL/2.20.5-GCCcore-13.3.0-CUDA-12.4.0
 
-srun train
+srun train.py
