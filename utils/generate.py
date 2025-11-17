@@ -3,6 +3,17 @@ import torch
 from PIL import Image, ImageDraw
 from torchvision import transforms
 
+import os
+import sys
+sys.path.append(os.path.abspath(__file__+'/../../'))
+
+from main.setup import params
+
+shape_vals = params["shape_vals"]
+size_vals = params["size_vals"]
+size_mapping_int = params["size_mapping_int"]
+color_vals = params["color_vals"]
+
 def overflow(points):
   x0, y0, x1, y1 = points
   if x0 < 0. or x1 > 1. or y0 < 0. or y1 > 1.:
@@ -65,9 +76,7 @@ def render(scenes, resolution = (128, 128), background = None, transparent_polyg
       x, y = x*resolution[0], y*resolution[1]
         
       # for circles, s corresponds to radius
-      if size == "small": s = 10
-      elif size == "medium": s = 15
-      elif size == "large": s = 20
+      s = size_mapping_int[size]
 
       if shape == "square":
         draw.rectangle(
