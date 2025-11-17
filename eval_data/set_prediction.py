@@ -21,7 +21,6 @@ sys.path.append(os.path.abspath(__file__+'/../../'))
 main_dir = os.path.abspath(__file__+'/../../')
 
 from main import models
-from main.models import occlusion
 from main import modifiedCSIS as mcsis
 from main import modifiedImportance as mImportance
 from utils.guide import load_trained_guide
