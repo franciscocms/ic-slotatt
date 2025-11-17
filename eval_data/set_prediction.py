@@ -90,7 +90,7 @@ def main():
 
     logger.info(device)
 
-    seeds = [1, 2, 3, 4, 5]
+    seeds = [1]
 
     OOD_EVAL = params["ood_eval"]
 
@@ -100,9 +100,7 @@ def main():
     for seed in seeds: 
         
         pyro.set_rng_seed(seed)
-        
-        
-        
+    
         model = models.model
         
         # set up trained guide and 'csis' object
@@ -162,7 +160,7 @@ def main():
                 # plt.savefig(f'{count_img_dir}/image_{sample_id}.png')
                 # plt.close()
                 
-                logger.info(sample_id)
+                #logger.info(sample_id)
                 
                 if not OOD_EVAL: target_dict = json.load(open(os.path.abspath(f'metadata/{COUNT}/{sample_id}.json')))
                 else: target_dict = json.load(open(os.path.abspath(f'metadata_ood/{COUNT}/{sample_id}.json')))
@@ -277,7 +275,7 @@ def main():
 
                     # logger.info(f"log weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
 
-                    for name, site in traces.nodes.items():                    
+                    #for name, site in traces.nodes.items():                    
                         # if name == 'image':
                         #     for i in range(site["fn"].mean.shape[0]):
                         #         output_image = site["fn"].mean[i]
@@ -285,8 +283,8 @@ def main():
                         #         plt.savefig(f'{count_img_dir}/image_{sample_id}_trace_{i}.png')
                         #         plt.close()
 
-                        if site["type"] == "sample": 
-                            logger.info(f"{name} - {site['fn']} - {site['value']} - {site['fn'].log_prob(site['value'])}")
+                        # if site["type"] == "sample": 
+                        #     logger.info(f"{name} - {site['fn']} - {site['value']} - {site['fn'].log_prob(site['value'])}")
 
                 
                 else: raise ValueError(f"{params['inference_method']} is not valid!")
