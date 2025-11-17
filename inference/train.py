@@ -104,6 +104,8 @@ if CHECK_ATTN and TRAINING_FROM_SCRATCH:
   if len(os.listdir(root_folder)) == 0:
     logger.info("Folders for all steps deleted...")
 
+assert params["running_type"] == "train"
+
 step_size = params['step_size']
 for s in range(resume_step, resume_step + nsteps):    
   

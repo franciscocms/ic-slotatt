@@ -17,8 +17,8 @@ params = {
     "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
     "dataset": "2Dobjects", # 'clevr' or '2Dobjects'
     "resolution": (128, 128),
-    "num_slots": 20,
-    "max_objects": 20,
+    "num_slots": 15,
+    "max_objects": 15,
     "guide_step" : 1200, # !!!!!!!!! 7750 for 2Dobjects - 11050 for clevr6 !!!!!!!!!
     "print_distributions": False,
     "print_importance_sampling": False,
@@ -63,7 +63,7 @@ if params["dataset"] == "clevr":
     params["batch_size"] = 64 if params["running_type"] == "train" else 1
     params["lr"] = 4e-4
 elif params["dataset"] == "2Dobjects": 
-    params["batch_size"] = 256
+    params["batch_size"] = 64
     params["lr"] = 1e-3
     params["shape_vals"] = ["ball", "square"]
     params["size_vals"] = ["small", "medium", "large"]
