@@ -156,7 +156,7 @@ def sample_scenes():
     scenes.append(objects)
   return scenes
 
-def model(observations={"image": torch.zeros((1, 3, 128, 128))}):
+def model(step=0, observations={"image": torch.zeros((1, 3, 128, 128))}):
 
   #init_time = time.time()
   
@@ -177,7 +177,7 @@ def model(observations={"image": torch.zeros((1, 3, 128, 128))}):
   logger.info(likelihood_fn)
   logger.info(likelihood_fn.to_event(3))
 
-  pyro.sample("image", likelihood_fn, obs=observations["image"])
+  pyro.sample("image", likelihood_fn.to_event(3), obs=observations["image"])
 
 
 # def old_model(observations={"image": torch.zeros((1, 3, 128, 128))}, show='all', save_obs=None, N=None):
