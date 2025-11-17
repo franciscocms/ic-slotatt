@@ -27,7 +27,7 @@ img_transform = transforms.Compose([transforms.ToTensor()])
 
 shape_vals = ["ball", "square"]
 size_vals = ["small", "medium", "large"]
-size_mapping_int = {'small': 5, 'medium': 10, 'large': 15}
+size_mapping_int = {'small': 4, 'medium': 8, 'large': 12}
 color_vals = ["red", "green", "blue"]
 
 def check_occlusion(check_dict, locx, locy, sizes):
@@ -158,7 +158,7 @@ def sample_scenes():
 
 def model(step=0, observations={"image": torch.zeros((1, 3, 128, 128))}):
 
-  #init_time = time.time()
+  init_time = time.time()
   
   B = params['batch_size'] if params["running_type"] == "train" else params['num_inference_samples']
   
@@ -168,8 +168,8 @@ def model(step=0, observations={"image": torch.zeros((1, 3, 128, 128))}):
 
   logger.info(img.shape)
   
-  #render_time = time.time() - init_time
-  #logger.info(f"Batch generation duration: {render_time} - {render_time/B} per sample")
+  render_time = time.time() - init_time
+  logger.info(f"Batch generation duration: {render_time} - {render_time/B} per sample")
 
   llh_uncertainty = 0.001 if params['running_type'] == "train" else 0.05
   likelihood_fn = MyNormal(img, torch.tensor(llh_uncertainty)).get_dist()
