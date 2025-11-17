@@ -149,7 +149,7 @@ def sample_scenes():
         objects.append({
             "shape": shape_vals[shape[b][m].item()],
             "color": color_vals[color[b][m].item()],
-            "size": size_vals[size[b][m].item()],
+            "size": size_vals[int(size[b][m].item())],
             "position": (locX[b, m].item(), locY[b, m].item())
         })
 
