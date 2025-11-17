@@ -187,7 +187,9 @@ class CSIS(Importance):
         elif isinstance(vals['fn'], dist.Delta): 
           prior_distribution = "categorical"
           proposal_distribution = "categorical"
-          out_dim = 2
+          
+          if p["dataset"] == "2Dobjects": out_dim = 3
+          elif p["dataset"] == "clevr": out_dim = 2
         
         # prior uniform distributed variables
         elif isinstance(vals["fn"], dist.Bernoulli): 
