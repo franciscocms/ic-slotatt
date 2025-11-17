@@ -268,15 +268,15 @@ def main():
                     # logger.info(f"log weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
 
                     for name, site in traces.nodes.items():                    
-                        # if name == 'image':
-                        #     for i in range(site["fn"].mean.shape[0]):
-                        #         output_image = site["fn"].mean[i]
-                        #         plt.imshow(output_image.permute(1, 2, 0).cpu().numpy())
-                        #         plt.savefig(f'{count_img_dir}/image_{sample_id}_trace_{i}.png')
-                        #         plt.close()
+                        if name == 'image':
+                            for i in range(site["fn"].mean.shape[0]):
+                                output_image = site["fn"].mean[i]
+                                plt.imshow(output_image.permute(1, 2, 0).cpu().numpy())
+                                plt.savefig(f'{count_img_dir}/image_{sample_id}_trace_{i}.png')
+                                plt.close()
 
-                        if site["type"] == "sample": 
-                            logger.info(f"{name} - {site['fn']} - {site['value']} - {site['fn'].log_prob(site['value'])}")
+                    #     if site["type"] == "sample": 
+                    #         logger.info(f"{name} - {site['fn']} - {site['value']} - {site['fn'].log_prob(site['value'])}")
 
                 
                 else: raise ValueError(f"{params['inference_method']} is not valid!")
@@ -288,7 +288,13 @@ def main():
                 
                 if compute_ap_flag:
                     preds = process_preds(prop_traces, resampling_id) if params['inference_method'] == 'importance_sampling_only' else sorted_preds[0]
+                    
+                    logger.info(preds)
+                    
                     targets = process_targets(target_dict)
+
+                    logger.info(targets)
+
                     for t in threshold: ap[t] += compute_AP(preds, targets, t)
 
                 if img_idx == 0: break
