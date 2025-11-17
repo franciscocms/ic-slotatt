@@ -138,12 +138,8 @@ def main():
             
             ap = {k: 0 for k in threshold}
 
-            if not OOD_EVAL: n_test_samples = len(glob.glob(os.path.abspath(f'images/{COUNT}/*.png')))
-            else: n_test_samples = len(glob.glob(os.path.abspath(f'images_ood/{COUNT}/*.png')))
-            
-            # run the inference module
-            if not OOD_EVAL: count_img_path = glob.glob(os.path.abspath(f'images/{COUNT}/*.png'))
-            else: count_img_path = glob.glob(os.path.abspath(f'images_ood/{COUNT}/*.png'))
+            n_test_samples = len(glob.glob(os.path.abspath(f'images_ood/{COUNT}/*.png')))
+            count_img_path = glob.glob(os.path.abspath(f'images_ood/{COUNT}/*.png'))
 
             count_img_path.sort()
             
@@ -159,10 +155,7 @@ def main():
                 # plt.savefig(f'{count_img_dir}/image_{sample_id}.png')
                 # plt.close()
                 
-                #logger.info(sample_id)
-                
-                if not OOD_EVAL: target_dict = json.load(open(os.path.abspath(f'metadata/{COUNT}/{sample_id}.json')))
-                else: target_dict = json.load(open(os.path.abspath(f'metadata_ood/{COUNT}/{sample_id}.json')))
+                target_dict = json.load(open(os.path.abspath(f'metadata_ood/{COUNT}/{sample_id}.json')))
 
                 # logger.info(target_dict)
 
@@ -274,7 +267,7 @@ def main():
 
                     # logger.info(f"log weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
 
-                    #for name, site in traces.nodes.items():                    
+                    for name, site in traces.nodes.items():                    
                         # if name == 'image':
                         #     for i in range(site["fn"].mean.shape[0]):
                         #         output_image = site["fn"].mean[i]
@@ -282,8 +275,8 @@ def main():
                         #         plt.savefig(f'{count_img_dir}/image_{sample_id}_trace_{i}.png')
                         #         plt.close()
 
-                        # if site["type"] == "sample": 
-                        #     logger.info(f"{name} - {site['fn']} - {site['value']} - {site['fn'].log_prob(site['value'])}")
+                        if site["type"] == "sample": 
+                            logger.info(f"{name} - {site['fn']} - {site['value']} - {site['fn'].log_prob(site['value'])}")
 
                 
                 else: raise ValueError(f"{params['inference_method']} is not valid!")
@@ -298,7 +291,7 @@ def main():
                     targets = process_targets(target_dict)
                     for t in threshold: ap[t] += compute_AP(preds, targets, t)
 
-                #if img_idx == 0: break
+                if img_idx == 0: break
             
             #logger.info(resampled_logwts)
             
