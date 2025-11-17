@@ -172,9 +172,9 @@ def main():
                 if PRINT_INFERENCE_TIME: since = time.time()
                 
                 posterior = csis.run(observations={"image": sample})
-                prop_traces = posterior.prop_traces[0]
-                traces = posterior.exec_traces[0]
-                log_wts = posterior.log_weights[0]
+                prop_traces = posterior.prop_traces[0]  # guide
+                traces = posterior.exec_traces[0]       # model
+                log_wts = posterior.log_weights[0]      
 
                 compute_ap_flag = True
 
@@ -277,6 +277,17 @@ def main():
 
                     # logger.info(f"log weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
 
+                    
+                    
+                    
+                    
+                    CHECK HOW MODEL_TRACE.LOG_PROB_SUM IS COMPUTED TO EXPLAIN IN THE REBUTTAL
+                    
+                    
+                    
+                    
+                    
+                    
                     # for name, site in traces.nodes.items():                    
                     #     if name == 'image':
                     #         for i in range(site["fn"].mean.shape[0]):

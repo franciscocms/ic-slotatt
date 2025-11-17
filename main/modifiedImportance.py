@@ -12,7 +12,6 @@ from pyro.ops.packed import pack
 from .mod_abstract_infer import TracePosterior
 from .myenum import get_importance_trace
 from pyro.poutine.runtime import apply_stack
-from .models import occlusion
 
 import inspect
 from sys import stdout
@@ -160,100 +159,6 @@ class Importance(TracePosterior):
                                 )
         return new_model_trace
     
-    def _old_traces(self, *args, **kwargs):
-        """
-        Generator of weighted samples from the proposal distribution.
-        """
-        for i in range(self.num_samples):
-            
-            guide_trace = poutine.trace(self.guide).get_trace(*args, **kwargs)  
-
-            #guide_trace = self._reorder_trace(guide_trace)
-
-            """
-            check if 'guide_trace' is a valid trace:
-            - condition: cannot exhibit overlapped object locations
-            - setting this condition to 'True' when evaluating the fully trained model,
-            not when capturing the model with some amount of training steps
-            """
-
-            # checking_overlaps: True for 'counting' tasks
-            #                    False for 'set prediction' tasks
-
-            checking_overlaps = False
-            if checking_overlaps:
-            
-                flag = True
-                all_locX, all_locY, all_size = [], [], []
-                
-                # aggregate 'loc' and 'size' variables for all objects
-                for name, site in guide_trace.nodes.items():
-                    if site['type'] == 'sample':      
-                        if name.split('_')[0] == 'locX': all_locX.append(site['value'])
-                        elif name.split('_')[0] == 'locY': all_locY.append(site['value'])
-                        elif name.split('_')[0] == 'size': all_size.append(site['value'])
-
-                for n in range(1, len(all_locX)):
-                    occlusion_set = [occlusion((all_locX[n], all_locY[n], all_size[n]), (all_locX[j], all_locY[j], all_size[j])) for j in range(n)] 
-                    #print(occlusion_set)
-
-                    if any(occlusion_set): flag = False
-
-            else: flag = True
-
-            if flag:
-                model_trace = poutine.trace(poutine.replay(self.model, trace=guide_trace)).get_trace(*args, **kwargs)         
-                
-                # logger.info('\nMODEL TRACE\n')
-                # for name, site in model_trace.nodes.items():
-                #     if site['type'] == 'sample':
-                #         logger.info(f"\n{name} - value: {site['value']}") 
-                #         if isinstance(site['fn'], dist.Bernoulli) or isinstance(site['fn'], dist.Categorical): logger.info(f"posterior: {site['fn'].probs} - log_prob: {site['fn'].log_prob(site['value'])}")
-                #         if isinstance(site['fn'], dist.Normal): logger.info(f"posterior mean: {site['fn'].loc} and std: {site['fn'].scale} - log_prob: {site['fn'].log_prob(site['value'])}")
-                #         if isinstance(site['fn'], dist.Delta): logger.info(f"posterior: {site['fn'].loc} - log_prob: {site['fn'].log_prob(site['value'])}")
-                
-                # logger.info(model_trace.log_prob_sum())
-                # logger.info(guide_trace.log_prob_sum())
-
-                only_img_llh = True
-                
-                log_p_sum = torch.tensor(0.)
-                for name, site in model_trace.nodes.items():
-                    log_p = 0.
-                    
-                    if not only_img_llh:
-                        if site['type'] == 'sample' and name != 'size':
-                            log_p = site['fn'].log_prob(site['value'])
-                            if name == 'image': 
-                                img_dim = site['fn'].mean.shape[-1]
-                                log_p = log_p / (img_dim**2)
-                            
-                            #logger.info(f"{name} - {log_p}")
-                            log_p = scale_and_mask(log_p, site["scale"], site["mask"]).sum()
-                            #logger.info(f"{name} - {log_p}")
-                    
-                    else:
-                        if site['type'] == 'sample' and name == 'image':
-                            log_p = site['fn'].log_prob(site['value']).item()
-                            img_dim = site['fn'].mean.shape[-1]
-                            log_p = log_p / (img_dim**2)
-                    
-                    log_p_sum += log_p
-
-
-                log_weight = log_p_sum #- guide_trace.log_prob_sum()
-
-                # logger.info(f"\ninspecting the guide log_prob_sum computation...\n")
-                # for name, site in guide_trace.nodes.items():
-                #     if site['type'] == 'sample':
-                #         logger.info(f"{name} - {site['value']} - {site['fn'].log_prob(site['value'])} - {site['fn'].log_prob(site['value']).sum()}")
-
-                # logger.info(f"model log_prob_sum: {log_p_sum}")
-                # logger.info(f"guide log_prob_sum: {guide_trace.log_prob_sum()}")
-
-                #yield (model_trace, log_weight)
-                yield (model_trace, guide_trace, log_weight)
-    
     
     def _traces(self, *args, **kwargs):
         """
@@ -295,23 +200,7 @@ class Importance(TracePosterior):
             
             log_p_sum += log_p
 
-        # guide_lps = torch.zeros(self.num_samples)
-        # mask = None
-        # for name, site in guide_trace.nodes.items():
-        #     if site["type"] == "sample":
-        #         logger.info(f"{name} - {site}")
-
-        #         if name == "mask":
-        #             guide_lps += torch.sum(site['fn'].log_prob(site['value']), dim=-1)
-        #             mask = site['value']
-        #         else:
-        #             assert mask != None
-        #             site['mask'] = mask
-        #             guide_lps += torch.sum(site['mask'] * site['fn'].log_prob(site['value']), dim=-1)
-        
-        # logger.info(f'model log weight: {log_p_sum}')
-        # logger.info(f'guide log weight: {guide_lps}')
-        # log_weight = list(log_p_sum - guide_lps)
+        # log_weight = model_trace.log_prob_sum() - guide_trace.log_prob_sum()
 
         log_weight = list(log_p_sum)
         yield (model_trace, guide_trace, log_weight)
