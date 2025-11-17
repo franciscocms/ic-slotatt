@@ -65,6 +65,10 @@ if params["dataset"] == "clevr":
 elif params["dataset"] == "2Dobjects": 
     params["batch_size"] = 64
     params["lr"] = 1e-3
+    params["shape_vals"] = ["ball", "square"]
+    params["size_vals"] = ["small", "medium", "large"]
+    params["size_mapping_int"] = {'small': 4, 'medium': 8, 'large': 12} # 10 - 15 - 20
+    params["color_vals"] = ["red", "green", "blue"]
 else: raise ValueError(f"Dataset error: dataset named {params['dataset']} not found!")
 
 if not os.path.isdir(params['plots_dir']): os.mkdir(params['plots_dir'])

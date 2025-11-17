@@ -25,10 +25,10 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 img_transform = transforms.Compose([transforms.ToTensor()])
 
-shape_vals = ["ball", "square"]
-size_vals = ["small", "medium", "large"]
-size_mapping_int = {'small': 4, 'medium': 8, 'large': 12}
-color_vals = ["red", "green", "blue"]
+shape_vals = params["shape_vals"]
+size_vals = params["size_vals"]
+size_mapping_int = params["size_mapping_int"]
+color_vals = params["color_vals"]
 
 def check_occlusion(check_dict, locx, locy, sizes):
 

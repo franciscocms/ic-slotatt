@@ -7,11 +7,21 @@ import os
 
 import logging
 
+import sys
+sys.path.append(os.path.abspath(__file__+'/../../'))
+
+from main.setup import params
+
 logfile_name = "generate.log"
 logging.basicConfig(filename=logfile_name, level=logging.INFO)
 
 img_transform = transforms.Compose([transforms.ToTensor()])
 BACKGROUND_COLOR = "black"
+
+shape_vals = params["shape_vals"]
+size_vals = params["size_vals"]
+size_mapping_int = params["size_mapping_int"]
+color_vals = params["color_vals"]
 
 def color_to_rgb(color):
   if color == "red": return (255, 0, 0)
@@ -36,9 +46,7 @@ def render(shape_obj, size_obj, color_obj, locx_obj, locy_obj, background_color)
   for n in range(len(shape_obj)):
     shape, size, color, locX, locY = shape_obj[n], size_obj[n], color_obj[n], locx_obj[n]*127, locy_obj[n]*127
 
-    if size == "small": s = 10
-    elif size == "medium": s = 15
-    elif size == "large": s = 20
+    s = size_mapping_int[size]
 
     if shape == "square":
       draw.rectangle(
@@ -77,10 +85,6 @@ def overflow(locx, locy, object_size):
   else: return False
 
 def model(scene_id, N):
-                        
-  shape_vals = ["ball", "square"]
-  size_vals = ["small", "medium", "large"]
-  color_vals = ["red", "green", "blue"]
 
   n_objects = N
 
@@ -93,24 +97,13 @@ def model(scene_id, N):
     "N": n_objects,
   }
 
-  OOD_FLAG = True
-
   all_locs = []
   for n in range(int(n_objects)):
     shape = shape_vals[dist.Categorical(probs=torch.tensor([1/len(shape_vals) for _ in range(len(shape_vals))])).sample()]
     shape_obj.append(shape)
     size = size_vals[torch.randint(high=len(size_vals), size=(1,))]
     size_obj.append(size)
-    
-    if not OOD_FLAG:
-      color = color_vals[torch.randint(high=len(color_vals), size=(1,))]
-    else:
-      shape_to_color_probs = {
-        "ball": torch.tensor([0.0, 0.5, 0.5]), 
-        "square": torch.tensor([1.0, 0., 0.]),
-        }
-      color_probs = shape_to_color_probs[shape]
-      color = color_vals[dist.Categorical(probs=color_probs).sample()]
+    color = color_vals[torch.randint(high=len(color_vals), size=(1,))]
     color_obj.append(color)
     
     # ensure there are no occlusions or object overflow
@@ -152,20 +145,20 @@ def main():
     metadata_dir = 'metadata_ood'
     img_dir = 'images_ood'
 
-    NSCENES = 50
+    NSCENES = 1000
 
     dirs = [metadata_dir, img_dir]
     for d in dirs:
       if not os.path.isdir(d): os.mkdir(d)
 
-    gen_count = range(1,7)
+    gen_count = range(10, 16)
 
     for c in gen_count:
 
       # set up paths for saving images and scene_dicts
       dirs = [os.path.join(img_dir, str(c)), os.path.join(metadata_dir, str(c))]
       for dir in dirs: 
-          if not os.path.isdir(dir): os.mkdir(dir)
+        if not os.path.isdir(dir): os.mkdir(dir)
       
       # generate scenes
       for scene_id in range(NSCENES): 

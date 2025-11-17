@@ -131,7 +131,7 @@ def main():
         
         
         
-        for COUNT in range(5, 6):
+        for COUNT in range(10, 16):
 
             count_img_dir = os.path.join(plots_dir, str(COUNT))
             if not os.path.isdir(count_img_dir): os.mkdir(count_img_dir)
@@ -277,24 +277,16 @@ def main():
 
                     # logger.info(f"log weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
 
-                    
-                    
-                    
-                    
-                    CHECK HOW MODEL_TRACE.LOG_PROB_SUM IS COMPUTED TO EXPLAIN IN THE REBUTTAL
-                    
-                    
-                    
-                    
-                    
-                    
-                    # for name, site in traces.nodes.items():                    
-                    #     if name == 'image':
-                    #         for i in range(site["fn"].mean.shape[0]):
-                    #             output_image = site["fn"].mean[i]
-                    #             plt.imshow(output_image.permute(1, 2, 0).cpu().numpy())
-                    #             plt.savefig(f'{count_img_dir}/image_{sample_id}_trace_{i}.png')
-                    #             plt.close()
+                    for name, site in traces.nodes.items():                    
+                        # if name == 'image':
+                        #     for i in range(site["fn"].mean.shape[0]):
+                        #         output_image = site["fn"].mean[i]
+                        #         plt.imshow(output_image.permute(1, 2, 0).cpu().numpy())
+                        #         plt.savefig(f'{count_img_dir}/image_{sample_id}_trace_{i}.png')
+                        #         plt.close()
+
+                        if site["type"] == "sample": 
+                            logger.info(f"{name} - {site['fn']} - {site['value']} - {site['fn'].log_prob(site['value'])}")
 
                 
                 else: raise ValueError(f"{params['inference_method']} is not valid!")
