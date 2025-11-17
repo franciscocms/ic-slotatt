@@ -152,9 +152,9 @@ def main():
                 sample = sample.to(device)
                 sample_id = img_path.split('/')[-1].split('.')[0]
                 
-                # plt.imshow(sample.squeeze(0).permute(1, 2, 0).detach().cpu().numpy())
-                # plt.savefig(f'{count_img_dir}/image_{sample_id}.png')
-                # plt.close()
+                plt.imshow(sample.squeeze(0).permute(1, 2, 0).detach().cpu().numpy())
+                plt.savefig(f'{count_img_dir}/image_{sample_id}.png')
+                plt.close()
                 
                 target_dict = json.load(open(os.path.abspath(f'metadata_ood/{COUNT}/{sample_id}.json')))
 
