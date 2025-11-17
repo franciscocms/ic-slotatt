@@ -63,7 +63,7 @@ if params["dataset"] == "clevr":
     params["batch_size"] = 64 if params["running_type"] == "train" else 1
     params["lr"] = 4e-4
 elif params["dataset"] == "2Dobjects": 
-    params["batch_size"] = 64
+    params["batch_size"] = 256
     params["lr"] = 1e-3
     params["shape_vals"] = ["ball", "square"]
     params["size_vals"] = ["small", "medium", "large"]
