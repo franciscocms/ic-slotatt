@@ -145,6 +145,7 @@ def main():
             
             resampled_logwts = {k: {} for k in range(len(count_img_path))}
 
+            ap_den = 0
             for img_idx, img_path in enumerate(count_img_path): 
                 
                 sample = img_to_tensor(Image.open(img_path))      
@@ -297,6 +298,8 @@ def main():
 
                     for t in threshold: ap[t] += compute_AP(preds, targets, t)
 
+                ap_den += 1
+                
                 if img_idx == 0: break
             
             #logger.info(resampled_logwts)
@@ -311,7 +314,7 @@ def main():
             # logger.info("\naveraged log_wts across all inference iterations:")
             # logger.info(avg_log_wts)
 
-            mAP = {k: v/n_test_samples for k, v in ap.items()}
+            mAP = {k: v/ap_den for k, v in ap.items()}
             logger.info(f"COUNT {COUNT}: distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")
             logger.info(f"COUNT {COUNT}: mAP values: {mAP[threshold[0]]} - {mAP[threshold[1]]} - {mAP[threshold[2]]} - {mAP[threshold[3]]} - {mAP[threshold[4]]} - {mAP[threshold[5]]}\n")
             
