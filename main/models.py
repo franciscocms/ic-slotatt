@@ -173,6 +173,10 @@ def model(observations={"image": torch.zeros((1, 3, 128, 128))}):
 
   llh_uncertainty = 0.001 if params['running_type'] == "train" else 0.05
   likelihood_fn = MyNormal(img, torch.tensor(llh_uncertainty)).get_dist()
+
+  logger.info(likelihood_fn)
+  logger.info(likelihood_fn.to_event(3))
+
   pyro.sample("image", likelihood_fn.to_event(3), obs=observations["image"])
 
 
