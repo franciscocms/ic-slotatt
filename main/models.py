@@ -101,7 +101,7 @@ def sample_scenes():
               
               while occlusion_flag:
 
-                  #logger.info(f"{b} - {n} - {occlusion_flag} - {i}")
+                  logger.info(f"{b} - {n} - {occlusion_flag} - {i}")
                   
                   i += 1
                   # sample proposed locations
