@@ -151,7 +151,7 @@ def main():
     for d in dirs:
       if not os.path.isdir(d): os.mkdir(d)
 
-    gen_count = range(16, 21)
+    gen_count = range(21, 26)
 
     for c in gen_count:
 
