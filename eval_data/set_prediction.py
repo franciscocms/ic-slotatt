@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import json
 import shutil
 import time
+from statistics import mean, stdev
 
 # add project path to sys to import relative modules
 import sys
@@ -136,7 +137,7 @@ def main():
             logger.info(f'\nEVALUATION STARTED FOR SCENES WITH {COUNT} OBJECTS\n')
 
             
-            ap = {k: 0 for k in threshold}
+            ap = {k: [] for k in threshold}
 
             n_test_samples = len(glob.glob(os.path.abspath(f'images_ood/{COUNT}/*.png')))
             count_img_path = glob.glob(os.path.abspath(f'images_ood/{COUNT}/*.png'))
@@ -299,11 +300,12 @@ def main():
 
                     #logger.info(targets)
 
-                    for t in threshold: ap[t] += compute_AP(preds, targets, t)
+                    sample_ap = compute_AP(preds, targets, t)
+                    for t in threshold: ap[t].append(sample_ap)
 
                 ap_den += 1
                 
-                #if img_idx == 0: break
+                if img_idx == 10: break
             
             #logger.info(resampled_logwts)
             
@@ -317,18 +319,11 @@ def main():
             # logger.info("\naveraged log_wts across all inference iterations:")
             # logger.info(avg_log_wts)
 
-            mAP = {k: v/ap_den for k, v in ap.items()}
-            logger.info(f"COUNT {COUNT}: distance thresholds: \n {threshold[0]} - {threshold[1]} - {threshold[2]} - {threshold[3]} - {threshold[4]} - {threshold[5]}")
-            logger.info(f"COUNT {COUNT}: mAP values: {mAP[threshold[0]]} - {mAP[threshold[1]]} - {mAP[threshold[2]]} - {mAP[threshold[3]]} - {mAP[threshold[4]]} - {mAP[threshold[5]]}\n")
-            
-            for k in threshold:
-                all_mAP[k].append(mAP[k])
-            
-            #break
+            mAP_mean = {k: mean(v) for k, v in ap.items()}
+            mAP_std = {k: stdev(v) for k, v in ap.items()}
+            for t_idx, t in enumerate(threshold):
+                logger.info(f"{t}: {mAP_mean[threshold[t_idx]]} +- {mAP_std[threshold[t_idx]]}")
 
-    logger.info(f"Average mAP: ")
-    for k in threshold:
-        logger.info(f"{k}: {np.mean(all_mAP[k])} +- {np.std(all_mAP[k])}")
         
 
 
