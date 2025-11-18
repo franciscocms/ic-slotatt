@@ -300,8 +300,7 @@ def main():
 
                     #logger.info(targets)
 
-                    sample_ap = compute_AP(preds, targets, t)
-                    for t in threshold: ap[t].append(sample_ap)
+                    for t in threshold: ap[t].append(compute_AP(preds, targets, t))
 
                 ap_den += 1
                 
