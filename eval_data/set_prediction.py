@@ -129,7 +129,7 @@ def main():
         
         
         
-        for COUNT in range(16, 17):
+        for COUNT in range(17, 18):
 
             count_img_dir = os.path.join(plots_dir, str(COUNT))
             if not os.path.isdir(count_img_dir): os.mkdir(count_img_dir)
