@@ -31,7 +31,7 @@ from utils.baseline import compute_AP
 from main.setup import params
 
 import logging
-logfile_name = f'icsa_set_prediction.log'
+logfile_name = f"eval-{params['jobID']}.log"
 logger = logging.getLogger(params["running_type"])
 logger.setLevel(logging.INFO)
 fh = logging.FileHandler(logfile_name, mode='w')
@@ -148,13 +148,16 @@ def main():
             ap_den = 0
             for img_idx, img_path in enumerate(count_img_path): 
                 
+                if img_idx % 100 == 0:
+                    logger.info(f"{img_idx}")
+                
                 sample = img_to_tensor(Image.open(img_path))      
                 sample = sample.to(device)
                 sample_id = img_path.split('/')[-1].split('.')[0]
                 
-                plt.imshow(sample.squeeze(0).permute(1, 2, 0).detach().cpu().numpy())
-                plt.savefig(f'{count_img_dir}/image_{sample_id}.png')
-                plt.close()
+                # plt.imshow(sample.squeeze(0).permute(1, 2, 0).detach().cpu().numpy())
+                # plt.savefig(f'{count_img_dir}/image_{sample_id}.png')
+                # plt.close()
                 
                 target_dict = json.load(open(os.path.abspath(f'metadata_ood/{COUNT}/{sample_id}.json')))
 
@@ -268,13 +271,13 @@ def main():
 
                     # logger.info(f"log weights: {[l.item() for l in log_wts]} - resampled trace: {resampling_id}")
 
-                    for name, site in traces.nodes.items():                    
-                        if name == 'image':
-                            for i in range(site["fn"].mean.shape[0]):
-                                output_image = site["fn"].mean[i]
-                                plt.imshow(output_image.permute(1, 2, 0).cpu().numpy())
-                                plt.savefig(f'{count_img_dir}/image_{sample_id}_trace_{i}.png')
-                                plt.close()
+                    # for name, site in traces.nodes.items():                    
+                    #     if name == 'image':
+                    #         for i in range(site["fn"].mean.shape[0]):
+                    #             output_image = site["fn"].mean[i]
+                    #             plt.imshow(output_image.permute(1, 2, 0).cpu().numpy())
+                    #             plt.savefig(f'{count_img_dir}/image_{sample_id}_trace_{i}.png')
+                    #             plt.close()
 
                     #     if site["type"] == "sample": 
                     #         logger.info(f"{name} - {site['fn']} - {site['value']} - {site['fn'].log_prob(site['value'])}")
@@ -300,7 +303,7 @@ def main():
 
                 ap_den += 1
                 
-                if img_idx == 0: break
+                #if img_idx == 0: break
             
             #logger.info(resampled_logwts)
             

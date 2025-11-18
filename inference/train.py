@@ -22,7 +22,7 @@ import wandb # type: ignore
 
 import logging
 logfile_name = f"log-{params['jobID']}.log"
-logger = logging.getLogger("train")
+logger = logging.getLogger(params["running_type"])
 logger.setLevel(logging.INFO)
 fh = logging.FileHandler(logfile_name, mode='w')
 logger.addHandler(fh)
