@@ -17,8 +17,8 @@ params = {
     "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
     "dataset": "2Dobjects", # 'clevr' or '2Dobjects'
     "resolution": (128, 128),
-    "num_slots": 15,
-    "max_objects": 15,
+    "num_slots": 10,
+    "max_objects": 10,
     "guide_step" : 10000, # !!!!!!!!! 7750 for 2Dobjects - 11050 for clevr6 !!!!!!!!!
     "print_distributions": False,
     "print_importance_sampling": False,
