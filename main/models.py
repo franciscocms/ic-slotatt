@@ -83,52 +83,56 @@ def sample_scenes():
   size_b_ = torch.zeros(B, M)
   i = 0
 
-  for b in range(B):
-      check_dict = {} # stores locations and sizes for all objects within a scene
-      for n in range(M):
-        if objects_mask[b, n]:
-            # if objects have been sampled already, we need to check for overlaps 
-            # while sampling new objects to add to the scene
-            if n > 0:
-              # sample proposed locations
-              locX_mu, locY_mu = sample_loc(i) 
-              size = sample_size(i)
-              
-              # check if proposed object violates occlusion
-              # 'check_dict' holds the properties of all previously accepted objects  
-              #occlusion_flag = check_occlusion(check_dict, locX_mu.item(), locY_mu.item(), size_mapping[size[b, n].item()])                    
-              occlusion_flag = check_occlusion(check_dict, locX_mu.item(), locY_mu.item(), size_vals[size.item()])                    
-              
-              while occlusion_flag:
+  if params["running_type"] == "train":
 
-                  logger.info(f"{b} - {n} - {occlusion_flag} - {i}")
-                  
-                  i += 1
-                  # sample proposed locations
-                  locX_mu, locY_mu = sample_loc(i)
-                  size = sample_size(i)
-                  #occlusion_flag = check_occlusion(check_dict, locX_mu.item(), locY_mu.item(), size_mapping[size[b, n].item()]) 
-                  occlusion_flag = check_occlusion(check_dict, locX_mu.item(), locY_mu.item(), size_vals[size.item()])
+    for b in range(B):
+        check_dict = {} # stores locations and sizes for all objects within a scene
+        for n in range(M):
+          if objects_mask[b, n]:
+              # if objects have been sampled already, we need to check for overlaps 
+              # while sampling new objects to add to the scene
+              if n > 0:
+                # sample proposed locations
+                locX_mu, locY_mu = sample_loc(i) 
+                size = sample_size(i)
+                
+                # check if proposed object violates occlusion
+                # 'check_dict' holds the properties of all previously accepted objects  
+                #occlusion_flag = check_occlusion(check_dict, locX_mu.item(), locY_mu.item(), size_mapping[size[b, n].item()])                    
+                occlusion_flag = check_occlusion(check_dict, locX_mu.item(), locY_mu.item(), size_vals[size.item()])                    
+                
+                while occlusion_flag:
+
+                    #logger.info(f"{b} - {n} - {occlusion_flag} - {i}")
+                    
+                    i += 1
+                    # sample proposed locations
+                    locX_mu, locY_mu = sample_loc(i)
+                    size = sample_size(i)
+                    #occlusion_flag = check_occlusion(check_dict, locX_mu.item(), locY_mu.item(), size_mapping[size[b, n].item()]) 
+                    occlusion_flag = check_occlusion(check_dict, locX_mu.item(), locY_mu.item(), size_vals[size.item()])
+                
+                check_dict[n] = {} # init dict for object 'n'
+                check_dict[n]['locX'] = locX_mu.item()
+                check_dict[n]['locY'] = locY_mu.item()
+                #check_dict[n]['size'] = size_mapping[size[b, n].item()]
+                check_dict[n]['size'] = size_vals[size.item()]
               
-              check_dict[n] = {} # init dict for object 'n'
-              check_dict[n]['locX'] = locX_mu.item()
-              check_dict[n]['locY'] = locY_mu.item()
-              #check_dict[n]['size'] = size_mapping[size[b, n].item()]
-              check_dict[n]['size'] = size_vals[size.item()]
-            
-            # if n == 0, then just add the sampled locations and correspondent object's size to 'check_dict'
-            else:
-              locX_mu, locY_mu = sample_loc(i)
-              size = sample_size(i)
+              # if n == 0, then just add the sampled locations and correspondent object's size to 'check_dict'
+              else:
+                locX_mu, locY_mu = sample_loc(i)
+                size = sample_size(i)
+                
+                check_dict[n] = {} # init dict for object 'n'
+                check_dict[n]['locX'] = locX_mu.item()
+                check_dict[n]['locY'] = locY_mu.item()
+                check_dict[n]['size'] = size_vals[size.item()]
               
-              check_dict[n] = {} # init dict for object 'n'
-              check_dict[n]['locX'] = locX_mu.item()
-              check_dict[n]['locY'] = locY_mu.item()
-              check_dict[n]['size'] = size_vals[size.item()]
-            
-            locX_mu_[b, n] = locX_mu
-            locY_mu_[b, n] = locY_mu
-            size_b_[b, n] = size
+              locX_mu_[b, n] = locX_mu
+              locY_mu_[b, n] = locY_mu
+              size_b_[b, n] = size
+  elif params["running_type"] == "eval":
+    locX_mu_, locY_mu_ = torch.randn(B, M), torch.randn(B, M) 
     
   locXfn = MyNormal(locX_mu_, torch.tensor(0.01)).get_dist()
   locYfn = MyNormal(locY_mu_, torch.tensor(0.01)).get_dist()
