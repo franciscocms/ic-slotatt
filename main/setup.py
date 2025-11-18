@@ -19,7 +19,7 @@ params = {
     "resolution": (128, 128),
     "num_slots": 15,
     "max_objects": 15,
-    "guide_step" : 1200, # !!!!!!!!! 7750 for 2Dobjects - 11050 for clevr6 !!!!!!!!!
+    "guide_step" : 10000, # !!!!!!!!! 7750 for 2Dobjects - 11050 for clevr6 !!!!!!!!!
     "print_distributions": False,
     "print_importance_sampling": False,
     "bernoulli_inf_reduction": 'none',
@@ -34,7 +34,7 @@ params = {
     "training_from_scratch" : True,
     "training_iters": 20000, # 10k
     "step_size": 100,
-    "running_type": "train", # train, debug, eval, inspect
+    "running_type": "eval", # train, debug, eval, inspect
     "ood_eval": True,
     "slot_dim" : 64, 
     "infer_background": False,
