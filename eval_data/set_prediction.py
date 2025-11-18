@@ -304,7 +304,7 @@ def main():
 
                 ap_den += 1
                 
-                if img_idx == 10: break
+                #if img_idx == 10: break
             
             #logger.info(resampled_logwts)
             
@@ -321,7 +321,7 @@ def main():
             mAP_mean = {k: mean(v) for k, v in ap.items()}
             mAP_std = {k: stdev(v) for k, v in ap.items()}
             for t_idx, t in enumerate(threshold):
-                logger.info(f"{t}: {mAP_mean[threshold[t_idx]]} +- {mAP_std[threshold[t_idx]]}")
+                logger.info(f"{t}: {round(mAP_mean[threshold[t_idx]], 3)} +- {round(mAP_std[threshold[t_idx]], 3)}")
 
         
 
