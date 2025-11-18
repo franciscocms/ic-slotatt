@@ -293,11 +293,11 @@ def main():
                 if compute_ap_flag:
                     preds = process_preds(prop_traces, resampling_id) if params['inference_method'] == 'importance_sampling_only' else sorted_preds[0]
                     
-                    logger.info(preds)
+                    #logger.info(preds)
                     
                     targets = process_targets(target_dict)
 
-                    logger.info(targets)
+                    #logger.info(targets)
 
                     for t in threshold: ap[t] += compute_AP(preds, targets, t)
 
