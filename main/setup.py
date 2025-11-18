@@ -19,7 +19,7 @@ params = {
     "resolution": (128, 128),
     "num_slots": 15,
     "max_objects": 15,
-    "guide_step" : 9999, # !!!!!!!!! 7750 for 2Dobjects - 11050 for clevr6 !!!!!!!!!
+    "guide_step" : 10000, # !!!!!!!!! 7750 for 2Dobjects - 11050 for clevr6 !!!!!!!!!
     "print_distributions": False,
     "print_importance_sampling": False,
     "bernoulli_inf_reduction": 'none',
@@ -42,7 +42,7 @@ params = {
     "softmax_temperature": 1.0,
     "strided_convs": True,
     "check_attn": True,
-    "jobID": 69, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects (95 for 10 slots/objects)
+    "jobID": 201, # 69 holds the results for ICSA trained on '2Dobjects' and 87 for only 4 CLEVR objects (95 for 10 slots/objects)
     "mesh_iters": 4,
     "mesh_lr": 5, # 76: 3, 77: 5
     "logprob_coeff": 1.,
